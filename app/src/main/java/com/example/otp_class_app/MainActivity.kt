@@ -3,26 +3,31 @@ package com.example.otp_class_app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.otp_class_app.screens.DashboardScreen
+import com.example.otp_class_app.screens.ReportingScreen
+import com.example.otp_class_app.screens.StudentFormScreen
+import com.example.otp_class_app.ui.screens.AttendanceScreen
 import com.example.otp_class_app.ui.theme.Otp_class_appTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             Otp_class_appTheme {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    StudentFormScreen()
+                // A surface container using the 'background' color from the theme
+                Surface(
+                    modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainNavHost()
                 }
             }
         }
@@ -30,17 +35,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Otp_class_appTheme {
-        Greeting("Android")
+fun MainNavHost(navController: NavHostController = rememberNavController()) {
+    NavHost(navController = navController, startDestination = "dashboard") {
+        composable("dashboard") { DashboardScreen(navController) }
+        composable("registration") { StudentFormScreen() }
+        composable("attendance") { AttendanceScreen() }
+        composable("reporting") { ReportingScreen() }
     }
 }

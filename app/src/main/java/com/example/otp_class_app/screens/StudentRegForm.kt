@@ -1,0 +1,233 @@
+package com.example.otp_class_app.screens
+
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
+import com.example.otp_class_app.api.ApiService
+import com.example.otp_class_app.models.StudentDTO
+import com.example.otp_class_app.ui.theme.Otp_class_appTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StudentFormScreen() {
+    var name by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var facilitator by remember { mutableStateOf("Select Facilitator") }
+    var batch by remember { mutableStateOf("Select Batch") }
+    var profession by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
+    var showDropdownFacilitator by remember { mutableStateOf(false) }
+    var showDropdownBatch by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    val facilitators = listOf("NA", "H.G Sadhu Chaitanya Prabhu", "H.G Seva Actyute Prabhu", "H.G Rajiv Lochan Prabhu")
+    val batches = listOf("DYS", "TSSV", "VL2")
+
+    val icon1 = if (showDropdownFacilitator)
+        Icons.Filled.KeyboardArrowUp
+    else
+        Icons.Filled.KeyboardArrowDown
+
+    val icon2 = if (showDropdownBatch)
+        Icons.Filled.KeyboardArrowUp
+    else
+        Icons.Filled.KeyboardArrowDown
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        // Custom header
+        Text(
+            text = "Hari Bol 🙏",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        // Name input
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Name") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+                .background(Color.White, shape = MaterialTheme.shapes.medium)
+        )
+
+        // Phone input
+        OutlinedTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = { Text("Phone") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+                .background(Color.White, shape = MaterialTheme.shapes.medium)
+        )
+
+        // Facilitator dropdown
+        Box(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+            var textFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+
+            OutlinedTextField(
+                value = facilitator,
+                onValueChange = { /* No-op */ },
+                label = { Text("Facilitator") },
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, shape = MaterialTheme.shapes.medium)
+                    .onGloballyPositioned { coordinates ->
+                        textFieldSize = coordinates.size.toSize()
+                    },
+                trailingIcon = {
+                    Icon(icon1,"contentDescription",
+                        Modifier.clickable { showDropdownFacilitator = !showDropdownFacilitator })
+                }
+            )
+            DropdownMenu(
+                expanded = showDropdownFacilitator,
+                onDismissRequest = { showDropdownFacilitator = false },
+                modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+            ) {
+                facilitators.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(text = option) },
+                        onClick = {
+                            facilitator = option
+                            showDropdownFacilitator = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // Batch dropdown
+        Box(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+            var textFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+
+            OutlinedTextField(
+                value = batch,
+                onValueChange = { /* No-op */ },
+                label = { Text("Batch") },
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, shape = MaterialTheme.shapes.medium)
+                    .onGloballyPositioned { coordinates ->
+                        textFieldSize = coordinates.size.toSize()
+                    },
+                trailingIcon = {
+                    Icon(icon2,"contentDescription",
+                        Modifier.clickable { showDropdownBatch = !showDropdownBatch })
+                }
+            )
+            DropdownMenu(
+                expanded = showDropdownBatch,
+                onDismissRequest = { showDropdownBatch = false },
+                modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+            ) {
+                batches.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(text = option) },
+                        onClick = {
+                            batch = option
+                            showDropdownBatch = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // Profession input
+        OutlinedTextField(
+            value = profession,
+            onValueChange = { profession = it },
+            label = { Text("Profession") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+                .background(Color.White, shape = MaterialTheme.shapes.medium)
+        )
+
+        // Address input
+        OutlinedTextField(
+            value = address,
+            onValueChange = { address = it },
+            label = { Text("Address") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+                .background(Color.White, shape = MaterialTheme.shapes.medium)
+        )
+
+        // Submit button
+        Button(
+            onClick = {
+                isSubmitting = true
+                val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                val student = StudentDTO(name, phone, facilitator, batch, profession, address, currentDate)
+                CoroutineScope(Dispatchers.Main).launch {
+                    val isSuccess = withContext(Dispatchers.IO) {
+                        ApiService.registerStudent(student)
+                    }
+                    isSubmitting = false
+                    showSuccessDialog = isSuccess
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Submit")
+        }
+
+        // Success Dialog
+        if (showSuccessDialog) {
+            AlertDialog(
+                onDismissRequest = { showSuccessDialog = false },
+                title = { Text("Success") },
+                text = { Text("Gaurange $name Prabhu Ji, Hari Bol 🙏") },
+                confirmButton = {
+                    TextButton(onClick = { showSuccessDialog = false }) {
+                        Text("Hari Bol")
+                    }
+                }
+            )
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+@Preview(showBackground = true)
+fun StudentFormScreenPreview() {
+    MaterialTheme {
+        StudentFormScreen()
+    }
+}
