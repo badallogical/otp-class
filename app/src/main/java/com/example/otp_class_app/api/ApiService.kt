@@ -17,7 +17,7 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.withContext
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbwizVXqu45nCOfHfqsE7EF8PkfjhPUAPluMlt7TFgyVXTpsr3lrxdc9fXmOBRLBeS6P/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbxob1SA8266rWuhkLpMjDReCQnh7Ag3DE7GEtT4-PxJjtreM42gMzwUjwmrEz70QwWi/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
