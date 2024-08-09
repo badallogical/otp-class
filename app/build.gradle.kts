@@ -55,6 +55,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.8")
     implementation("androidx.navigation:navigation-compose:2.7.0")
     implementation(libs.places)
+    implementation(libs.androidx.media3.common)
 
 
     testImplementation("org.mockito:mockito-core:4.0.0")

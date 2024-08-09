@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -189,23 +190,49 @@ fun StudentFormScreen() {
         )
 
         // Submit button
+        // Submit button with loading indicator
         Button(
             onClick = {
-                isSubmitting = true
-                val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                val student = StudentDTO(name, phone, facilitator, batch, profession, address, currentDate)
-                CoroutineScope(Dispatchers.Main).launch {
-                    val isSuccess = withContext(Dispatchers.IO) {
-                        ApiService.registerStudent(student)
+                if (!isSubmitting) {
+                    isSubmitting = true
+                    val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    val student = StudentDTO(name, phone, facilitator, batch, profession, address, currentDate)
+                    CoroutineScope(Dispatchers.Main).launch {
+                        val isSuccess = withContext(Dispatchers.IO) {
+                            ApiService.registerStudent(student)
+                        }
+                        isSubmitting = false
+                        showSuccessDialog = isSuccess
                     }
-                    isSubmitting = false
-                    showSuccessDialog = isSuccess
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
         ) {
-            Text("Submit")
+            if (isSubmitting) {
+                // Show loading indicator inside button
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Submit")
+            }
         }
+
+        // Show processing animation if submitting
+//        if (isSubmitting) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(Color.Black.copy(alpha = 0.5f), shape = MaterialTheme.shapes.medium),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                CircularProgressIndicator()
+//            }
+//        }
 
         // Success Dialog
         if (showSuccessDialog) {

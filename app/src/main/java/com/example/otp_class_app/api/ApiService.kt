@@ -17,7 +17,7 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.withContext
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbxob1SA8266rWuhkLpMjDReCQnh7Ag3DE7GEtT4-PxJjtreM42gMzwUjwmrEz70QwWi/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycby5ZCEoPLsqTWXPFkgbR_4a3EWvwLvijGmbSse12Y-p1qSSAK8bRp57Sn6XLAqR8QWP/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -54,59 +54,68 @@ object ApiService {
     }
 
 
-    fun getStudents(onResponse: (List<StudentPOJO>?) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val request = Request.Builder()
-                .url(BASE_URL)
-                .get()
-                .build()
-
-            val response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                response.body?.let { responseBody ->
-                    val jsonString = responseBody.string()
-                    val studentListType = object : TypeToken<List<StudentPOJO>>() {}.type
-                    val studentList: List<StudentPOJO> = Gson().fromJson(jsonString, studentListType)
-                    onResponse(studentList)
-                    Log.d("ApiService", studentList.toString())
-                } ?: run {
-                    onResponse(null)
-                }
-            } else {
-                Log.e("ApiService", "GET request failed")
-                onResponse(null)
-            }
-        }
-    }
-
-    fun postAttendance(studentId: String, date: String, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val jsonObject = JSONObject().apply {
-                put("type", "MarkAttendance")
-                put("attendance", JSONObject().apply {
-                    put("studentID", studentId)
-                    put("date", date)
-                })
-            }
-
-            val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
-            val body = jsonObject.toString().toRequestBody(mediaType)
-
-            val request = Request.Builder()
-                .url(BASE_URL)
-                .post(body)
-                .build()
-
+    suspend fun getStudents(): List<StudentPOJO>? {
+        return withContext(Dispatchers.IO) {
             try {
+                val request = Request.Builder()
+                    .url(BASE_URL)
+                    .get()
+                    .build()
+
                 val response = client.newCall(request).execute()
                 if (response.isSuccessful) {
-                    onSuccess()
+                    response.body?.let { responseBody ->
+                        val jsonString = responseBody.string()
+                        Log.d("ApiService Josn","Json String :" + jsonString);
+                        val studentListType = object : TypeToken<List<StudentPOJO>>() {}.type
+                        val studentList: List<StudentPOJO> = Gson().fromJson(jsonString, studentListType)
+                        Log.d("ApiService", studentList.toString())
+                        return@withContext studentList
+                    }
                 } else {
-                    onError(Exception("POST request failed: ${response.code}"))
+                    Log.e("ApiService", "GET request failed with code: ${response.code}")
+                    return@withContext null
                 }
             } catch (e: Exception) {
-                onError(e)
+                Log.e("ApiService", "GET request failed: ${e.message}")
+                return@withContext null
             }
         }
     }
+
+
+
+    suspend fun postAttendance(studentId: String, date: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val jsonObject = JSONObject().apply {
+                    put("type", "MarkAttendance")
+                    put("attendance", JSONObject().apply {
+                        put("studentID", studentId)
+                        put("date", date)
+                    })
+                }
+
+                val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+                val body = jsonObject.toString().toRequestBody(mediaType)
+
+                val request = Request.Builder()
+                    .url(BASE_URL)
+                    .post(body)
+                    .build()
+
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    return@withContext true
+                } else {
+                    Log.e("ApiService", "POST request failed with code: ${response.code}")
+                    return@withContext false
+                }
+            } catch (e: Exception) {
+                Log.e("ApiService", "POST request failed: ${e.message}")
+                return@withContext false
+            }
+        }
+    }
+
 }
