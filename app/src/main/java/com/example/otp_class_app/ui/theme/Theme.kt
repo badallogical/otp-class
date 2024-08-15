@@ -33,7 +33,14 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color(0xFF1C1B1F),
     */
 )
-private val OrangeColorScheme = lightColorScheme(
+
+private val OrangeLightColorScheme = lightColorScheme(
+    primary = Color(0xFFFF5722), // Orange color
+    secondary = Color(0xFFFFAB91),
+    background = Color(0xFFF5F5F5)
+)
+
+private val OrangeDarkColorScheme = darkColorScheme(
     primary = Color(0xFFFF5722), // Orange color
     secondary = Color(0xFFFFAB91),
     background = Color(0xFFF5F5F5)
@@ -49,11 +56,12 @@ fun Otp_class_appTheme(
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) OrangeDarkColorScheme else OrangeLightColorScheme
+            // else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> OrangeDarkColorScheme
+        else -> OrangeLightColorScheme
     }
 
     MaterialTheme(

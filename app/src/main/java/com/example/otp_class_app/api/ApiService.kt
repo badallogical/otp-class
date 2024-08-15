@@ -1,20 +1,19 @@
 package com.example.otp_class_app.api
 
 import android.util.Log
+import com.example.otp_class_app.models.AttendanceDTO
 import com.example.otp_class_app.models.StudentDTO
 import com.example.otp_class_app.models.StudentPOJO
-import kotlinx.coroutines.CoroutineScope
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.withContext
 
 object ApiService {
     private const val BASE_URL = "https://script.google.com/macros/s/AKfycby5ZCEoPLsqTWXPFkgbR_4a3EWvwLvijGmbSse12Y-p1qSSAK8bRp57Sn6XLAqR8QWP/exec"
@@ -85,14 +84,14 @@ object ApiService {
 
 
 
-    suspend fun postAttendance(studentId: String, date: String): Boolean {
+    suspend fun postAttendance(attendance : AttendanceDTO ): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 val jsonObject = JSONObject().apply {
                     put("type", "MarkAttendance")
                     put("attendance", JSONObject().apply {
-                        put("studentID", studentId)
-                        put("date", date)
+                        put("studentID", attendance.studentId)
+                        put("date", attendance.date)
                     })
                 }
 

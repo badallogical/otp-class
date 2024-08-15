@@ -1,12 +1,15 @@
 package com.example.otp_class_app
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,7 +24,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Otp_class_appTheme {
+            MaterialTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = androidx.compose.ui.Modifier.fillMaxSize(),
@@ -41,5 +44,14 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
         composable("registration") { StudentFormScreen() }
         composable("attendance") { AttendanceScreen() }
         composable("reporting") { ReportingScreen() }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+@Preview(showBackground = true)
+fun MainPreview() {
+    Otp_class_appTheme {
+        DashboardScreen(navController = rememberNavController())
     }
 }
