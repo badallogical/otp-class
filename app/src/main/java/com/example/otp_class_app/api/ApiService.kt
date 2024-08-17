@@ -16,7 +16,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycby5ZCEoPLsqTWXPFkgbR_4a3EWvwLvijGmbSse12Y-p1qSSAK8bRp57Sn6XLAqR8QWP/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbzq_n9_bM6oiwEYyXBmiRjNpeQBisnDtE15kqjail0ncFUJ2Bk37aVKeybVa4svHgOS/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -83,7 +83,6 @@ object ApiService {
     }
 
 
-
     suspend fun postAttendance(attendance : AttendanceDTO ): Boolean {
         return withContext(Dispatchers.IO) {
             try {
@@ -116,5 +115,29 @@ object ApiService {
             }
         }
     }
+
+
+    suspend fun syncAttendance(attendanceMap: Map<String, List<AttendanceDTO>>): Boolean {
+        return withContext(Dispatchers.IO) {
+            var success = true
+
+            // Iterate over each date in the attendanceMap
+            for ((date, attendanceList) in attendanceMap) {
+                for (attendance in attendanceList) {
+                    // Post each attendance entry
+                    val result = postAttendance(attendance)
+                    if (!result) {
+                        success = false
+                        // Optionally, you could log or handle failed attendance post requests here
+                        Log.e("SyncService", "Failed to post attendance for studentID: ${attendance.studentId} on date: $date")
+                        return@withContext false
+                    }
+                }
+            }
+
+            true
+        }
+    }
+
 
 }

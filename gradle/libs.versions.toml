@@ -10,6 +10,7 @@ activityCompose = "1.8.0"
 composeBom = "2024.04.01"
 places = "3.5.0"
 media3Common = "1.4.0"
+datastore = "1.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -28,7 +29,7 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 places = { group = "com.google.android.libraries.places", name = "places", version.ref = "places" }
 androidx-media3-common = { group = "androidx.media3", name = "media3-common", version.ref = "media3Common" }
-
+androidx-datastore-preferences = {  module = "androidx.datastore:datastore-preferences" ,version.ref = "datastore"}
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

@@ -34,13 +34,13 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
-private val OrangeLightColorScheme = lightColorScheme(
+val OrangeLightColorScheme = lightColorScheme(
     primary = Color(0xFFFF5722), // Orange color
     secondary = Color(0xFFFFAB91),
     background = Color(0xFFF5F5F5)
 )
 
-private val OrangeDarkColorScheme = darkColorScheme(
+val OrangeDarkColorScheme = darkColorScheme(
     primary = Color(0xFFFF5722), // Orange color
     secondary = Color(0xFFFFAB91),
     background = Color(0xFFF5F5F5)

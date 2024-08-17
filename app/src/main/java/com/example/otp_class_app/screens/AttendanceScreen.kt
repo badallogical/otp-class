@@ -1,5 +1,6 @@
 package com.example.otp_class_app.ui.screens
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,16 +37,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.otp_class_app.R
 import com.example.otp_class_app.api.ApiService
+import com.example.otp_class_app.api.AttendanceDataStore
 import com.example.otp_class_app.models.AttendanceDTO
 import com.example.otp_class_app.models.StudentDTO
 import com.example.otp_class_app.models.StudentPOJO
+import com.example.otp_class_app.ui.theme.OrangeLightColorScheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -52,7 +60,7 @@ import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AttendanceScreen() {
+fun AttendanceScreen(navController: NavController) {
     var students by remember { mutableStateOf<List<StudentPOJO>?>(null) }
     var filteredStudents by remember { mutableStateOf<List<StudentPOJO>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
@@ -61,8 +69,12 @@ fun AttendanceScreen() {
     var selectedStudent by remember { mutableStateOf<StudentPOJO?>(null) }
     var showRegistrationDialog by remember { mutableStateOf(false) }
 
+
     // Declare the map to store attendance data
     val attendanceMap = mutableMapOf<String, MutableList<AttendanceDTO>>()
+
+    // Create an instance of DataStore with the context
+    val appContext = LocalContext.current.applicationContext
 
     // Function to filter students based on the search query
     fun filterStudents(query: String, studentList: List<StudentPOJO>?) {
@@ -119,14 +131,14 @@ fun AttendanceScreen() {
                     }
             )
             Icon(
-                painter = painterResource(id= R.drawable.baseline_view_list_24),
+                painter = painterResource(id = R.drawable.baseline_view_list_24),
                 contentDescription = "Save & Sync",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .size(24.dp)
                     .weight(1f)
-                    .clickable{
-                        // TODO: open a view screen.
+                    .clickable {
+                        navController.navigate("attendance_view")
                     }
             )
         }
@@ -135,7 +147,10 @@ fun AttendanceScreen() {
             value = searchQuery,
             onValueChange = { newQuery ->
                 searchQuery = newQuery
-                filterStudents(searchQuery, students) // Update the filtered list on search query change
+                filterStudents(
+                    searchQuery,
+                    students
+                ) // Update the filtered list on search query change
             },
             label = { Text("Search by phone number") },
             modifier = Modifier
@@ -169,13 +184,17 @@ fun AttendanceScreen() {
                 verticalArrangement = Arrangement.Top
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("No Student found", style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+                Text(
+                    "No Student found",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.Gray
+                )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = { showRegistrationDialog = true }) {
                     Text("Quick Registration")
                 }
             }
-        }  else {
+        } else {
             LazyColumn {
                 items(filteredStudents) { student ->
                     StudentItem(student = student) {
@@ -189,23 +208,25 @@ fun AttendanceScreen() {
 
     // Dialog to mark attendance
     if (showDialog && selectedStudent != null) {
-        AttendanceDialog(student = selectedStudent!!, onDismiss = { showDialog = false })
+        AttendanceDialog(student = selectedStudent!!,appContext, onDismiss = { showDialog = false })
     }
 
     // Quick Registration Dialog
     if (showRegistrationDialog) {
-        QuickRegistrationDialog(onDismiss = { showRegistrationDialog = false }, onRegister = { name, phone ->
-            CoroutineScope(Dispatchers.Main).launch {
-                registerStudent(name, phone)
-                showRegistrationDialog = false
-            }
-        })
+        QuickRegistrationDialog(
+            onDismiss = { showRegistrationDialog = false },
+            onRegister = { name, phone ->
+                CoroutineScope(Dispatchers.Main).launch {
+                    registerStudent(name, phone)
+                    showRegistrationDialog = false
+                }
+            })
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
+fun AttendanceDialog(student: StudentPOJO, context: Context, onDismiss: () -> Unit) {
     var isSubmitting by remember { mutableStateOf(false) }
     var showCongrats by remember { mutableStateOf(false) }
 
@@ -229,27 +250,30 @@ fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
                     Text("Phone: ${student.phone}")
                     Text("Batch: ${student.batch}")
                     Text("Facilitator: ${student.facilitator}")
-                   if (isSubmitting) {
-                    // Center the CircularProgressIndicator
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
+                    if (isSubmitting) {
+                        // Center the CircularProgressIndicator
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
                     }
-                }
                 }
             },
             confirmButton = {
                 Button(onClick = {
                     isSubmitting = true
+                    val currentDate = "2024-01-07"
+                    val attendance = AttendanceDTO(student.phone, currentDate);
                     CoroutineScope(Dispatchers.Main).launch {
                         //val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        val currentDate = "2024-01-07"
-                        val attendance = AttendanceDTO(student.phone, currentDate);
-                        val success = ApiService.postAttendance(attendance)
+                        AttendanceDataStore.saveAttendance(attendance)
+                        delay(500)
+                        val success = true;
+                        //val success = ApiService.postAttendance(attendance)
                         isSubmitting = false
                         if (success) {
                             showCongrats = true
@@ -296,6 +320,7 @@ fun QuickRegistrationDialog(onDismiss: () -> Unit, onRegister: (String, String) 
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var isSubmitting by remember { mutableStateOf(false) }
+    var isClicked by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -330,11 +355,17 @@ fun QuickRegistrationDialog(onDismiss: () -> Unit, onRegister: (String, String) 
             }
         },
         confirmButton = {
-            Button(onClick = {
-                isSubmitting = true
-                onRegister(name, phone)
-                isSubmitting = false
-            }) {
+            Button(
+                onClick = {
+                    isClicked = !isClicked
+                    isSubmitting = true
+                    onRegister(name, phone)
+                    isSubmitting = false
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isClicked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                )
+            ) {
                 Text("Hari Bol")
             }
         },
@@ -347,7 +378,7 @@ fun QuickRegistrationDialog(onDismiss: () -> Unit, onRegister: (String, String) 
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
- suspend fun registerStudent(name: String, phone: String) {
+suspend fun registerStudent(name: String, phone: String) {
     val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
     val student = StudentDTO(name, phone, "NA", "NA", "NA", "NA", currentDate)
     withContext(Dispatchers.IO) {
@@ -361,6 +392,6 @@ fun QuickRegistrationDialog(onDismiss: () -> Unit, onRegister: (String, String) 
 @Preview(showBackground = true)
 fun AttendancePreview() {
     MaterialTheme {
-        AttendanceScreen()
+        AttendanceScreen(navController = rememberNavController())
     }
 }
