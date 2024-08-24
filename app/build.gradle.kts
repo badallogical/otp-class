@@ -58,6 +58,9 @@ dependencies {
     implementation(libs.androidx.media3.common)
     implementation(libs.androidx.datastore.preferences)
 
+    // Swipe refresh
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.28.0")
+
 
     testImplementation("org.mockito:mockito-core:4.0.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0")

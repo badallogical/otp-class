@@ -16,7 +16,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbzq_n9_bM6oiwEYyXBmiRjNpeQBisnDtE15kqjail0ncFUJ2Bk37aVKeybVa4svHgOS/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbwim9RwFh1eS8NHTMHS79i8YT8EygMbdIBXjLFXs5KWX3FpeczEGRYmWFASfDdhVDFQ/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -24,10 +24,11 @@ object ApiService {
         })
         .build()
 
-    suspend fun registerStudent(student: StudentDTO): Boolean {
+    suspend fun registerStudent(student: StudentDTO, updated : Boolean = false ): Boolean {
         return withContext(Dispatchers.IO) {
             val jsonObject = JSONObject().apply {
-                put("type", "registerStudent") // Add the request type
+                put("type", "registerStudent")
+                put("updated", updated)// Add the request type
                 put("student", JSONObject().apply {
                     put("name", student.name)
                     put("phone", student.phone)
@@ -55,6 +56,7 @@ object ApiService {
 
     suspend fun getStudents(): List<StudentPOJO>? {
         return withContext(Dispatchers.IO) {
+            val url = "$BASE_URL?phone=null"
             try {
                 val request = Request.Builder()
                     .url(BASE_URL)
@@ -81,6 +83,38 @@ object ApiService {
             }
         }
     }
+
+    suspend fun findStudentByPhone(phoneNumber: String): StudentDTO? {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Add the phone number as a query parameter to the URL
+                val url = "$BASE_URL?phone=$phoneNumber"
+                val request = Request.Builder()
+                    .url(url)
+                    .get()
+                    .build()
+
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    response.body?.let { responseBody ->
+                        val jsonString = responseBody.string()
+                        Log.d("ApiService Josn", "Json String :" + jsonString)
+                        val studentType = object : TypeToken<StudentDTO>() {}.type
+                        val student: StudentDTO = Gson().fromJson(jsonString, studentType)
+                        Log.d("ApiService", student.toString())
+                        return@withContext student
+                    }
+                } else {
+                    Log.e("ApiService", "GET request failed with code: ${response.code}")
+                    return@withContext null
+                }
+            } catch (e: Exception) {
+                Log.e("ApiService", "GET request failed: ${e.message}")
+                return@withContext null
+            }
+        }
+    }
+
 
 
     suspend fun postAttendance(attendance : AttendanceDTO ): Boolean {
