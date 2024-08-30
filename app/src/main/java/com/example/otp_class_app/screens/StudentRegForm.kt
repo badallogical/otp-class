@@ -2,6 +2,7 @@ package com.example.otp_class_app.screens
 
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -138,6 +140,7 @@ fun StudentFormScreen() {
                         Modifier.clickable { showDropdownFacilitator = !showDropdownFacilitator })
                 }
             )
+
             DropdownMenu(
                 expanded = showDropdownFacilitator,
                 onDismissRequest = { showDropdownFacilitator = false },
@@ -153,6 +156,7 @@ fun StudentFormScreen() {
                     )
                 }
             }
+
         }
 
         // Batch dropdown
@@ -213,11 +217,16 @@ fun StudentFormScreen() {
                 .padding(bottom = 8.dp)
                 .background(Color.White, shape = MaterialTheme.shapes.medium)
         )
-
+        val context = LocalContext.current;
         // Submit button
         Button(
             onClick = {
+
                 if (!isSubmitting) {
+                    if (!(phone.length == 10 && phone.all { it.isDigit() })) {
+                        Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
                     isSubmitting = true
                     val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                     val student = StudentDTO(name, phone, facilitator, batch, profession, address, currentDate)
@@ -339,6 +348,11 @@ fun StudentFormScreen() {
         }
     }
 }
+
+fun isValidPhoneNumber(phone: String): Boolean {
+    return phone.length == 10 && phone.all { it.isDigit() }
+}
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
