@@ -16,7 +16,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,9 +46,12 @@ import com.example.otp_class_app.screens.StudentFormScreen
 import com.example.otp_class_app.ui.screens.AttendanceScreen
 import com.example.otp_class_app.ui.theme.Otp_class_appTheme
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
@@ -52,10 +59,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
-                // A surface container using the 'background' color from the theme
+            Otp_class_appTheme {
                 Surface(
-                    modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     MainNavHost()
@@ -65,43 +71,37 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ConnectivityCheckScreen(navController: NavHostController, content: @Composable () -> Unit) {
+fun MainNavHost(navController: NavHostController = rememberNavController()) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(checkInternetConnection(context)) }
-    var isRefreshing by remember { mutableStateOf(false) }
 
-    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
+    // Use LaunchedEffect to check for internet connectivity when the screen is opened
+    LaunchedEffect(Unit) {
+        isConnected = checkInternetConnection(context)
+    }
 
-    SwipeRefresh(
-        state = swipeRefreshState,
-        onRefresh = {
-            isRefreshing = true
+    if (isConnected) {
+        // Show the main content if connected
+        NavHost(navController = navController, startDestination = "dashboard") {
+            composable("dashboard") { DashboardScreen(navController) }
+            composable("registration") { StudentFormScreen() }
+            composable("attendance") { AttendanceScreen(navController) }
+            composable("reporting") { ReportingScreen() }
+            composable("attendance_view") { AttendanceViewScreen(LocalContext.current) }
+        }
+    } else {
+        // Show NoInternetScreen if not connected
+        NoInternetScreen(onRetry = {
+            // Retry connection when the refresh icon is clicked
             isConnected = checkInternetConnection(context)
-            isRefreshing = false
-        },
-        indicator = { state, trigger ->
-            SwipeRefreshIndicator(
-                state = state,
-                refreshTriggerDistance = trigger,
-                scale = true,
-                contentColor = MaterialTheme.colorScheme.primary
-            )
-        }
-    ) {
-        if (isConnected) {
-            content()
-        } else {
-            NoInternetScreen {
-                val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
-                context.startActivity(intent)
-            }
-        }
+        })
     }
 }
 
 @Composable
-fun NoInternetScreen(onClick: () -> Unit) {
+fun NoInternetScreen(onRetry: () -> Unit) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -111,8 +111,8 @@ fun NoInternetScreen(onClick: () -> Unit) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("No internet connection", style = MaterialTheme.typography.bodyLarge)
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onClick) {
-                Text("Turn on Mobile Data")
+            IconButton(onClick = onRetry) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
             }
         }
     }
@@ -127,20 +127,6 @@ fun checkInternetConnection(context: Context): Boolean {
         activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
         activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
         else -> false
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun MainNavHost(navController: NavHostController = rememberNavController()) {
-    ConnectivityCheckScreen(navController) {
-        NavHost(navController = navController, startDestination = "dashboard") {
-            composable("dashboard") { DashboardScreen(navController) }
-            composable("registration") { StudentFormScreen() }
-            composable("attendance") { AttendanceScreen(navController) }
-            composable("reporting") { ReportingScreen() }
-            composable("attendance_view") { AttendanceViewScreen(LocalContext.current) }
-        }
     }
 }
 

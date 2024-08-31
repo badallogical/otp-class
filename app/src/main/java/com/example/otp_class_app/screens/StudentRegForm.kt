@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -68,6 +69,12 @@ fun StudentFormScreen() {
     else
         Icons.Filled.KeyboardArrowDown
 
+    val backgroundColor = if (isSystemInDarkTheme()) {
+        MaterialTheme.colorScheme.surfaceVariant // Dark theme background color
+    } else {
+        MaterialTheme.colorScheme.surface // Light theme background color
+    }
+
     Column(modifier = Modifier.padding(16.dp)) {
         // Custom header
         Row(
@@ -105,7 +112,7 @@ fun StudentFormScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
-                .background(Color.White, shape = MaterialTheme.shapes.medium)
+                .background(backgroundColor, shape = MaterialTheme.shapes.small)
         )
 
         // Phone input
@@ -117,7 +124,7 @@ fun StudentFormScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
-                .background(Color.White, shape = MaterialTheme.shapes.medium)
+                .background(backgroundColor, shape = MaterialTheme.shapes.small)
         )
 
         // Facilitator dropdown
@@ -131,7 +138,7 @@ fun StudentFormScreen() {
                 readOnly = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White, shape = MaterialTheme.shapes.medium)
+                    .background(backgroundColor, shape = MaterialTheme.shapes.small)
                     .onGloballyPositioned { coordinates ->
                         textFieldSize = coordinates.size.toSize()
                     },
@@ -170,7 +177,7 @@ fun StudentFormScreen() {
                 readOnly = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White, shape = MaterialTheme.shapes.medium)
+                    .background(backgroundColor, shape = MaterialTheme.shapes.small)
                     .onGloballyPositioned { coordinates ->
                         textFieldSize = coordinates.size.toSize()
                     },
@@ -204,7 +211,7 @@ fun StudentFormScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
-                .background(Color.White, shape = MaterialTheme.shapes.medium)
+                .background(backgroundColor, shape = MaterialTheme.shapes.small)
         )
 
         // Address input
@@ -215,7 +222,7 @@ fun StudentFormScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
-                .background(Color.White, shape = MaterialTheme.shapes.medium)
+                .background(backgroundColor, shape = MaterialTheme.shapes.small)
         )
         val context = LocalContext.current;
         // Submit button

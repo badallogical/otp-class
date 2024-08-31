@@ -9,8 +9,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -49,24 +51,40 @@ val OrangeDarkColorScheme = darkColorScheme(
 @Composable
 fun Otp_class_appTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) OrangeDarkColorScheme else OrangeLightColorScheme
-            // else dynamicLightColorScheme(context)
-        }
+    val context = LocalContext.current
+    val colorScheme = remember(darkTheme, dynamicColor) {
+        when {
+            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
 
-        darkTheme -> OrangeDarkColorScheme
-        else -> OrangeLightColorScheme
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            }
+            darkTheme -> OrangeDarkColorScheme
+            else -> OrangeLightColorScheme
+        }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = Typography, // Ensure you have a Typography definition or use the default
         content = content
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LightThemePreview() {
+    Otp_class_appTheme(darkTheme = false) {
+        // Preview light theme
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DarkThemePreview() {
+    Otp_class_appTheme(darkTheme = true) {
+        // Preview dark theme
+    }
 }
