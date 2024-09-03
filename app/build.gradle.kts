@@ -52,16 +52,19 @@ android {
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation("com.google.code.gson:gson:2.8.8")
+    implementation("com.google.code.gson:gson:2.8.9")
     implementation("androidx.navigation:navigation-compose:2.7.0")
     implementation(libs.places)
     implementation(libs.androidx.media3.common)
+    implementation(libs.androidx.datastore.preferences)
+
+    // Swipe refresh
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.28.0")
 
 
     testImplementation("org.mockito:mockito-core:4.0.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.9.3")
-
 
 
     implementation(libs.androidx.core.ktx)
