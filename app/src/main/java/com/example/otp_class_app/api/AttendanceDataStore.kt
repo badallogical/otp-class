@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.otp_class_app.MyApplication
 import com.example.otp_class_app.models.AttendanceDTO
+import com.example.otp_class_app.models.AttendancePOJO
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.Flow
@@ -25,7 +26,7 @@ object AttendanceDataStore {
 
 
     // Function to save attendance data to DataStore
-    suspend fun saveAttendance(attendance: AttendanceDTO) {
+    suspend fun saveNewAttendance(attendance: AttendancePOJO) {
 
         val date = attendance.date;
         context.dataStore.edit { preferences ->
@@ -33,10 +34,10 @@ object AttendanceDataStore {
             val currentMap = if (currentMapJson != null) {
                 // Deserialize JSON string to a Map
                 val type =
-                    object : TypeToken<MutableMap<String, MutableList<AttendanceDTO>>>() {}.type
+                    object : TypeToken<MutableMap<String, MutableList<AttendancePOJO>>>() {}.type
                 Gson().fromJson(currentMapJson, type)
             } else {
-                mutableMapOf<String, MutableList<AttendanceDTO>>()
+                mutableMapOf<String, MutableList<AttendancePOJO>>()
             }
 
             // Update the map with new attendance
@@ -56,14 +57,37 @@ object AttendanceDataStore {
         }
     }
 
+    // Function to save attendance data to DataStore
+    suspend fun updateAttendance(attendanceList: List<AttendancePOJO>) {
+
+        val date = attendanceList[0].date;
+        context.dataStore.edit { preferences ->
+            val currentMapJson = preferences[ATTENDANCE_KEY]
+            val currentMap = if (currentMapJson != null) {
+                // Deserialize JSON string to a Map
+                val type =
+                    object : TypeToken<MutableMap<String, MutableList<AttendancePOJO>>>() {}.type
+                Gson().fromJson(currentMapJson, type)
+            } else {
+                mutableMapOf<String, MutableList<AttendancePOJO>>()
+            }
+
+
+            currentMap[date] = attendanceList.toMutableList()
+
+            // Serialize the updated map back to JSON and save it in DataStore
+            preferences[ATTENDANCE_KEY] = Gson().toJson(currentMap)
+        }
+    }
+
     // Function to retrieve the attendance map from DataStore
-    fun getAttendanceMap(): Flow<Map<String, List<AttendanceDTO>>> {
+    fun getAttendanceMap(): Flow<Map<String, List<AttendancePOJO>>> {
         return context.dataStore.data.map { preferences ->
             val currentMapJson = preferences[ATTENDANCE_KEY]
             if (currentMapJson != null) {
                 Gson().fromJson(
                     currentMapJson,
-                    object : TypeToken<Map<String, List<AttendanceDTO>>>() {}.type
+                    object : TypeToken<Map<String, List<AttendancePOJO>>>() {}.type
                 )
             } else {
                 emptyMap()
@@ -74,7 +98,7 @@ object AttendanceDataStore {
     suspend fun clearAttendanceData() {
         context.dataStore.edit { preferences ->
             // Set the key's value to an empty JSON object (i.e., empty map)
-            preferences[ATTENDANCE_KEY] = Gson().toJson(emptyMap<String, List<AttendanceDTO>>())
+            preferences[ATTENDANCE_KEY] = Gson().toJson(emptyMap<String, List<AttendancePOJO>>())
         }
     }
 

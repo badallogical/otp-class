@@ -2,11 +2,12 @@ package com.example.otp_class_app.screens
 
 import android.content.Context
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,17 +16,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.rememberNavController
 import com.example.otp_class_app.R
-import com.example.otp_class_app.api.ApiService
 import com.example.otp_class_app.api.ApiService.syncAttendance
 import com.example.otp_class_app.api.AttendanceDataStore
 import com.example.otp_class_app.models.AttendanceDTO
+import com.example.otp_class_app.models.AttendancePOJO
+import com.example.otp_class_app.models.toDTO
 import com.example.otp_class_app.ui.theme.Otp_class_appTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,18 +34,31 @@ fun AttendanceViewScreen(context: Context) {
     var attendanceMap by remember {
         mutableStateOf(emptyMap<String, List<AttendanceDTO>>())
     }
+    var attendanceMapPOJO by remember {
+        mutableStateOf(emptyMap<String, List<AttendancePOJO>>())
+    }
+
     var isSyncing by remember { mutableStateOf(false) }
     var syncResult by remember { mutableStateOf<Result?>(null) }
 
-    val context = LocalContext.current.applicationContext
+    val fetchAttendances: () -> Unit = {
+        CoroutineScope(Dispatchers.IO).launch {
+            AttendanceDataStore.getAttendanceMap().collect { pojoMap ->
+                attendanceMapPOJO = pojoMap
 
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            AttendanceDataStore.getAttendanceMap().collect { data ->
-                attendanceMap = data
+                val dtoMap = pojoMap.mapValues { (_, pojoList) ->
+                    pojoList.map { pojo -> pojo.toDTO() }
+                }
+                attendanceMap = dtoMap
             }
         }
     }
+
+    LaunchedEffect(Unit) {
+        fetchAttendances()
+    }
+
+
 
     Scaffold(
         topBar = {
@@ -57,6 +69,7 @@ fun AttendanceViewScreen(context: Context) {
                         CoroutineScope(Dispatchers.Main).launch {
                             isSyncing = true
                             val result = try {
+                                fetchAttendances()
                                 val success = syncAttendance(attendanceMap)
                                 if( success ) AttendanceDataStore.clearAttendanceData()
 
@@ -64,6 +77,7 @@ fun AttendanceViewScreen(context: Context) {
                             } catch (e: Exception) {
                                 Result(false, e.message)
                             }
+
                             isSyncing = false
                             syncResult = result
                         }
@@ -76,21 +90,24 @@ fun AttendanceViewScreen(context: Context) {
         content = { padding ->
             if (isSyncing) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    // Syncing loading
                     CircularProgressIndicator()
                 }
-            } else if (attendanceMap.isEmpty()) {
+            } else if (attendanceMapPOJO.isEmpty()) {
+                // if Empty
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No attendance records found.")
                 }
             } else {
+                // show list
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
                 ) {
-                    items(attendanceMap.keys.toList()) { date ->
-                        val attendanceList = attendanceMap[date] ?: emptyList()
-                        AttendanceCard(date, attendanceList.size)
+                    items(attendanceMapPOJO.keys.toList()) { date ->
+                        val attendanceList = attendanceMapPOJO[date] ?: emptyList()
+                        AttendanceCard(date, attendanceList )
                     }
                 }
             }
@@ -119,20 +136,74 @@ fun AttendanceViewScreen(context: Context) {
 data class Result(val success: Boolean, val message: String?)
 
 @Composable
-fun AttendanceCard(date: String, count: Int) {
+fun AttendanceCard(date: String, list: List<AttendancePOJO>) {
+    var showDialog by remember { mutableStateOf(false) }
+    var updatedList by remember { mutableStateOf(list) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .padding(horizontal = 16.dp),
-        elevation = CardDefaults.cardElevation()
+        elevation = CardDefaults.cardElevation(),
+        onClick = {
+            showDialog = true
+        }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "Date: $date", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Count: $count", style = MaterialTheme.typography.bodySmall)
+            Text(text = "Count: ${updatedList.size}", style = MaterialTheme.typography.bodySmall)
         }
     }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(text = "Attendance List") },
+            text = {
+                Column {
+                    updatedList.forEachIndexed { index, attendance ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = attendance.name)
+                            IconButton(onClick = {
+                                updatedList = updatedList.toMutableList().also { it.removeAt(index) }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete"
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    // Save the updated list to DataStore
+                    CoroutineScope(Dispatchers.Main).launch {
+                        AttendanceDataStore.updateAttendance(updatedList)
+                        showDialog = false
+                    }
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
+
+
+
 
 
 

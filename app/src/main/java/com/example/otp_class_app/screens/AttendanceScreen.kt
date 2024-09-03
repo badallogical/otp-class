@@ -46,7 +46,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.otp_class_app.R
 import com.example.otp_class_app.api.ApiService
 import com.example.otp_class_app.api.AttendanceDataStore
-import com.example.otp_class_app.models.AttendanceDTO
+import com.example.otp_class_app.models.AttendancePOJO
 import com.example.otp_class_app.models.StudentDTO
 import com.example.otp_class_app.models.StudentPOJO
 import com.example.otp_class_app.ui.theme.OrangeLightColorScheme
@@ -70,8 +70,6 @@ fun AttendanceScreen(navController: NavController) {
     var showRegistrationDialog by remember { mutableStateOf(false) }
 
 
-    // Declare the map to store attendance data
-    val attendanceMap = mutableMapOf<String, MutableList<AttendanceDTO>>()
 
     // Create an instance of DataStore with the context
     val appContext = LocalContext.current.applicationContext
@@ -267,10 +265,10 @@ fun AttendanceDialog(student: StudentPOJO, context: Context, onDismiss: () -> Un
                 Button(onClick = {
                     isSubmitting = true
                     val currentDate = "2024-01-07"
-                    val attendance = AttendanceDTO(student.phone, currentDate);
+                    val attendance = AttendancePOJO(student.phone, currentDate, student.name);
                     CoroutineScope(Dispatchers.Main).launch {
                         //val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        AttendanceDataStore.saveAttendance(attendance)
+                        AttendanceDataStore.saveNewAttendance(attendance)
                         delay(500)
                         val success = true;
                         //val success = ApiService.postAttendance(attendance)
