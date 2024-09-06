@@ -48,9 +48,14 @@ import com.example.otp_class_app.ui.theme.Otp_class_appTheme
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import com.example.otp_class_app.api.ApiService.postStudentReport
+import com.example.otp_class_app.models.ReportDTO
+import com.example.otp_class_app.screens.EditReportScreen
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 
@@ -88,8 +93,19 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
             composable("dashboard") { DashboardScreen(navController) }
             composable("registration") { StudentFormScreen() }
             composable("attendance") { AttendanceScreen(navController) }
-            composable("reporting") { ReportingScreen() }
-            composable("attendance_view") { AttendanceViewScreen(LocalContext.current) }
+            composable("reporting") { ReportingScreen(context, navController) }
+            composable("attendance_view") { AttendanceViewScreen(context) }
+            composable("edit_report/{report}") { backStackEntry ->
+                val reportJson = backStackEntry.arguments?.getString("report")
+                val report = reportJson?.let {
+                    Gson().fromJson(it, ReportDTO::class.java)
+                }
+                if (report != null) {
+                    EditReportScreen(report, onCancel = {
+                        navController.popBackStack()
+                    })
+                }
+            }
         }
     } else {
         // Show NoInternetScreen if not connected

@@ -49,7 +49,6 @@ import com.example.otp_class_app.api.AttendanceDataStore
 import com.example.otp_class_app.models.AttendancePOJO
 import com.example.otp_class_app.models.StudentDTO
 import com.example.otp_class_app.models.StudentPOJO
-import com.example.otp_class_app.ui.theme.OrangeLightColorScheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -77,8 +76,9 @@ fun AttendanceScreen(navController: NavController) {
     // Function to filter students based on the search query
     fun filterStudents(query: String, studentList: List<StudentPOJO>?) {
         filteredStudents = studentList?.filter {
-            it.phone.contains(query, ignoreCase = true) ?: false
+            it.phone.contains(query, ignoreCase = true)
         } ?: emptyList()
+
     }
 
     fun fetchAndFilterStudents() {
@@ -206,7 +206,7 @@ fun AttendanceScreen(navController: NavController) {
 
     // Dialog to mark attendance
     if (showDialog && selectedStudent != null) {
-        AttendanceDialog(student = selectedStudent!!,appContext, onDismiss = { showDialog = false })
+        AttendanceDialog(student = selectedStudent!!, onDismiss = { showDialog = false })
     }
 
     // Quick Registration Dialog
@@ -224,7 +224,7 @@ fun AttendanceScreen(navController: NavController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AttendanceDialog(student: StudentPOJO, context: Context, onDismiss: () -> Unit) {
+fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
     var isSubmitting by remember { mutableStateOf(false) }
     var showCongrats by remember { mutableStateOf(false) }
 

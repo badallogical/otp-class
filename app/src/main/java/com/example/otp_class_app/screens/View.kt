@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttendanceViewScreen(context: Context) {
-    val coroutineScope = rememberCoroutineScope()
+    rememberCoroutineScope()
     var attendanceMap by remember {
         mutableStateOf(emptyMap<String, List<AttendanceDTO>>())
     }

@@ -1,15 +1,12 @@
 package com.example.otp_class_app.api
 
 import android.content.Context
-import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.otp_class_app.MyApplication
-import com.example.otp_class_app.models.AttendanceDTO
 import com.example.otp_class_app.models.AttendancePOJO
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -28,7 +25,7 @@ object AttendanceDataStore {
     // Function to save attendance data to DataStore
     suspend fun saveNewAttendance(attendance: AttendancePOJO) {
 
-        val date = attendance.date;
+        val date = attendance.date
         context.dataStore.edit { preferences ->
             val currentMapJson = preferences[ATTENDANCE_KEY]
             val currentMap = if (currentMapJson != null) {
@@ -60,7 +57,7 @@ object AttendanceDataStore {
     // Function to save attendance data to DataStore
     suspend fun updateAttendance(attendanceList: List<AttendancePOJO>) {
 
-        val date = attendanceList[0].date;
+        val date = attendanceList[0].date
         context.dataStore.edit { preferences ->
             val currentMapJson = preferences[ATTENDANCE_KEY]
             val currentMap = if (currentMapJson != null) {

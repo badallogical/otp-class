@@ -2,6 +2,7 @@ package com.example.otp_class_app.api
 
 import android.util.Log
 import com.example.otp_class_app.models.AttendanceDTO
+import com.example.otp_class_app.models.ReportDTO
 import com.example.otp_class_app.models.StudentDTO
 import com.example.otp_class_app.models.StudentPOJO
 import com.google.gson.Gson
@@ -16,7 +17,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbwim9RwFh1eS8NHTMHS79i8YT8EygMbdIBXjLFXs5KWX3FpeczEGRYmWFASfDdhVDFQ/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbxumx42Kiuv9BfjBQ1WJqLAXkAnDy30prsm2z-KPnLgQHnCVTUGmApnXvRXBhx80Art/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -115,6 +116,101 @@ object ApiService {
         }
     }
 
+    suspend fun fetchStudentReportByFacilitator(facilitator: String): List<ReportDTO> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Build the request URL with the facilitator as a query parameter
+                val url = "$BASE_URL?facilitator=$facilitator"
+                val request = Request.Builder()
+                    .url(url)
+                    .get()
+                    .build()
+
+                // Execute the HTTP request
+                val response = client.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    response.body?.let { responseBody ->
+                        val jsonString = responseBody.string()
+                        Log.d("ApiService Json", "Json String: $jsonString")
+
+                        // Parse the JSON response to a list of ReportDTO objects
+                        val studentReportType = object : TypeToken<List<ReportDTO>>() {}.type
+                        val studentReports: List<ReportDTO> = Gson().fromJson(jsonString, studentReportType)
+
+                        Log.d("ApiService", "Parsed Reports: $studentReports")
+                        return@withContext studentReports
+                    } ?: run {
+                        Log.e("ApiService", "Response body is null")
+                        return@withContext emptyList<ReportDTO>() // Return an empty list if response body is null
+                    }
+                } else {
+                    Log.e("ApiService", "GET request failed with code: ${response.code}")
+                    return@withContext emptyList<ReportDTO>() // Return an empty list on failure
+                }
+            } catch (e: Exception) {
+                Log.e("ApiService", "GET request failed: ${e.message}")
+                return@withContext emptyList<ReportDTO>() // Return an empty list in case of an exception
+            }
+        }
+    }
+
+    suspend fun postStudentReport(report: ReportDTO): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Construct the JSON object
+                val jsonObject = JSONObject().apply {
+                    put("type", "Reporting")
+                    put("report", JSONObject().apply {
+                        put("name", report.name)
+                        put("contact", report.contact)
+                        put("facilitator", report.facilitator)
+                        put("classlevel", report.classlevel)
+                        put("chanting", report.chanting)
+                        put("wrh", report.wrh)
+                        put("book", report.book)
+                        put("whh", report.whh)
+                        put("active", report.active)
+                        put("fourRegPrinciples", report.fourRegPrinciples)
+                        put("percentageRegularity", report.percentageRegularity)
+                        put("meetsFacilitator", report.meetsFacilitator)
+                        put("sewa", report.sewa)
+                        put("seriousness", report.seriousness)
+                        put("attendsDailyEveningClass", report.attendsDailyEveningClass)
+                        put("reasonForNotAttending", report.reasonForNotAttending ?: JSONObject.NULL)
+                        put("noOfNightStay", report.noOfNightStay)
+                        put("remarks", report.remarks ?: JSONObject.NULL)
+                        put("lastMeetingDate", report.lastMeetingDate ?: JSONObject.NULL)
+                    })
+                }
+
+                // Convert JSON object to request body
+                val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+                val body = jsonObject.toString().toRequestBody(mediaType)
+
+                // Build and execute the request
+                val request = Request.Builder()
+                    .url(BASE_URL) // Replace with your actual base URL
+                    .post(body)
+                    .build()
+
+                val client = OkHttpClient()
+                val response = client.newCall(request).execute()
+
+                // Handle response
+                if (response.isSuccessful) {
+                    true
+                } else {
+                    Log.e("ApiService", "POST request failed with code: ${response.code}")
+                    false
+                }
+            } catch (e: Exception) {
+                Log.e("ApiService", "POST request failed: ${e.message}")
+                false
+            }
+        }
+    }
+
 
 
     suspend fun postAttendance(attendance : AttendanceDTO ): Boolean {
@@ -172,6 +268,8 @@ object ApiService {
             true
         }
     }
+
+
 
 
 }
