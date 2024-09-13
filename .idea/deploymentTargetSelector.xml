@@ -26,7 +26,7 @@
       </SelectionState>
       <SelectionState runConfigName="MainPreview">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-09-03T05:12:50.857176900Z">
+        <DropdownSelection timestamp="2024-09-13T06:36:31.234381100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\badal\.android\avd\Medium_Phone_API_28.avd" />

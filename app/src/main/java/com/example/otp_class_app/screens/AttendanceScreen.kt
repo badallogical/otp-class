@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,6 +55,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -80,6 +82,8 @@ fun AttendanceScreen(navController: NavController) {
         } ?: emptyList()
 
     }
+
+
 
     fun fetchAndFilterStudents() {
         CoroutineScope(Dispatchers.Main).launch {
@@ -228,6 +232,15 @@ fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
     var isSubmitting by remember { mutableStateOf(false) }
     var showCongrats by remember { mutableStateOf(false) }
 
+     val currentDate = "2024-01-07"
+//    val currentDate = getCurrentOrNextSunday()
+    if( currentDate == ""){
+       // no class today
+        NoClassesDialog()
+        return;
+    }
+
+
     if (showCongrats) {
         AlertDialog(
             onDismissRequest = { onDismiss() },
@@ -264,19 +277,22 @@ fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
             confirmButton = {
                 Button(onClick = {
                     isSubmitting = true
-                    val currentDate = "2024-01-07"
-                    val attendance = AttendancePOJO(student.phone, currentDate, student.name);
-                    CoroutineScope(Dispatchers.Main).launch {
-                        //val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        AttendanceDataStore.saveNewAttendance(attendance)
-                        delay(500)
-                        val success = true;
-                        //val success = ApiService.postAttendance(attendance)
-                        isSubmitting = false
-                        if (success) {
-                            showCongrats = true
+
+
+                        val attendance = AttendancePOJO(student.phone, currentDate, student.name);
+                        CoroutineScope(Dispatchers.Main).launch {
+                            //val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                            AttendanceDataStore.saveNewAttendance(attendance)
+                            delay(500)
+                            val success = true;
+                            //val success = ApiService.postAttendance(attendance)
+                            isSubmitting = false
+                            if (success) {
+                                showCongrats = true
+                            }
                         }
-                    }
+
+
                 }) {
                     Text("Hari Bol")
                 }
@@ -288,6 +304,8 @@ fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
             }
         )
     }
+
+
 }
 
 suspend fun fetchStudentsFromApi(): List<StudentPOJO>? {
@@ -296,6 +314,57 @@ suspend fun fetchStudentsFromApi(): List<StudentPOJO>? {
         ApiService.getStudents()
     }
 }
+
+fun getCurrentOrNextSunday(): String {
+    // Get the current date
+    var currentDate = LocalDate.now()
+
+    // Check if the current day is Saturday
+    if (currentDate.dayOfWeek == DayOfWeek.SATURDAY) {
+        // Update to the next day (Sunday)
+        currentDate = currentDate.plusDays(1)
+    }else if( currentDate.dayOfWeek != DayOfWeek.SUNDAY){
+        return ""
+    }
+
+    // Format the date in the required format "YYYY-MM-DD"
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    return currentDate.format(formatter)
+}
+
+@Composable
+fun NoClassesDialog() {
+    // Remember the dialog state
+    val openDialog = remember { mutableStateOf(true) }
+
+    if (openDialog.value) {
+        AlertDialog(
+            onDismissRequest = { openDialog.value = false },
+            title = {
+                // No title for this dialog
+            },
+            text = {
+                // Message content in the dialog
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "Today is No classes Prabhu Ji")
+                    Text(text = "Hare Krishna 🙏")
+                }
+            },
+            confirmButton = {
+                // Button to dismiss the dialog
+                TextButton(
+                    onClick = { openDialog.value = false }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+}
+
 
 @Composable
 fun StudentItem(student: StudentPOJO, onClick: () -> Unit) {

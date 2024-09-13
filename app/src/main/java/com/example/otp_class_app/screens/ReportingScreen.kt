@@ -23,12 +23,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -38,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -46,15 +49,18 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,10 +69,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.otp_class_app.R
 import com.example.otp_class_app.api.ApiService
 import com.example.otp_class_app.api.ApiService.fetchStudentReportByFacilitator
+import com.example.otp_class_app.api.ApiService.fetchStudentsByFacilitator
 import com.example.otp_class_app.api.ApiService.postStudentReport
 import com.example.otp_class_app.models.ReportDTO
+import com.example.otp_class_app.models.StudentDTO
+import com.example.otp_class_app.models.StudentPOJO
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -82,11 +92,20 @@ fun ReportingScreen(context: Context, navController: NavController) {
 
     // State to handle dropdown visibility
     var showDropdown by remember { mutableStateOf(false) }
+    var isDataFetched by remember { mutableStateOf(false) }
 
     // State to handle fetching and displaying student reports
     var studentReports by remember { mutableStateOf<List<ReportDTO>>(emptyList()) }
+    var studentsList by remember { mutableStateOf<List<StudentPOJO>>(emptyList()) }
+    var trackingStudentList by remember { mutableStateOf<List<StudentPOJO>>(emptyList()) }
+
+    var filterstudentReports by remember { mutableStateOf<List<ReportDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    var searchQuery by remember { mutableStateOf("") }
+
+    var isDialogVisible by remember { mutableStateOf(false) }
 
     // List of facilitators
     val facilitators = listOf(
@@ -96,6 +115,16 @@ fun ReportingScreen(context: Context, navController: NavController) {
         "H.G Madhu Smita Prabhu"
     )
 
+    fun filterReports(query: String, studentList: List<ReportDTO>?) {
+        if( query == "all"){
+            filterstudentReports = studentReports
+        }else {
+            filterstudentReports = studentList?.filter {
+                it.name.contains(query, ignoreCase = true)
+            } ?: emptyList()
+        }
+    }
+
 
     // Top App Bar with share button
     Scaffold(
@@ -103,15 +132,20 @@ fun ReportingScreen(context: Context, navController: NavController) {
             TopAppBar(
                 title = { Text("Reporting") },
                 actions = {
-                    IconButton(onClick = {
-                        // Handle sharing
-                        shareFormLink(context)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Share,
-                            contentDescription = "Share"
-                        )
+                    // Add "+" button
+                    IconButton(onClick = { isDialogVisible = true }) {
+                        Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Devotees")
                     }
+
+//                    IconButton(onClick = {
+//                        // Handle sharing
+//                        shareFormLink(context)
+//                    }) {
+//                        Icon(
+//                            imageVector = Icons.Filled.Share,
+//                            contentDescription = "Share"
+//                        )
+//                    }
                 }
             )
         },
@@ -123,46 +157,47 @@ fun ReportingScreen(context: Context, navController: NavController) {
                 )
             ) {
 
-                // Box for the dropdown menu
-                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    var textFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+                if( !isDataFetched ) {
+                    // Box for the dropdown menu
+                    Box(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                        var textFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
 
-                    // OutlinedTextField for displaying the selected facilitator
-                    OutlinedTextField(
-                        value = selectedFacilitator ?: "Select Facilitator",
-                        onValueChange = { /* No-op */ },
-                        label = { Text("Facilitator") },
-                        readOnly = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.background,
-                                shape = MaterialTheme.shapes.small
-                            )
-                            .onGloballyPositioned { coordinates ->
-                                textFieldSize = coordinates.size.toSize()
-                            },
-                        trailingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowDropDown,
-                                contentDescription = "Dropdown",
-                                modifier = Modifier.clickable { showDropdown = !showDropdown }
-                            )
-                        }
-                    )
+                        // OutlinedTextField for displaying the selected facilitator
+                        OutlinedTextField(
+                            value = selectedFacilitator ?: "Select Facilitator",
+                            onValueChange = { /* No-op */ },
+                            label = { Text("Facilitator") },
+                            readOnly = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.background,
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .onGloballyPositioned { coordinates ->
+                                    textFieldSize = coordinates.size.toSize()
+                                },
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowDropDown,
+                                    contentDescription = "Dropdown",
+                                    modifier = Modifier.clickable { showDropdown = !showDropdown }
+                                )
+                            }
+                        )
 
-                    // DropdownMenu to display list of facilitators
-                    DropdownMenu(
-                        expanded = showDropdown,
-                        onDismissRequest = { showDropdown = false },
-                        modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })
-                    ) {
-                        facilitators.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(text = option) },
-                                onClick = {
-                                    selectedFacilitator = option
-                                    showDropdown = false
+                        // DropdownMenu to display list of facilitators
+                        DropdownMenu(
+                            expanded = showDropdown,
+                            onDismissRequest = { showDropdown = false },
+                            modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+                        ) {
+                            facilitators.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(text = option) },
+                                    onClick = {
+                                        selectedFacilitator = option
+                                        showDropdown = false
 //                                    // Fetch student reports based on selected facilitator
 //                                    fetchStudentReports(option, onSuccess = {
 //                                        studentReports = it
@@ -171,32 +206,86 @@ fun ReportingScreen(context: Context, navController: NavController) {
 //                                        errorMessage = it
 //                                        isLoading = false
 //                                    })
-                                }
-                            )
+                                    }
+                                )
+                            }
                         }
+                    }
+
+                    // Fetch button
+                    Button(
+                        onClick = {
+                            selectedFacilitator?.let { facilitator ->
+
+                                // Launch a coroutine to fetch data
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    isLoading = true
+                                    val reports = fetchStudentReportByFacilitator(facilitator)
+                                    studentReports = reports // Store the fetched reports
+                                    filterReports("all", studentReports)
+
+                                    studentsList = fetchStudentsByFacilitator(facilitator)
+                                    isLoading = false // Reset loading state
+                                    //onReportFetched(reports) // Notify parent or handle data
+
+                                    isDataFetched = true
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                    ) {
+                        Text("Fetch")
                     }
                 }
 
-                // Fetch button
-                Button(
-                    onClick = {
-                        selectedFacilitator?.let { facilitator ->
-
-                            // Launch a coroutine to fetch data
-                            CoroutineScope(Dispatchers.Main).launch {
-                                isLoading = true
-                                val reports = fetchStudentReportByFacilitator(facilitator)
-                                studentReports = reports // Store the fetched reports
-                                isLoading = false // Reset loading state
-                                //onReportFetched(reports) // Notify parent or handle data
+                // Show the Add Devotees Dialog
+                if (isDialogVisible) {
+                    AddDevoteesDialog(
+                        studentList = studentsList,
+                        onDismiss = { isDialogVisible = false },
+                        onConfirm = { selectedStudents ->
+                            trackingStudentList = selectedStudents // Save the selected students
+                            CoroutineScope(Dispatchers.IO).launch {
+                                trackingStudentList.forEach { student ->
+                                    var report = ReportDTO(student.name, student.phone, student.facilitator, student.batch)
+                                    postStudentReport(report)
+                                }
                             }
 
+                            isDialogVisible = false // Close the dialog
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                ) {
-                    Text("Fetch")
+                    )
                 }
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { newQuery ->
+                        searchQuery = newQuery
+                        filterReports(
+                            searchQuery,
+                            studentReports
+                        ) // Update the filtered list on search query change
+                    },
+                    label = { Text("Search by Name") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    shape = MaterialTheme.shapes.medium, // Round corners
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_search_24), // Replace with your search icon resource
+                            contentDescription = "Search Icon",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.DarkGray, // Dark border when focused
+                        unfocusedBorderColor = Color.LightGray, // Light border when not focused
+                        cursorColor = MaterialTheme.colorScheme.primary // Cursor color
+                    ),
+                    singleLine = true, // Make the text field single-lined
+                    maxLines = 1 // Limit the text input to one line
+                )
 
                 // Show loading indicator
                 if (isLoading) {
@@ -216,13 +305,13 @@ fun ReportingScreen(context: Context, navController: NavController) {
                 }
 
                 // Check if the studentReports list is empty
-                if (studentReports.isEmpty()) {
+                if (filterstudentReports.isEmpty()) {
                     // Show a message if there are no reports
                     NoStudentFoundMessage()
                 } else {
                     // Show student reports in a LazyColumn
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(studentReports) { report ->
+                        items(filterstudentReports) { report ->
                             ReportItem(report, onClick = { student ->
                                 // Navigate to EditStudentReportScreen
                                 val reportJson = Gson().toJson(report) // Serialize your ReportDTO
@@ -237,16 +326,68 @@ fun ReportingScreen(context: Context, navController: NavController) {
 }
 
 @Composable
+fun AddDevoteesDialog(
+    studentList: List<StudentPOJO>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<StudentPOJO>) -> Unit
+) {
+    val selectedStudents = remember { mutableStateListOf<StudentPOJO>() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add devotees to track") },
+        text = {
+            LazyColumn {
+                items(studentList) { student ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${student.name} - ${student.phone}",
+                            modifier = Modifier.weight(1f)
+                        )
+                        Checkbox(
+                            checked = selectedStudents.contains(student),
+                            onCheckedChange = { isChecked ->
+                                if (isChecked) {
+                                    selectedStudents.add(student)
+                                } else {
+                                    selectedStudents.remove(student)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(selectedStudents) }) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
 fun NoStudentFoundMessage() {
     // Centered text indicating no students were found
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            text = "No student found",
+            text = "No Devotee found",
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground
         )
     }
 }
+
 // Function to fetch student reports based on facilitator
 //fun fetchStudentReports(
 //    facilitator: String,
@@ -311,6 +452,42 @@ fun ReportItem(report: ReportDTO, onClick: (ReportDTO) -> Unit) {
         }
     }
 }
+
+// Function to handle form link sharing logic
+fun shareOrCreateFormLink(
+    context: Context,
+    onSuccess: (String) -> Unit,
+    onError: (String) -> Unit
+) {
+    // Call Google Apps Script to check if form exists for the sheet
+    val formExists = checkIfFormExists() // Dummy function to check for form
+
+    if (formExists) {
+        // Fetch the existing form link
+        val existingFormLink = fetchExistingFormLink() // Fetch link from Google Sheet or database
+        onSuccess(existingFormLink)
+    } else {
+        // Create new form if it doesn't exist
+//        createNewForm({ newFormLink ->
+//            onSuccess(newFormLink)
+//        }, { error ->
+//            onError("Failed to create the form: $error")
+//        })
+    }
+}
+
+// Dummy function to check if a form already exists for the sheet
+fun checkIfFormExists(): Boolean {
+    // Replace this with actual logic to check if the form is already created
+    return false // For now, assume form doesn't exist
+}
+
+// Dummy function to fetch existing form link
+fun fetchExistingFormLink(): String {
+    // Replace this with actual logic to fetch the existing form link
+    return "https://docs.google.com/forms/d/xxxxxx"
+}
+
 
 @Composable
 fun EditReportScreen(

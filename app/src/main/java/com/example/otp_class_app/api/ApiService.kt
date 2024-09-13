@@ -17,7 +17,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbxumx42Kiuv9BfjBQ1WJqLAXkAnDy30prsm2z-KPnLgQHnCVTUGmApnXvRXBhx80Art/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbzUgtZDJr3hPVJXvdLUs6AiyT6TWxV3rFEqGLjE7EqGylbVpyaN5kAh_w9920VYCowo/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -151,6 +151,45 @@ object ApiService {
             } catch (e: Exception) {
                 Log.e("ApiService", "GET request failed: ${e.message}")
                 return@withContext emptyList<ReportDTO>() // Return an empty list in case of an exception
+            }
+        }
+    }
+
+    suspend fun fetchStudentsByFacilitator(facilitator: String): List<StudentPOJO> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Build the request URL with the facilitator as a query parameter
+                val url = "$BASE_URL?studentFacilitator=$facilitator"
+                val request = Request.Builder()
+                    .url(url)
+                    .get()
+                    .build()
+
+                // Execute the HTTP request
+                val response = client.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    response.body?.let { responseBody ->
+                        val jsonString = responseBody.string()
+                        Log.d("ApiService Json", "Json String: $jsonString")
+
+                        // Parse the JSON response to a list of ReportDTO objects
+                        val studentDataType = object : TypeToken<List<StudentPOJO>>() {}.type
+                        val studentsList: List<StudentPOJO> = Gson().fromJson(jsonString, studentDataType)
+
+                        Log.d("ApiService", "Parsed Reports: $studentsList")
+                        return@withContext studentsList
+                    } ?: run {
+                        Log.e("ApiService", "Response body is null")
+                        return@withContext emptyList<StudentPOJO>() // Return an empty list if response body is null
+                    }
+                } else {
+                    Log.e("ApiService", "GET request failed with code: ${response.code}")
+                    return@withContext emptyList<StudentPOJO>() // Return an empty list on failure
+                }
+            } catch (e: Exception) {
+                Log.e("ApiService", "GET request failed: ${e.message}")
+                return@withContext emptyList<StudentPOJO>() // Return an empty list in case of an exception
             }
         }
     }
