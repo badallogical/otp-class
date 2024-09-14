@@ -50,28 +50,23 @@ val OrangeDarkColorScheme = darkColorScheme(
 
 @Composable
 fun Otp_class_appTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = isSystemInDarkTheme(), // Use system theme or force dark mode
     content: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
-    val colorScheme = remember(darkTheme, dynamicColor) {
-        when {
-            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            }
-            darkTheme -> OrangeDarkColorScheme
-            else -> OrangeLightColorScheme
-        }
+    // Choose between light and dark color schemes based on the theme
+    val colorScheme = if (darkTheme) {
+        OrangeDarkColorScheme
+    } else {
+        OrangeLightColorScheme
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // Ensure you have a Typography definition or use the default
+        typography = Typography, // Use your defined typography or the default
         content = content
     )
 }
+
 
 @Preview(showBackground = true)
 @Composable

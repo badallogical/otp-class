@@ -79,7 +79,6 @@ fun DashboardScreen(navController: NavController) {
     ) { paddingValues ->
         Column(
             modifier = Modifier
-                .padding(paddingValues)
                 .fillMaxSize()
                 .padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween,
@@ -88,26 +87,29 @@ fun DashboardScreen(navController: NavController) {
 
             Column(
                 modifier = Modifier
-                    .padding(paddingValues)
-                    .padding(16.dp),
+                    .padding(paddingValues),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 DashboardOption(
-                    text = "Registration",
                     icon = painterResource(R.drawable.baseline_edit_24),
+                    title = "Registration",
+                    subtitle = "Register new students",
                     onClick = { navController.navigate("registration") }
                 )
                 DashboardOption(
-                    text = "Attendance",
                     icon = painterResource(R.drawable.baseline_done_outline_24),
+                    title = "Attendance",
+                    subtitle = "Mark student attendance",
                     onClick = { navController.navigate("attendance") }
                 )
                 DashboardOption(
-                    text = "Reporting",
                     icon = painterResource(R.drawable.outline_report_24),
+                    title = "Reporting",
+                    subtitle = "Generate and view reports",
                     onClick = { navController.navigate("reporting") }
                 )
             }
+            Spacer(modifier = Modifier.weight(1f)) // Adjust the space between top and bottom content
 
             Image(
                 painter = painterResource(id = R.drawable.iskcon_logo), // Replace with your image resource
@@ -120,27 +122,38 @@ fun DashboardScreen(navController: NavController) {
 }
 
 @Composable
-fun DashboardOption(text: String, icon: Painter, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
+fun DashboardOption(
+    icon: Painter,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-        shape = RoundedCornerShape(15.dp)
-
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Icon(
-                painter = icon, // Replace with your icon resource
-                contentDescription = null,
-                modifier = Modifier.size(24.dp) // Size of the icon
+        Icon(
+            painter = icon,
+            contentDescription = null,
+            modifier = Modifier.size(35.dp), // Adjust icon size as needed
+            tint = MaterialTheme.colorScheme.primary // Set the icon color
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(text, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            )
         }
     }
 }
