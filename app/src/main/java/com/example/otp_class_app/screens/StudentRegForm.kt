@@ -1,5 +1,8 @@
 package com.example.otp_class_app.screens
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -55,8 +58,14 @@ fun StudentFormScreen() {
     var showStudentNotFoundDialog by remember { mutableStateOf(false) }
     var showDataFetchedToast by remember { mutableStateOf(false) }
     var updated by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
-    val facilitators = listOf("NA", "H.G Sadhu Chaitanya Prabhu", "H.G Seva Actyute Prabhu", "H.G Rajiv Lochan Prabhu")
+    val facilitators = listOf(
+        "NA",
+        "H.G Sadhu Chaitanya Prabhu",
+        "H.G Seva Actyute Prabhu",
+        "H.G Rajiv Lochan Prabhu"
+    )
     val batches = listOf("DYS", "TSSV", "VL2")
 
     val icon1 = if (showDropdownFacilitator)
@@ -115,17 +124,46 @@ fun StudentFormScreen() {
                 .background(backgroundColor, shape = MaterialTheme.shapes.small)
         )
 
-        // Phone input
-        OutlinedTextField(
-            value = phone,
-            onValueChange = { phone = it },
-            label = { Text("Phone") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
-                .background(backgroundColor, shape = MaterialTheme.shapes.small)
-        )
+        ) {
+            // Phone input field
+            OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text("Phone") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(backgroundColor, shape = MaterialTheme.shapes.small)
+             )
+
+            // Clickable text
+            Text(
+                text = "\uD83E\uDD1D Invite",
+                color = MaterialTheme.colorScheme.primary, // Or any color you want for the text
+                modifier = Modifier
+                    .align(Alignment.CenterEnd) // Align to the right
+                    .padding(16.dp) // Adjust padding for aesthetics
+                    .clickable {
+                        if (phone.length == 10 && phone.all { it.isDigit() }) {
+                            sendWhatsAppMessage(
+                                context,
+                                phone,
+                                name,
+                                "95329450033"
+                            )
+                        } else {
+                            Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
+            )
+        }
+
+
 
         // Facilitator dropdown
         Box(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
@@ -224,23 +262,34 @@ fun StudentFormScreen() {
                 .padding(bottom = 8.dp)
                 .background(backgroundColor, shape = MaterialTheme.shapes.small)
         )
-        val context = LocalContext.current;
+
         // Submit button
         Button(
             onClick = {
 
                 if (!isSubmitting) {
                     if (!(phone.length == 10 && phone.all { it.isDigit() })) {
-                        Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "Please enter a valid phone number",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         return@Button
                     }
                     isSubmitting = true
-                    val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                    val student = StudentDTO(name, phone, facilitator, batch, profession, address, currentDate)
+                    val currentDate =
+                        LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    val student = StudentDTO(
+                        name,
+                        phone,
+                        facilitator,
+                        batch,
+                        profession,
+                        address,
+                        currentDate
+                    )
                     CoroutineScope(Dispatchers.Main).launch {
-                        val isSuccess = withContext(Dispatchers.IO) {
-                            ApiService.registerStudent(student,updated)
-                        }
+                        val isSuccess = ApiService.registerStudent(student, updated)
                         isSubmitting = false
                         showSuccessDialog = isSuccess
                     }
@@ -358,6 +407,42 @@ fun StudentFormScreen() {
 
 fun isValidPhoneNumber(phone: String): Boolean {
     return phone.length == 10 && phone.all { it.isDigit() }
+}
+
+fun sendWhatsAppMessage(
+    context: Context,
+    phoneNumber: String,
+    name: String,
+    contact: String
+) {
+    val message = """
+    Hare Krishna *${name.toCamelCase()} Prabhu Ji* 🙏
+    
+    Thanks for your registration for ISKCON Youth Forum (IYF) classes, it's a life-changing step to discover yourself and unleash your true potential. 💯
+    
+    📢 *We invite you to the Sunday Program*:
+    🕒 *Timing*: 4:30 PM, this Sunday
+    🎉  *Event*: Seminar 🧑‍💻🗣️, Kirtan 🎤, Music 🎸 and Delicious Prasadam 🍛🍰
+    
+    🏛️ *Venue*: ISKCON Temple, Lucknow
+    
+    Hare Krishna Prabhu Ji 🙏
+    Badal Prabhu
+    📞 *Contact*: $contact 
+    (Please save this number)
+""".trimIndent()
+
+    val intent = Intent(Intent.ACTION_VIEW)
+    intent.data = Uri.parse("https://wa.me/$phoneNumber?text=$message")
+    context.startActivity(intent)
+}
+
+fun String.toCamelCase(): String {
+    return this.lowercase()
+        .split(" ")
+        .joinToString(" ") { word ->
+            word.replaceFirstChar { it.uppercase() }
+        }
 }
 
 
