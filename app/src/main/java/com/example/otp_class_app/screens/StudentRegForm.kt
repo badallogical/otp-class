@@ -7,6 +7,7 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.collection.emptyLongSet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.toSize
 import com.example.otp_class_app.R
 import com.example.otp_class_app.api.ApiService
 import com.example.otp_class_app.models.StudentDTO
+import com.squareup.okhttp.Response
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -59,6 +61,7 @@ fun StudentFormScreen() {
     var showDataFetchedToast by remember { mutableStateOf(false) }
     var updated by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    var response: okhttp3.Response? = null
 
     val facilitators = listOf(
         "NA",
@@ -289,9 +292,9 @@ fun StudentFormScreen() {
                         currentDate
                     )
                     CoroutineScope(Dispatchers.Main).launch {
-                        val isSuccess = ApiService.registerStudent(student, updated)
+                        response = ApiService.registerStudent(student, updated)
                         isSubmitting = false
-                        showSuccessDialog = isSuccess
+                        showSuccessDialog = true
                     }
                 }
             },
@@ -314,15 +317,14 @@ fun StudentFormScreen() {
         if (showSuccessDialog) {
             AlertDialog(
                 onDismissRequest = { showSuccessDialog = false },
-                title = { Text("Success") },
-                text = { Text("Gaurange $name Prabhu Ji, Hari Bol 🙏") },
+                title = { Text( if(response!!.isSuccessful) "Success" else "Failed")  },
+                text = { Text(if( response!!.isSuccessful ) "Gaurange $name Prabhu Ji, Hari Bol 🙏" else "Hari Bol, ${response!!.message}") },
                 confirmButton = {
                     TextButton(onClick = { showSuccessDialog = false }) {
                         Text("Hari Bol")
                     }
                 }
             )
-
         }
 
         // Phone Number Dialog

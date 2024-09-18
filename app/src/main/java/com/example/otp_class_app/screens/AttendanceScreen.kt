@@ -233,7 +233,7 @@ fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
     var showCongrats by remember { mutableStateOf(false) }
 
      val currentDate = "2024-01-07"
-//    val currentDate = getCurrentOrNextSunday()
+//   val currentDate = getCurrentOrNextSunday()
     if( currentDate == ""){
        // no class today
         NoClassesDialog()
