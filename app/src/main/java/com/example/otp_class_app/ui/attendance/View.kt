@@ -1,4 +1,4 @@
-package com.example.otp_class_app.screens
+package com.example.otp_class_app.ui.attendance
 
 import android.content.Context
 import android.os.Build
@@ -17,11 +17,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.otp_class_app.R
-import com.example.otp_class_app.api.ApiService.syncAttendance
-import com.example.otp_class_app.api.AttendanceDataStore
-import com.example.otp_class_app.models.AttendanceDTO
-import com.example.otp_class_app.models.AttendancePOJO
-import com.example.otp_class_app.models.toDTO
+import com.example.otp_class_app.data.api.ApiService.syncAttendance
+import com.example.otp_class_app.data.api.AttendanceDataStore
+import com.example.otp_class_app.data.models.AttendanceDTO
+import com.example.otp_class_app.data.models.AttendancePOJO
+import com.example.otp_class_app.data.models.toDTO
 import com.example.otp_class_app.ui.theme.Otp_class_appTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

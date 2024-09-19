@@ -1,12 +1,10 @@
 package com.example.otp_class_app
 
 import android.content.Context
-import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -18,13 +16,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,24 +35,16 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.otp_class_app.screens.AttendanceViewScreen
-import com.example.otp_class_app.screens.DashboardScreen
-import com.example.otp_class_app.screens.ReportingScreen
-import com.example.otp_class_app.screens.StudentFormScreen
+import com.example.otp_class_app.ui.attendance.AttendanceViewScreen
+import com.example.otp_class_app.ui.dashboard.DashboardScreen
+import com.example.otp_class_app.ui.reporting.ReportingScreen
+import com.example.otp_class_app.ui.registeration.StudentFormScreen
 import com.example.otp_class_app.ui.screens.AttendanceScreen
 import com.example.otp_class_app.ui.theme.Otp_class_appTheme
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
-import com.example.otp_class_app.api.ApiService.postStudentReport
-import com.example.otp_class_app.models.ReportDTO
-import com.example.otp_class_app.screens.EditReportScreen
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.example.otp_class_app.data.models.ReportDTO
+import com.example.otp_class_app.ui.reporting.EditReportScreen
 import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {

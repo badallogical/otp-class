@@ -1,4 +1,4 @@
-package com.example.otp_class_app.models
+package com.example.otp_class_app.data.models
 
 // For local use we use POJO that include name.
 data class AttendancePOJO(

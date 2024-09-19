@@ -1,4 +1,4 @@
-package com.example.otp_class_app.api
+package com.example.otp_class_app.data.api
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -7,7 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.otp_class_app.MyApplication
-import com.example.otp_class_app.models.AttendancePOJO
+import com.example.otp_class_app.data.models.AttendancePOJO
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.Flow

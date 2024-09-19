@@ -1,4 +1,4 @@
-package com.example.otp_class_app.screens
+package com.example.otp_class_app.ui.registeration
 
 import android.os.Build
 import android.util.Log
@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import com.example.otp_class_app.R
-import com.example.otp_class_app.api.ApiService
-import com.example.otp_class_app.models.StudentDTO
+import com.example.otp_class_app.data.api.ApiService
+import com.example.otp_class_app.data.models.StudentDTO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

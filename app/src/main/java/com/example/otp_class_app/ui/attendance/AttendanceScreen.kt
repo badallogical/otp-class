@@ -1,8 +1,6 @@
 package com.example.otp_class_app.ui.screens
 
-import android.content.Context
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,7 +30,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,71 +40,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.otp_class_app.R
-import com.example.otp_class_app.api.ApiService
-import com.example.otp_class_app.api.AttendanceDataStore
-import com.example.otp_class_app.models.AttendancePOJO
-import com.example.otp_class_app.models.StudentDTO
-import com.example.otp_class_app.models.StudentPOJO
-import kotlinx.coroutines.CoroutineScope
+import com.example.otp_class_app.data.api.ApiService
+import com.example.otp_class_app.data.models.StudentPOJO
+import com.example.otp_class_app.ui.attendance.AttendanceUiState
+import com.example.otp_class_app.ui.attendance.AttendanceViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AttendanceScreen(navController: NavController) {
-    var students by remember { mutableStateOf<List<StudentPOJO>?>(null) }
-    var filteredStudents by remember { mutableStateOf<List<StudentPOJO>>(emptyList()) }
-    var searchQuery by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(true) }
-    var showDialog by remember { mutableStateOf(false) }
-    var selectedStudent by remember { mutableStateOf<StudentPOJO?>(null) }
-    var showRegistrationDialog by remember { mutableStateOf(false) }
+fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel = viewModel() ) {
 
-
+    val uiState by viewModel.uiState.collectAsState()
 
     // Create an instance of DataStore with the context
     val appContext = LocalContext.current.applicationContext
 
-    // Function to filter students based on the search query
-    fun filterStudents(query: String, studentList: List<StudentPOJO>?) {
-        filteredStudents = studentList?.filter {
-            it.phone.contains(query, ignoreCase = true)
-        } ?: emptyList()
-
-    }
-
-
-
-    fun fetchAndFilterStudents() {
-        CoroutineScope(Dispatchers.Main).launch {
-            isLoading = true
-            val fetchedStudents = fetchStudentsFromApi()
-            students = fetchedStudents
-            isLoading = false
-            filterStudents(searchQuery, students)
-            Log.d("Attendnace screen", "Students fetched " + students.toString())
-        }
-    }
-
     // Fetch students from API and set the initial list
-    LaunchedEffect(Unit) {
-        fetchAndFilterStudents()
-    }
-
-    // Update filtered students whenever the search query changes
-    LaunchedEffect(searchQuery) {
-        filterStudents(searchQuery, students)
-    }
+   
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -120,7 +84,6 @@ fun AttendanceScreen(navController: NavController) {
                 modifier = Modifier.weight(4f) // Take up as much space as possible
             )
 
-
             Icon(
                 painter = painterResource(id = R.drawable.baseline_refresh_24), // Replace with your refresh icon resource
                 contentDescription = "Refresh Icon",
@@ -129,9 +92,10 @@ fun AttendanceScreen(navController: NavController) {
                     .size(24.dp)
                     .weight(0.5f)
                     .clickable {
-                        fetchAndFilterStudents() // Fetch students again when refresh icon is clicked
+                        viewModel.onRefresh() // Fetch students again when refresh icon is clicked
                     }
             )
+
             Icon(
                 painter = painterResource(id = R.drawable.baseline_view_list_24),
                 contentDescription = "Save & Sync",
@@ -146,13 +110,10 @@ fun AttendanceScreen(navController: NavController) {
         }
 
         OutlinedTextField(
-            value = searchQuery,
+            value = uiState.searchQuery,
             onValueChange = { newQuery ->
-                searchQuery = newQuery
-                filterStudents(
-                    searchQuery,
-                    students
-                ) // Update the filtered list on search query change
+                            // Update the filtered list on search query change
+                viewModel.onSearchQueryChanged(newQuery)
             },
             label = { Text("Search by phone number") },
             modifier = Modifier
@@ -166,6 +127,15 @@ fun AttendanceScreen(navController: NavController) {
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             },
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done // Set the IME action to "Done"
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    // Action when the "Done" button is pressed on the keyboard
+                    viewModel.onSearchQueryChanged(uiState.searchQuery)
+                }
+            ),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color.DarkGray, // Dark border when focused
                 unfocusedBorderColor = Color.LightGray, // Light border when not focused
@@ -175,11 +145,11 @@ fun AttendanceScreen(navController: NavController) {
             maxLines = 1 // Limit the text input to one line
         )
 
-        if (isLoading) {
+        if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-        } else if (filteredStudents.isEmpty()) {
+        } else if (uiState.filteredStudents.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -192,16 +162,15 @@ fun AttendanceScreen(navController: NavController) {
                     color = Color.Gray
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { showRegistrationDialog = true }) {
+                Button(onClick = { viewModel.onClickQuickRegisteration() } ) {
                     Text("Quick Registration")
                 }
             }
         } else {
             LazyColumn {
-                items(filteredStudents) { student ->
+                items(uiState.filteredStudents) { student ->
                     StudentItem(student = student) {
-                        selectedStudent = student
-                        showDialog = true
+                        viewModel.onStudentItemClicked(student)
                     }
                 }
             }
@@ -209,28 +178,34 @@ fun AttendanceScreen(navController: NavController) {
     }
 
     // Dialog to mark attendance
-    if (showDialog && selectedStudent != null) {
-        AttendanceDialog(student = selectedStudent!!, onDismiss = { showDialog = false })
+    if (uiState.showDialog && uiState.selectedStudent != null) {
+        AttendanceDialog(
+            uiState = uiState,
+            onSubmit = { student ->  // Correctly pass the student to the onSubmit lambda
+                viewModel.postAttendance(student)  // Pass the student to postAttendance function
+            },
+            onDismiss = {
+                viewModel.onDismissAttendanceDialog()  // Dismiss the dialog and clear the selected student
+            }
+        )
     }
 
     // Quick Registration Dialog
-    if (showRegistrationDialog) {
+    if (uiState.showRegistrationDialog) {
         QuickRegistrationDialog(
-            onDismiss = { showRegistrationDialog = false },
+            uiState,
+            onDismiss = { viewModel.onDismissRegisterationDialog() },
             onRegister = { name, phone ->
-                CoroutineScope(Dispatchers.Main).launch {
-                    registerStudent(name, phone)
-                    showRegistrationDialog = false
-                }
+                viewModel.onRegisterStudent(name,phone)
             })
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
-    var isSubmitting by remember { mutableStateOf(false) }
-    var showCongrats by remember { mutableStateOf(false) }
+fun AttendanceDialog(uiState: AttendanceUiState, onSubmit: (StudentPOJO) -> Unit, onDismiss: () -> Unit) {
+
+    val student = uiState.selectedStudent
 
      val currentDate = "2024-01-07"
 //    val currentDate = getCurrentOrNextSunday()
@@ -241,10 +216,10 @@ fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
     }
 
 
-    if (showCongrats) {
+    if (uiState.showCongratsAfterPosting) {
         AlertDialog(
             onDismissRequest = { onDismiss() },
-            title = { Text("Gauranga ${student.name} Prabhu Ji 🙏") },
+            title = { Text("Gauranga ${student?.name} Prabhu Ji 🙏") },
             confirmButton = {
                 Button(onClick = onDismiss) {
                     Text("Hari Bol")
@@ -257,44 +232,39 @@ fun AttendanceDialog(student: StudentPOJO, onDismiss: () -> Unit) {
             title = { Text("Mark Attendance") },
             text = {
                 Column {
-                    Text("Name: ${student.name}")
-                    Text("Phone: ${student.phone}")
-                    Text("Batch: ${student.batch}")
-                    Text("Facilitator: ${student.facilitator}")
-                    if (isSubmitting) {
-                        // Center the CircularProgressIndicator
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
+                    if (student != null) {
+                        Text("Name: ${student.name}")
+                    }
+                    if (student != null) {
+                        Text("Phone: ${student.phone}")
+                    }
+                    if (student != null) {
+                        Text("Batch: ${student.batch}")
+                    }
+                    if (student != null) {
+                        Text("Facilitator: ${student.facilitator}")
                     }
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    isSubmitting = true
-
-
-                        val attendance = AttendancePOJO(student.phone, currentDate, student.name);
-                        CoroutineScope(Dispatchers.Main).launch {
-                            //val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                            AttendanceDataStore.saveNewAttendance(attendance)
-                            delay(500)
-                            val success = true;
-                            //val success = ApiService.postAttendance(attendance)
-                            isSubmitting = false
-                            if (success) {
-                                showCongrats = true
+                Button(
+                    onClick = {
+                        if (!uiState.isPostingAttendance) {  // Prevent multiple submissions
+                            if (student != null) {
+                                onSubmit(student)
                             }
                         }
-
-
-                }) {
-                    Text("Hari Bol")
+                    },
+                    enabled = !uiState.isPostingAttendance // Disable the button while submitting
+                ) {
+                    if (uiState.isPostingAttendance) {
+                        CircularProgressIndicator(
+                            color = Color.White, // You can set the color based on your theme
+                            modifier = Modifier.size(16.dp) // Adjust size as needed
+                        )
+                    } else {
+                        Text("Hari Bol")
+                    }
                 }
             },
             dismissButton = {
@@ -383,10 +353,10 @@ fun StudentItem(student: StudentPOJO, onClick: () -> Unit) {
 }
 
 @Composable
-fun QuickRegistrationDialog(onDismiss: () -> Unit, onRegister: (String, String) -> Unit) {
+fun QuickRegistrationDialog(uiState: AttendanceUiState , onDismiss: () -> Unit, onRegister: (String, String) -> Unit) {
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
-    var isSubmitting by remember { mutableStateOf(false) }
+
     var isClicked by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -409,7 +379,8 @@ fun QuickRegistrationDialog(onDismiss: () -> Unit, onRegister: (String, String) 
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium
                 )
-                if (isSubmitting) {
+
+                if (uiState.isRegistering) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -425,9 +396,7 @@ fun QuickRegistrationDialog(onDismiss: () -> Unit, onRegister: (String, String) 
             Button(
                 onClick = {
                     isClicked = !isClicked
-                    isSubmitting = true
                     onRegister(name, phone)
-                    isSubmitting = false
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isClicked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
@@ -442,16 +411,6 @@ fun QuickRegistrationDialog(onDismiss: () -> Unit, onRegister: (String, String) 
             }
         }
     )
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-suspend fun registerStudent(name: String, phone: String) {
-    val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-    val student = StudentDTO(name, phone, "NA", "NA", "NA", "NA", currentDate)
-    withContext(Dispatchers.IO) {
-        // Simulate a network call to register the student
-        ApiService.registerStudent(student)
-    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

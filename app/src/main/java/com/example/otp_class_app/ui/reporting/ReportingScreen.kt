@@ -1,4 +1,4 @@
-package com.example.otp_class_app.screens
+package com.example.otp_class_app.ui.reporting
 
 import android.content.Context
 import android.content.Intent
@@ -25,7 +25,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -35,7 +34,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -70,17 +68,14 @@ import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.otp_class_app.R
-import com.example.otp_class_app.api.ApiService
-import com.example.otp_class_app.api.ApiService.fetchStudentReportByFacilitator
-import com.example.otp_class_app.api.ApiService.fetchStudentsByFacilitator
-import com.example.otp_class_app.api.ApiService.postStudentReport
-import com.example.otp_class_app.models.ReportDTO
-import com.example.otp_class_app.models.StudentDTO
-import com.example.otp_class_app.models.StudentPOJO
+import com.example.otp_class_app.data.api.ApiService.fetchStudentReportByFacilitator
+import com.example.otp_class_app.data.api.ApiService.fetchStudentsByFacilitator
+import com.example.otp_class_app.data.api.ApiService.postStudentReport
+import com.example.otp_class_app.data.models.ReportDTO
+import com.example.otp_class_app.data.models.StudentPOJO
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 

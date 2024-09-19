@@ -1,4 +1,4 @@
-package com.example.otp_class_app.models
+package com.example.otp_class_app.data.models
 
 import com.google.gson.annotations.SerializedName
 
@@ -15,7 +15,7 @@ data class StudentDTO(
         get() = _name.toCamelCase()
 
     val phone: String
-        get() = _phone.toCamelCase()
+        get() = _phone.toString()
 
     val facilitator: String
         get() = _facilitator

@@ -1,4 +1,4 @@
-package com.example.otp_class_app.models
+package com.example.otp_class_app.data.models
 
 data class ReportDTO(
     var name: String,

@@ -1,10 +1,10 @@
-package com.example.otp_class_app.api
+package com.example.otp_class_app.data.api
 
 import android.util.Log
-import com.example.otp_class_app.models.AttendanceDTO
-import com.example.otp_class_app.models.ReportDTO
-import com.example.otp_class_app.models.StudentDTO
-import com.example.otp_class_app.models.StudentPOJO
+import com.example.otp_class_app.data.models.AttendanceDTO
+import com.example.otp_class_app.data.models.ReportDTO
+import com.example.otp_class_app.data.models.StudentDTO
+import com.example.otp_class_app.data.models.StudentPOJO
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -252,7 +252,7 @@ object ApiService {
 
 
 
-    suspend fun postAttendance(attendance : AttendanceDTO ): Boolean {
+    suspend fun postAttendance(attendance : AttendanceDTO): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 val jsonObject = JSONObject().apply {
