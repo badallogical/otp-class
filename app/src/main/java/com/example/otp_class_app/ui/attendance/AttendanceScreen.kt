@@ -208,7 +208,7 @@ fun AttendanceDialog(uiState: AttendanceUiState, onSubmit: (StudentPOJO) -> Unit
     val student = uiState.selectedStudent
 
      val currentDate = "2024-01-07"
-//    val currentDate = getCurrentOrNextSunday()
+//   val currentDate = getCurrentOrNextSunday()
     if( currentDate == ""){
        // no class today
         NoClassesDialog()

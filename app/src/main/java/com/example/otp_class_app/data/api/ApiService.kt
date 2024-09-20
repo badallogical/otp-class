@@ -13,6 +13,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
@@ -25,7 +26,7 @@ object ApiService {
         })
         .build()
 
-    suspend fun registerStudent(student: StudentDTO, updated : Boolean = false ): Boolean {
+    suspend fun registerStudent(student: StudentDTO, updated : Boolean = false ): Response {
         return withContext(Dispatchers.IO) {
             val jsonObject = JSONObject().apply {
                 put("type", "registerStudent")
@@ -50,7 +51,7 @@ object ApiService {
                 .build()
 
             val response = client.newCall(request).execute()
-            return@withContext response.isSuccessful
+            return@withContext response
         }
     }
 
@@ -286,26 +287,69 @@ object ApiService {
     }
 
 
-    suspend fun syncAttendance(attendanceMap: Map<String, List<AttendanceDTO>>): Boolean {
-        return withContext(Dispatchers.IO) {
-            var success = true
+//    suspend fun syncAttendance(attendanceMap: Map<String, List<AttendanceDTO>>): Boolean {
+//        return withContext(Dispatchers.IO) {
+//            var success = true
+//
+//            // Iterate over each date in the attendanceMap
+//            for ((date, attendanceList) in attendanceMap) {
+//                for (attendance in attendanceList) {
+//                    // Post each attendance entry
+//                    val result = postAttendance(attendance)
+//                    if (!result) {
+//                        success = false
+//                        // Optionally, you could log or handle failed attendance post requests here
+//                        Log.e("SyncService", "Failed to post attendance for studentID: ${attendance.studentId} on date: $date")
+//                        return@withContext false
+//                    }
+//                }
+//            }
+//
+//            true
+//        }
+//    }
 
-            // Iterate over each date in the attendanceMap
-            for ((date, attendanceList) in attendanceMap) {
-                for (attendance in attendanceList) {
-                    // Post each attendance entry
-                    val result = postAttendance(attendance)
-                    if (!result) {
-                        success = false
-                        // Optionally, you could log or handle failed attendance post requests here
-                        Log.e("SyncService", "Failed to post attendance for studentID: ${attendance.studentId} on date: $date")
-                        return@withContext false
-                    }
+    suspend fun syncAttendance(
+        attendanceMap: Map<String, List<AttendanceDTO>>,
+        onProgressUpdate: (Int,Int,Int,Int) -> Unit
+    ): Boolean = withContext(Dispatchers.IO) {
+        var success = true
+        val totalAttendanceCount = attendanceMap.values.sumOf { it.size }
+        if( totalAttendanceCount == 0 )
+            return@withContext true
+
+        var postedCount = 0
+
+        var newProgress = 0
+        var day = 0
+        var totalForDay = 0
+        var savedForDay = 0
+
+        for ((date, attendanceList) in attendanceMap) {
+            totalForDay = attendanceList.size
+            day++;
+            savedForDay = 0;
+            for (attendance in attendanceList) {
+                // Post each attendance entry
+                val result = postAttendance(attendance)
+                if (!result) {
+                    success = false
+                    Log.e(
+                        "SyncService",
+                        "Failed to post attendance for studentID: ${attendance.studentId} on date: $date"
+                    )
+                    return@withContext false
                 }
-            }
 
-            true
+                savedForDay++;
+                // Update the posted count and progress
+                postedCount++
+                val progress = (postedCount * 100) / totalAttendanceCount
+                onProgressUpdate(progress, day, totalForDay,savedForDay) // Notify the UI of the progress
+            }
         }
+
+        return@withContext success
     }
 
 
