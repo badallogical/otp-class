@@ -1,6 +1,7 @@
 package com.example.otp_class_app.ui.screens
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +31,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,9 +55,6 @@ import com.example.otp_class_app.ui.attendance.AttendanceUiState
 import com.example.otp_class_app.ui.attendance.AttendanceViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -64,11 +63,13 @@ fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel
 
     val uiState by viewModel.uiState.collectAsState()
 
-    // Create an instance of DataStore with the context
-    val appContext = LocalContext.current.applicationContext
-
     // Fetch students from API and set the initial list
-   
+   LaunchedEffect(Unit){
+       if(uiState.students.isEmpty()) {
+           viewModel.fetchStudents()
+           Log.d("Attendance", "Launched Called");
+       }
+   }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -207,8 +208,9 @@ fun AttendanceDialog(uiState: AttendanceUiState, onSubmit: (StudentPOJO) -> Unit
 
     val student = uiState.selectedStudent
 
-     val currentDate = "2024-01-07"
+    val currentDate = "2024-01-07"
 //   val currentDate = getCurrentOrNextSunday()
+
     if( currentDate == ""){
        // no class today
         NoClassesDialog()
@@ -278,29 +280,6 @@ fun AttendanceDialog(uiState: AttendanceUiState, onSubmit: (StudentPOJO) -> Unit
 
 }
 
-suspend fun fetchStudentsFromApi(): List<StudentPOJO>? {
-    return withContext(Dispatchers.IO) {
-        // Simulate a network call
-        ApiService.getStudents()
-    }
-}
-
-fun getCurrentOrNextSunday(): String {
-    // Get the current date
-    var currentDate = LocalDate.now()
-
-    // Check if the current day is Saturday
-    if (currentDate.dayOfWeek == DayOfWeek.SATURDAY) {
-        // Update to the next day (Sunday)
-        currentDate = currentDate.plusDays(1)
-    }else if( currentDate.dayOfWeek != DayOfWeek.SUNDAY){
-        return ""
-    }
-
-    // Format the date in the required format "YYYY-MM-DD"
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    return currentDate.format(formatter)
-}
 
 @Composable
 fun NoClassesDialog() {

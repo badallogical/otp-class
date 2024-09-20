@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -29,9 +30,9 @@ class AttendanceViewModel : ViewModel(){
         val query = currentState.searchQuery
 
         // Filter the students based on the query
-        val filtered = currentState.students?.filter {
+        val filtered = currentState.students.filter {
             it.phone.contains(query, ignoreCase = true)
-        } ?: emptyList()
+        }
 
         // Update the UI state with the new filtered students and query
         _uiState.value = currentState.copy(
@@ -40,23 +41,30 @@ class AttendanceViewModel : ViewModel(){
     }
 
     // Function to fetch students and update UI state
-    fun fetchStudents() {
+    fun fetchStudents(filter : Boolean = false) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             val fetchedStudents = ApiService.getStudents()
 
+
             _uiState.value = _uiState.value.copy(
                 students = fetchedStudents,
-                filteredStudents = fetchedStudents ?: emptyList(),
+                filteredStudents = if( !filter ) {
+                    fetchedStudents
+                }else { fetchedStudents.filter {
+                    it.phone.contains(_uiState.value.searchQuery, ignoreCase = true)
+                } },
                 isLoading = false
             )
         }
     }
 
+
+
     // Function to fetch students from API and filter them
     fun onRefresh() {
-        fetchStudents()
+        fetchStudents(true)
     }
 
     // Function to update the search query and trigger filtering
@@ -106,6 +114,7 @@ class AttendanceViewModel : ViewModel(){
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRegistering = true)
 
+
             val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
             val student = StudentDTO(name, phone, "NA", "NA", "NA", "NA", currentDate)
 
@@ -129,13 +138,31 @@ class AttendanceViewModel : ViewModel(){
         }
     }
 
+    fun getCurrentOrNextSunday(): String {
+        // Get the current date
+        var currentDate = LocalDate.now()
+
+        // Check if the current day is Saturday
+        if (currentDate.dayOfWeek == DayOfWeek.SATURDAY) {
+            // Update to the next day (Sunday)
+            currentDate = currentDate.plusDays(1)
+        }else if( currentDate.dayOfWeek != DayOfWeek.SUNDAY){
+            return ""
+        }
+
+        // Format the date in the required format "YYYY-MM-DD"
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        return currentDate.format(formatter)
+    }
 
     fun postAttendance(student: StudentPOJO) {
         viewModelScope.launch {
             // Update UI state to show that submission is in progress
             _uiState.value = _uiState.value.copy(isPostingAttendance = true)
 
-            val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            val currentDate = "2024-01-07"
+//   val currentDate = getCurrentOrNextSunday()
+            //val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
             val attendance = AttendancePOJO(student.phone, currentDate, student.name)
 
             try {

@@ -18,7 +18,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbzUgtZDJr3hPVJXvdLUs6AiyT6TWxV3rFEqGLjE7EqGylbVpyaN5kAh_w9920VYCowo/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbyKtkzVVkH9RnphBny2yF7oB8EETEtu6zkWJ66CDv_5IsGWPmvVtAanhebgcD6FrUJ1/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -56,9 +56,9 @@ object ApiService {
     }
 
 
-    suspend fun getStudents(): List<StudentPOJO>? {
+    suspend fun getStudents(): List<StudentPOJO> {
         return withContext(Dispatchers.IO) {
-            val url = "$BASE_URL?phone=null"
+
             try {
                 val request = Request.Builder()
                     .url(BASE_URL)
@@ -71,17 +71,17 @@ object ApiService {
                         val jsonString = responseBody.string()
                         Log.d("ApiService Josn","Json String :" + jsonString);
                         val studentListType = object : TypeToken<List<StudentPOJO>>() {}.type
-                        val studentList: List<StudentPOJO> = Gson().fromJson(jsonString, studentListType)
+                        val studentList: List<StudentPOJO> = Gson().fromJson(jsonString, studentListType) ?: emptyList()
                         Log.d("ApiService", studentList.toString())
-                        return@withContext studentList
-                    }
+                        studentList
+                    }?: emptyList<StudentPOJO>()
                 } else {
                     Log.e("ApiService", "GET request failed with code: ${response.code}")
-                    return@withContext null
+                    emptyList<StudentPOJO>()
                 }
             } catch (e: Exception) {
                 Log.e("ApiService", "GET request failed: ${e.message}")
-                return@withContext null
+                emptyList<StudentPOJO>()
             }
         }
     }
@@ -319,16 +319,14 @@ object ApiService {
             return@withContext true
 
         var postedCount = 0
-
-        var newProgress = 0
         var day = 0
         var totalForDay = 0
         var savedForDay = 0
 
         for ((date, attendanceList) in attendanceMap) {
             totalForDay = attendanceList.size
-            day++;
-            savedForDay = 0;
+            day++
+            savedForDay = 0
             for (attendance in attendanceList) {
                 // Post each attendance entry
                 val result = postAttendance(attendance)
@@ -341,7 +339,8 @@ object ApiService {
                     return@withContext false
                 }
 
-                savedForDay++;
+                savedForDay++
+
                 // Update the posted count and progress
                 postedCount++
                 val progress = (postedCount * 100) / totalAttendanceCount
@@ -351,8 +350,5 @@ object ApiService {
 
         return@withContext success
     }
-
-
-
 
 }

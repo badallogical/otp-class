@@ -38,11 +38,11 @@ import androidx.navigation.compose.rememberNavController
 import com.example.otp_class_app.ui.attendance.AttendanceViewScreen
 import com.example.otp_class_app.ui.dashboard.DashboardScreen
 import com.example.otp_class_app.ui.reporting.ReportingScreen
-import com.example.otp_class_app.ui.registeration.StudentFormScreen
 import com.example.otp_class_app.ui.screens.AttendanceScreen
 import com.example.otp_class_app.ui.theme.Otp_class_appTheme
 import androidx.compose.runtime.LaunchedEffect
 import com.example.otp_class_app.data.models.ReportDTO
+import com.example.otp_class_app.screens.StudentFormScreen
 import com.example.otp_class_app.ui.reporting.EditReportScreen
 import com.google.gson.Gson
 
