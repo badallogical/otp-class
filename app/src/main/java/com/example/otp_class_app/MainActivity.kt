@@ -43,6 +43,8 @@ import com.example.otp_class_app.ui.theme.Otp_class_appTheme
 import androidx.compose.runtime.LaunchedEffect
 import com.example.otp_class_app.data.models.ReportDTO
 import com.example.otp_class_app.screens.StudentFormScreen
+import com.example.otp_class_app.ui.registeration.RegistrationScreen
+import com.example.otp_class_app.ui.registeration.CallingListScreen
 import com.example.otp_class_app.ui.reporting.EditReportScreen
 import com.google.gson.Gson
 
@@ -79,7 +81,7 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
         // Show the main content if connected
         NavHost(navController = navController, startDestination = "dashboard") {
             composable("dashboard") { DashboardScreen(navController) }
-            composable("registration") { StudentFormScreen() }
+            composable("registration") { RegistrationScreen(navController) }
             composable("attendance") { AttendanceScreen(navController) }
             composable("reporting") { ReportingScreen(context, navController) }
             composable("attendance_view") { AttendanceViewScreen(context) }
@@ -94,6 +96,8 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
                     })
                 }
             }
+            composable("form") { StudentFormScreen() }
+            composable("calling_screen") { CallingListScreen() }
         }
     } else {
         // Show NoInternetScreen if not connected

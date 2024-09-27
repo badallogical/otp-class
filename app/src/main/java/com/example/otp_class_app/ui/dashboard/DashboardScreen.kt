@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -32,6 +33,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.otp_class_app.R
 import com.example.otp_class_app.ui.theme.Otp_class_appTheme
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,12 +113,19 @@ fun DashboardScreen(navController: NavController) {
             }
             Spacer(modifier = Modifier.weight(1f)) // Adjust the space between top and bottom content
 
-            Image(
-                painter = painterResource(id = R.drawable.iskcon_logo), // Replace with your image resource
-                contentDescription = null,
-                modifier = Modifier
-                    .size(200.dp) // Adjust size as needed
+
+//            Image(
+//                painter = painterResource(id = R.drawable.iyf), // Replace with your image resource
+//                contentDescription = null,
+//                modifier = Modifier
+//                    .size(100.dp) // Adjust size as needed
+//            )
+            Text(
+                text = "ISKCON Youth Forum",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelSmall
             )
+            Spacer( modifier = Modifier.size(20.dp))
         }
     }
 }

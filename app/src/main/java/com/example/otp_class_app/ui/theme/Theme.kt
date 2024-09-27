@@ -23,7 +23,8 @@ val OrangeLightColorScheme = lightColorScheme(
     background = Color(0xFFF5F5F5), // Light background color
     onBackground = Color.Black, // Text on light background should be black
     surface = Color.White, // White surface color
-    onSurface = Color.Black // Text on white surface should be black
+    onSurface = Color.Black, // Text on white surface should be black
+
 )
 
 // Dark Theme Color Scheme
@@ -35,7 +36,8 @@ val OrangeDarkColorScheme = darkColorScheme(
     background = Color(0xFF121212), // Very dark background
     onBackground = Color.White, // Text on dark background should be white
     surface = Color(0xFF1E1E1E), // Dark surface color
-    onSurface = Color.White // Text on dark surface should be white
+    onSurface = Color.White, // Text on dark surface should be white
+
 )
 
 @Composable

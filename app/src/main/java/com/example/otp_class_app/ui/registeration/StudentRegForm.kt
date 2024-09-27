@@ -103,7 +103,7 @@ fun StudentFormScreen() {
     val backgroundColor = if (isSystemInDarkTheme()) {
         MaterialTheme.colorScheme.surfaceVariant // Dark theme background color
     } else {
-        MaterialTheme.colorScheme.surface // Light theme background color
+        MaterialTheme.colorScheme.background // Light theme background color
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
