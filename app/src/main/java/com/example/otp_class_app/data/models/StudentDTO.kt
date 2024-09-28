@@ -1,10 +1,20 @@
 package com.example.otp_class_app.data.models
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
+@Entity(tableName = "students")
 data class StudentDTO(
-    @SerializedName("Name") private val _name: String,
-    @SerializedName("Phone") private val _phone: String,
+
+    @SerializedName("Name")
+    private val _name: String,
+
+    @PrimaryKey
+    @SerializedName("Phone")
+    private val _phone: String,
+
     @SerializedName("Facilitator") private val _facilitator: String,
     @SerializedName("Batch") private val _batch: String,
     @SerializedName("Profession") private val _profession: String,
@@ -36,7 +46,6 @@ data class StudentDTO(
                 word.replaceFirstChar { it.uppercase() }
             }
     }
-
 }
 
 

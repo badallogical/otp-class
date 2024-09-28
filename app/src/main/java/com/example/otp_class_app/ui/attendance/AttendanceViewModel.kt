@@ -1,6 +1,8 @@
 package com.example.otp_class_app.ui.attendance
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.otp_class_app.data.api.ApiService
@@ -110,6 +112,7 @@ class AttendanceViewModel : ViewModel(){
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun onRegisterStudent(name: String, phone: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRegistering = true)
@@ -138,6 +141,7 @@ class AttendanceViewModel : ViewModel(){
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun getCurrentOrNextSunday(): String {
         // Get the current date
         var currentDate = LocalDate.now()

@@ -2,8 +2,12 @@ package com.example.otp_class_app
 
 import android.app.Application
 import android.content.Context
+import com.example.otp_class_app.data.local.repos.RepoContainer
 
 class MyApplication : Application() {
+
+    lateinit var container : RepoContainer
+
     init {
         instance = this
     }
@@ -18,6 +22,6 @@ class MyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // Initialize things here
+        container = RepoContainer(this)
     }
 }
