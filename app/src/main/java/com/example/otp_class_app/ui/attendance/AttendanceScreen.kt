@@ -59,7 +59,7 @@ import kotlinx.coroutines.withContext
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel = viewModel() ) {
+fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel = viewModel(factory = AttendanceViewModel.Factory) ) {
 
     val uiState by viewModel.uiState.collectAsState()
 

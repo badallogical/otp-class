@@ -18,7 +18,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbyKtkzVVkH9RnphBny2yF7oB8EETEtu6zkWJ66CDv_5IsGWPmvVtAanhebgcD6FrUJ1/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbz9aydA77dAKqHHyUw0xD-iO27gAp7hWtu2k45B8AnhDdpvE5GL-5ZRhzA_ai-YjSi0/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -39,6 +39,7 @@ object ApiService {
                     put("profession", student.profession)
                     put("address", student.address)
                     put("date", student.date)
+                    put("by",student.by)
                 })
             }
 
@@ -56,7 +57,7 @@ object ApiService {
     }
 
 
-    suspend fun getStudents(): List<StudentPOJO> {
+    suspend fun getStudents(): List<StudentDTO> {
         return withContext(Dispatchers.IO) {
 
             try {
@@ -70,18 +71,18 @@ object ApiService {
                     response.body?.let { responseBody ->
                         val jsonString = responseBody.string()
                         Log.d("ApiService Josn","Json String :" + jsonString);
-                        val studentListType = object : TypeToken<List<StudentPOJO>>() {}.type
-                        val studentList: List<StudentPOJO> = Gson().fromJson(jsonString, studentListType) ?: emptyList()
+                        val studentListType = object : TypeToken<List<StudentDTO>>() {}.type
+                        val studentList: List<StudentDTO> = Gson().fromJson(jsonString, studentListType) ?: emptyList()
                         Log.d("ApiService", studentList.toString())
                         studentList
-                    }?: emptyList<StudentPOJO>()
+                    }?: emptyList<StudentDTO>()
                 } else {
                     Log.e("ApiService", "GET request failed with code: ${response.code}")
-                    emptyList<StudentPOJO>()
+                    emptyList<StudentDTO>()
                 }
             } catch (e: Exception) {
                 Log.e("ApiService", "GET request failed: ${e.message}")
-                emptyList<StudentPOJO>()
+                emptyList<StudentDTO>()
             }
         }
     }

@@ -1,6 +1,5 @@
 package com.example.otp_class_app.data.models
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
@@ -19,7 +18,8 @@ data class StudentDTO(
     @SerializedName("Batch") private val _batch: String,
     @SerializedName("Profession") private val _profession: String,
     @SerializedName("Address") private val _address: String,
-    @SerializedName("Date") val date: String
+    @SerializedName("Date") val date: String,
+    @SerializedName("By") private val _by : String? = null
 ) {
     val name: String
         get() = _name.toCamelCase()
@@ -39,6 +39,9 @@ data class StudentDTO(
     val address: String
         get() = _address.toCamelCase()
 
+    val by: String
+        get() = _by ?: "Unknown"
+
     private fun String.toCamelCase(): String {
         return this.lowercase()
             .split(" ")
@@ -46,6 +49,8 @@ data class StudentDTO(
                 word.replaceFirstChar { it.uppercase() }
             }
     }
+
+
 }
 
 

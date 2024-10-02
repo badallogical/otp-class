@@ -10,8 +10,10 @@ import com.example.otp_class_app.data.models.StudentPOJO
 
 @Dao
 interface StudentDao {
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(student: StudentDTO)
+
 
     @Query("""
         SELECT 

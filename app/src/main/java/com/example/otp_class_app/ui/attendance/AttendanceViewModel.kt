@@ -4,9 +4,14 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.otp_class_app.MyApplication
 import com.example.otp_class_app.data.api.ApiService
 import com.example.otp_class_app.data.api.AttendanceDataStore
+import com.example.otp_class_app.data.local.repos.StudentRepository
 import com.example.otp_class_app.data.models.AttendancePOJO
 import com.example.otp_class_app.data.models.StudentDTO
 import com.example.otp_class_app.data.models.StudentPOJO
@@ -22,9 +27,19 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class AttendanceViewModel : ViewModel(){
+class AttendanceViewModel(private val studentRepository: StudentRepository) : ViewModel(){
     private var _uiState = MutableStateFlow(AttendanceUiState())
     val uiState : StateFlow<AttendanceUiState> = _uiState.asStateFlow()
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
+                val repository = application.container.studentRepository // Assuming container contains the repository
+                AttendanceViewModel(repository)  // Pass the repository to the ViewModel constructor
+            }
+        }
+    }
 
     // Function to filter students based on search query
     fun filterStudents() {
@@ -47,18 +62,19 @@ class AttendanceViewModel : ViewModel(){
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
-            val fetchedStudents = ApiService.getStudents()
+            val fetchedStudents = studentRepository.getAllStudents()
 
-
-            _uiState.value = _uiState.value.copy(
-                students = fetchedStudents,
-                filteredStudents = if( !filter ) {
-                    fetchedStudents
-                }else { fetchedStudents.filter {
-                    it.phone.contains(_uiState.value.searchQuery, ignoreCase = true)
-                } },
-                isLoading = false
-            )
+            _uiState.value = fetchedStudents?.let {
+                _uiState.value.copy(
+                    students = it,
+                    filteredStudents = if( !filter ) {
+                        fetchedStudents
+                    }else { fetchedStudents.filter {
+                        it.phone.contains(_uiState.value.searchQuery, ignoreCase = true)
+                    } },
+                    isLoading = false
+                )
+            }!!
         }
     }
 
@@ -66,7 +82,12 @@ class AttendanceViewModel : ViewModel(){
 
     // Function to fetch students from API and filter them
     fun onRefresh() {
-        fetchStudents(true)
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            studentRepository.syncStudentData()
+            _uiState.value = _uiState.value.copy(isLoading = false)
+            fetchStudents(true)
+        }
     }
 
     // Function to update the search query and trigger filtering
@@ -119,12 +140,11 @@ class AttendanceViewModel : ViewModel(){
 
 
             val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val student = StudentDTO(name, phone, "NA", "NA", "NA", "NA", currentDate)
+            val student = StudentDTO(name, phone, "NA", "NA", "NA", "NA", currentDate,"NA")
 
             try {
                 // Perform the network call on IO thread
-
-                ApiService.registerStudent(student)
+                studentRepository.insertStudent(student)
 
                 // Update the UI after successful registration
                 _uiState.value = _uiState.value.copy(

@@ -308,7 +308,8 @@ fun StudentFormScreen() {
                         batch,
                         profession,
                         address,
-                        currentDate
+                        currentDate,
+                        "NA"
                     )
                     CoroutineScope(Dispatchers.Main).launch {
                         response = ApiService.registerStudent(student, updated)

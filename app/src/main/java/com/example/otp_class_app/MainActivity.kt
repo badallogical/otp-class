@@ -41,12 +41,16 @@ import com.example.otp_class_app.ui.reporting.ReportingScreen
 import com.example.otp_class_app.ui.screens.AttendanceScreen
 import com.example.otp_class_app.ui.theme.Otp_class_appTheme
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import com.example.otp_class_app.data.api.AttendanceDataStore.getUserData
 import com.example.otp_class_app.data.models.ReportDTO
 import com.example.otp_class_app.screens.StudentFormScreen
+import com.example.otp_class_app.ui.dashboard.WelcomeScreen
 import com.example.otp_class_app.ui.registeration.RegistrationScreen
 import com.example.otp_class_app.ui.registeration.CallingListScreen
 import com.example.otp_class_app.ui.reporting.EditReportScreen
 import com.google.gson.Gson
+import kotlinx.coroutines.flow.first
 
 
 class MainActivity : ComponentActivity() {
@@ -72,39 +76,63 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(checkInternetConnection(context)) }
 
+    var startDestination by remember { mutableStateOf("welcome") } // Default to welcome
+    var isUserRegistered by remember { mutableStateOf(false)}
+
     // Use LaunchedEffect to check for internet connectivity when the screen is opened
     LaunchedEffect(Unit) {
+
         isConnected = checkInternetConnection(context)
+        val isRegistered = checkIfUserIsRegistered() // Call your function to check registration
+        startDestination = if (isRegistered) "dashboard" else "welcome"
+        isUserRegistered = true
     }
 
-    if (isConnected) {
-        // Show the main content if connected
-        NavHost(navController = navController, startDestination = "dashboard") {
-            composable("dashboard") { DashboardScreen(navController) }
-            composable("registration") { RegistrationScreen(navController) }
-            composable("attendance") { AttendanceScreen(navController) }
-            composable("reporting") { ReportingScreen(context, navController) }
-            composable("attendance_view") { AttendanceViewScreen(context) }
-            composable("edit_report/{report}") { backStackEntry ->
-                val reportJson = backStackEntry.arguments?.getString("report")
-                val report = reportJson?.let {
-                    Gson().fromJson(it, ReportDTO::class.java)
+
+    if( isUserRegistered ) {
+        if (isConnected) {
+            // Show the main content if connected
+            NavHost(navController = navController, startDestination = startDestination) {
+                composable("dashboard") { DashboardScreen(navController) }
+                composable("welcome") { WelcomeScreen(navController) }
+                composable("registration") { RegistrationScreen(navController) }
+                composable("attendance") { AttendanceScreen(navController) }
+                composable("reporting") { ReportingScreen(context, navController) }
+                composable("attendance_view") { AttendanceViewScreen(context) }
+                composable("edit_report/{report}") { backStackEntry ->
+                    val reportJson = backStackEntry.arguments?.getString("report")
+                    val report = reportJson?.let {
+                        Gson().fromJson(it, ReportDTO::class.java)
+                    }
+                    if (report != null) {
+                        EditReportScreen(report, onCancel = {
+                            navController.popBackStack()
+                        })
+                    }
                 }
-                if (report != null) {
-                    EditReportScreen(report, onCancel = {
-                        navController.popBackStack()
-                    })
-                }
+                composable("form") { StudentFormScreen() }
+                composable("calling_screen") { CallingListScreen() }
             }
-            composable("form") { StudentFormScreen() }
-            composable("calling_screen") { CallingListScreen() }
+        } else {
+            // Show NoInternetScreen if not connected
+            NoInternetScreen(onRetry = {
+                // Retry connection when the refresh icon is clicked
+                isConnected = MyApplication.checkInternetConnection()
+            })
         }
-    } else {
-        // Show NoInternetScreen if not connected
-        NoInternetScreen(onRetry = {
-            // Retry connection when the refresh icon is clicked
-            isConnected = checkInternetConnection(context)
-        })
+    }
+}
+
+suspend fun checkIfUserIsRegistered(): Boolean {
+   return getUserData().first().let { (name, phone) ->
+        if (name != null && phone != null) {
+            // User is registered
+            true
+        } else {
+            // Handle the case where no user data is found
+            println("User data not found in DataStore.")
+            false
+        }
     }
 }
 

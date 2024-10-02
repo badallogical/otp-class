@@ -45,7 +45,7 @@ fun DashboardScreen(navController: NavController) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                         // Align the content to the far sides
+                        // Align the content to the far sides
                     ) {
                         Text(
                             text = "Hari Bol",
@@ -53,8 +53,10 @@ fun DashboardScreen(navController: NavController) {
                             modifier = Modifier.weight(1f)
                         )
 
-                        Row(modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically)
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        )
                         {
                             Image(
                                 painter = painterResource(id = R.drawable.iyflogo), // Replace with your refresh icon resource
@@ -75,7 +77,7 @@ fun DashboardScreen(navController: NavController) {
                     containerColor = MaterialTheme.colorScheme.primary, // Background color from the theme
                     titleContentColor = MaterialTheme.colorScheme.onPrimary // Title text color from the theme
                 )
-                
+
             )
         }
     ) { paddingValues ->
@@ -113,7 +115,6 @@ fun DashboardScreen(navController: NavController) {
             }
             Spacer(modifier = Modifier.weight(1f)) // Adjust the space between top and bottom content
 
-
 //            Image(
 //                painter = painterResource(id = R.drawable.iyf), // Replace with your image resource
 //                contentDescription = null,
@@ -125,7 +126,7 @@ fun DashboardScreen(navController: NavController) {
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelSmall
             )
-            Spacer( modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -166,6 +167,7 @@ fun DashboardOption(
         }
     }
 }
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

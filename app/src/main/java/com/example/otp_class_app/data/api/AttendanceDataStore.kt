@@ -18,6 +18,10 @@ object AttendanceDataStore {
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "attendance")
     private val context: Context by lazy { MyApplication.applicationContext() }
 
+    // Define keys for storing user data
+    private val NAME_KEY = stringPreferencesKey("user_name")
+    private val PHONE_KEY = stringPreferencesKey("user_phone")
+
     // Define a key for your attendance map (using JSON String representation)
     private val ATTENDANCE_KEY = stringPreferencesKey("attendance_map")
 
@@ -96,6 +100,31 @@ object AttendanceDataStore {
         context.dataStore.edit { preferences ->
             // Set the key's value to an empty JSON object (i.e., empty map)
             preferences[ATTENDANCE_KEY] = Gson().toJson(emptyMap<String, List<AttendancePOJO>>())
+        }
+    }
+
+    // Function to save name and phone to DataStore
+    suspend fun saveUserData(name: String, phone: String) {
+        context.dataStore.edit { preferences ->
+            preferences[NAME_KEY] = name
+            preferences[PHONE_KEY] = phone
+        }
+    }
+
+    // Function to retrieve name and phone from DataStore
+    fun getUserData(): Flow<Pair<String?, String?>> {
+        return context.dataStore.data.map { preferences ->
+            val name = preferences[NAME_KEY]
+            val phone = preferences[PHONE_KEY]
+            Pair(name, phone)
+        }
+    }
+
+    // Function to clear user data
+    suspend fun clearUserData() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(NAME_KEY)
+            preferences.remove(PHONE_KEY)
         }
     }
 
