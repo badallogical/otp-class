@@ -240,6 +240,7 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         viewModelScope.launch {
             withContext(Dispatchers.IO){
                 studentRepository.insertStudent(student, updated = uiState.value.updated)
+                AttendanceDataStore.addDate(student.date)
             }
 
             _uiState.update { current ->

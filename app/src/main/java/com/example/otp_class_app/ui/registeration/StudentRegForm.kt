@@ -53,7 +53,6 @@ import com.example.otp_class_app.R
 import com.example.otp_class_app.ui.registeration.StudentFormViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = StudentFormViewModel.Factory)) {
 

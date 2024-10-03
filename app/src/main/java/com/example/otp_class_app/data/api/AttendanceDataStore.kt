@@ -5,13 +5,17 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.otp_class_app.MyApplication
 import com.example.otp_class_app.data.models.AttendancePOJO
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 object AttendanceDataStore {
 
@@ -24,6 +28,11 @@ object AttendanceDataStore {
 
     // Define a key for your attendance map (using JSON String representation)
     private val ATTENDANCE_KEY = stringPreferencesKey("attendance_map")
+
+    // Define the key for storing the registration sync status as a set of dates
+    private val REGISTRATION_SYNC_STATUS_KEY = stringSetPreferencesKey("registration_sync_status_dates")
+
+
 
 
     // Function to save attendance data to DataStore
@@ -125,6 +134,59 @@ object AttendanceDataStore {
         context.dataStore.edit { preferences ->
             preferences.remove(NAME_KEY)
             preferences.remove(PHONE_KEY)
+        }
+    }
+
+
+
+    // Get the current list of dates from DataStore
+    suspend fun getDates(): Set<String> {
+        return withContext(Dispatchers.IO) {
+            context.dataStore.data
+                .map { preferences ->
+                    preferences[REGISTRATION_SYNC_STATUS_KEY] ?: emptySet() // Use emptySet() if no data is found
+                }
+                .firstOrNull() ?: emptySet() // Make sure we don't get a null result
+        }
+    }
+
+    // Remove a date from the list
+    suspend fun removeDate(date: String) {
+        withContext(Dispatchers.IO) {
+            // Fetch the current set of dates
+            val currentDates = getDates()
+
+            // Remove the date if it exists
+            if (date in currentDates) {
+                context.dataStore.edit { preferences ->
+                    val updatedDates = currentDates.toMutableSet().apply { remove(date) }
+                    preferences[REGISTRATION_SYNC_STATUS_KEY] = updatedDates
+                }
+            }
+        }
+    }
+
+    // Add a date to the list
+    suspend fun addDate(date: String) {
+        withContext(Dispatchers.IO) {
+            // Fetch the current set of dates
+            val currentDates = getDates()
+
+            // Add the new date if it doesn't exist already
+            if (date !in currentDates) {
+                context.dataStore.edit { preferences ->
+                    val updatedDates = currentDates.toMutableSet().apply { add(date) }
+                    preferences[REGISTRATION_SYNC_STATUS_KEY] = updatedDates
+                }
+            }
+        }
+    }
+
+    // Check if a date exists in the list
+    suspend fun dateExists(date: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            val currentDates = getDates()
+            date in currentDates
         }
     }
 

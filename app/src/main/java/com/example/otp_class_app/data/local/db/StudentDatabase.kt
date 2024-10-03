@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import com.example.otp_class_app.data.local.db.dao.CallingReportDao
 import com.example.otp_class_app.data.local.db.dao.StudentDao
 import com.example.otp_class_app.data.models.CallingReportPOJO
+import com.example.otp_class_app.data.models.RegistrationStatus
 import com.example.otp_class_app.data.models.StudentDTO
 
 @Database(entities = [StudentDTO::class, CallingReportPOJO::class], version = 1)
@@ -15,6 +16,7 @@ abstract class StudentDatabase : RoomDatabase(){
     abstract fun getStudentDao(): StudentDao
 
     abstract fun getCallingReportDao(): CallingReportDao
+
 
     companion object{
         @Volatile

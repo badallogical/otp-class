@@ -5,11 +5,12 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import com.example.otp_class_app.MyApplication
 import com.example.otp_class_app.data.api.ApiService
+import com.example.otp_class_app.data.api.AttendanceDataStore
 import com.example.otp_class_app.data.local.db.dao.CallingReportDao
 import com.example.otp_class_app.data.local.db.dao.Registration
-import com.example.otp_class_app.data.local.db.dao.RegistrationCount
 import com.example.otp_class_app.data.local.db.dao.StudentDao
 import com.example.otp_class_app.data.models.CallingReportPOJO
+import com.example.otp_class_app.data.models.RegistrationStatus
 import com.example.otp_class_app.data.models.StudentDTO
 import com.example.otp_class_app.data.models.StudentPOJO
 import kotlinx.coroutines.CoroutineScope
@@ -21,15 +22,19 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 // Its the repository that will work for registrations.
-class StudentRepository(private val studentDao: StudentDao, private val callingDao : CallingReportDao) {
+class StudentRepository(
+    private val studentDao: StudentDao,
+    private val callingDao: CallingReportDao
+) {
 
     // Insert a student into the database and update the callings
-    suspend fun insertStudent(student: StudentDTO, updated : Boolean = false) {
+    suspend fun insertStudent(student: StudentDTO, updated: Boolean = false) {
         // save to local
         studentDao.insert(student)
 
         // update calling report
-        val callingReport = CallingReportPOJO(student.phone,student.name,"status",0,student.date)
+        val callingReport =
+            CallingReportPOJO(student.phone, student.name, "status", 0, student.date)
         callingDao.insert(callingReport)
 
 
@@ -56,7 +61,7 @@ class StudentRepository(private val studentDao: StudentDao, private val callingD
             if (MyApplication.checkInternetConnection()) {
                 try {
                     // Sync with the server
-                    ApiService.registerStudent(student,true)
+                    ApiService.registerStudent(student, true)
                 } catch (exception: Exception) {
                     // Handle network or API errors here
                     exception.printStackTrace()
@@ -72,8 +77,8 @@ class StudentRepository(private val studentDao: StudentDao, private val callingD
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun syncStudentData(){
-        val remoteStudents = ApiService.getStudents().map{ student ->
+    suspend fun syncStudentData() {
+        val remoteStudents = ApiService.getStudents().map { student ->
             val formatteddate = formatDateString(student.date)
             student.copy(date = formatteddate)
         }
@@ -81,7 +86,7 @@ class StudentRepository(private val studentDao: StudentDao, private val callingD
         Log.d("StudentRepo", "Data Fetched From the remote ${remoteStudents.size}")
 
         // Store the data in the local database for future requests
-        withContext(Dispatchers.IO){
+        withContext(Dispatchers.IO) {
             Log.d("student Repo", "wring to db")
             remoteStudents.forEach { student ->
                 Log.d("StudentRepo", "Inserting student: $student")
@@ -135,7 +140,7 @@ class StudentRepository(private val studentDao: StudentDao, private val callingD
 
     // Fetch list of registrations by date with counts
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun getRegistrationList(): List<RegistrationCount>? {
+    suspend fun getRegistrationList(): List<RegistrationStatus>? {
         // Attempt to get the data from the local database (Room)
         var registrationCounts = studentDao.getRegistrationList()
 
@@ -191,5 +196,17 @@ class StudentRepository(private val studentDao: StudentDao, private val callingD
         return registrations
     }
 
+    suspend fun syncLocalRegisterations(date: String) {
+        var registerations: List<StudentDTO>?
+        AttendanceDataStore.getUserData().collect { userData ->
+            registerations = userData.first?.let { studentDao.getFullRegistrationsByDate(date, it) }
+
+
+            registerations?.forEach { registeration ->
+                ApiService.registerStudent(registeration)
+            }
+
+        }
+    }
 
 }
