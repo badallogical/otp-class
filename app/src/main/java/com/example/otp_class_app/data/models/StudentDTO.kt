@@ -49,9 +49,11 @@ data class StudentDTO(
                 word.replaceFirstChar { it.uppercase() }
             }
     }
-
-
 }
+
+
+
+
 
 
 

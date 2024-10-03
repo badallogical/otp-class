@@ -2,7 +2,6 @@ package com.example.otp_class_app.data.local.repos
 
 import android.content.Context
 import com.example.otp_class_app.data.local.db.StudentDatabase
-import com.example.otp_class_app.ui.registeration.Student
 
 class RepoContainer(private val context : Context) {
 
@@ -13,7 +12,7 @@ class RepoContainer(private val context : Context) {
     }
 
     val studentRepository : StudentRepository by lazy{
-        StudentRepository(database.getStudentDao())
+        StudentRepository(database.getStudentDao(), database.getCallingReportDao())
     }
 
     val callingReportRepository : CallingReportRepository by lazy{

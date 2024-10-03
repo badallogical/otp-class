@@ -111,7 +111,13 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
                     }
                 }
                 composable("form") { StudentFormScreen() }
-                composable("calling_screen") { CallingListScreen() }
+                composable("calling_screen/{date}") { backStackEntry ->
+                    // Retrieve the date from the backStackEntry arguments
+                    val date = backStackEntry.arguments?.getString("date") ?: ""
+
+                    // Pass the date to your screen
+                    CallingListScreen(date = date)
+                }
             }
         } else {
             // Show NoInternetScreen if not connected

@@ -8,6 +8,7 @@ import androidx.room.Update
 import com.example.otp_class_app.data.models.StudentDTO
 import com.example.otp_class_app.data.models.StudentPOJO
 
+
 @Dao
 interface StudentDao {
 
@@ -41,4 +42,24 @@ interface StudentDao {
         FROM students
     """)
     suspend fun getAllStudents(): List<StudentPOJO>?
+
+    // It will get the list of registrations done by date.
+    @Query("SELECT date, count(*) as counts from students group by date order by date DESC")
+    suspend fun getRegistrationList(): List<RegistrationCount>?
+
+    // It will load the initial registration data that will later make the calling report.
+    @Query("SELECT _name as name, _phone as phone from students where date = :date order by date desc")
+    suspend fun getRegistrations(date: String) : List<Registration>?
+
 }
+
+data class RegistrationCount(
+    val date: String,
+    val counts : Int
+)
+
+data class Registration(
+    val name: String,
+    val phone: String,
+)
+

@@ -7,47 +7,45 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.otp_class_app.data.local.db.dao.Registration
+import com.example.otp_class_app.data.local.db.dao.RegistrationCount
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegistrationScreen(navController: NavController, viewModel: RegistrationViewModel = viewModel()) {
+fun RegistrationScreen(navController: NavController, viewModel: RegistrationViewModel = viewModel( factory = RegistrationViewModel.Factory)) {
 
     val registrations by viewModel.registrations.collectAsState()
+
+    LaunchedEffect(Unit){
+        viewModel.getRegistration()
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -84,7 +82,7 @@ fun RegistrationScreen(navController: NavController, viewModel: RegistrationView
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegistrationListView(registrations :List<Pair<String,Int>>, navController: NavController) {
+fun RegistrationListView(registrations: List<RegistrationCount>, navController: NavController) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -113,7 +111,7 @@ fun RegistrationItem(date: String, count : Int, navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { navController.navigate("calling_screen") }, // Open dialog on click
+            .clickable { navController.navigate("calling_screen/${date}") }, // Open dialog on click
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -132,74 +130,11 @@ fun RegistrationItem(date: String, count : Int, navController: NavController) {
     }
 }
 
-@Composable
-fun RegistrationDialog(date: String, registrations: List<Registration>, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth()
-            ) {
-                // Title with formatted date
-                Text(
-                    text = date,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                // List of registrations (name and phone)
-                registrations.forEach { registration ->
-                    RegistrationTile(registration = registration)
-                }
-
-                // Close button
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("Close")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RegistrationTile(registration: Registration) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column {
-            Text(text = "Name: ${registration.name}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Phone: ${registration.phone}", style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
-
-// Define the Registration data class
-data class Registration(val name: String, val phone: String, val isSynced: Boolean)
 
 // Example preview for this composable
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
 fun PreviewRegistrationScreen() {
-    val mockData = mapOf(
-        "2024-09-23" to listOf(
-            Registration("John Doe", "1234567890", true),
-            Registration("Jane Smith", "0987654321", false)
-        ),
-        "2024-09-22" to listOf(
-            Registration("Alice Brown", "1231231231", true)
-        )
-    )
 
 }

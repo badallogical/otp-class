@@ -1,10 +1,6 @@
 package com.example.otp_class_app.screens
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
-import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -34,6 +30,7 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,36 +48,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.otp_class_app.R
-import com.example.otp_class_app.data.api.ApiService
-import com.example.otp_class_app.data.models.StudentDTO
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import com.example.otp_class_app.ui.registeration.StudentFormViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StudentFormScreen() {
-    var name by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var facilitator by remember { mutableStateOf("Select Facilitator") }
-    var batch by remember { mutableStateOf("Select Batch") }
-    var profession by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var showDropdownFacilitator by remember { mutableStateOf(false) }
-    var showDropdownBatch by remember { mutableStateOf(false) }
-    var showSuccessDialog by remember { mutableStateOf(false) }
-    var isSubmitting by remember { mutableStateOf(false) }
-    var showPhoneDialog by remember { mutableStateOf(false) }
-    var showStudentNotFoundDialog by remember { mutableStateOf(false) }
-    var showDataFetchedToast by remember { mutableStateOf(false) }
-    var updated by remember { mutableStateOf(false) }
+fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = StudentFormViewModel.Factory)) {
+
+    val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    var response: okhttp3.Response? = null
 
     val facilitators = listOf(
         "NA",
@@ -90,12 +68,12 @@ fun StudentFormScreen() {
     )
     val batches = listOf("DYS", "TSSV", "VL2")
 
-    val icon1 = if (showDropdownFacilitator)
+    val icon1 = if (uiState.showDropdownFacilitator)
         Icons.Filled.KeyboardArrowUp
     else
         Icons.Filled.KeyboardArrowDown
 
-    val icon2 = if (showDropdownBatch)
+    val icon2 = if (uiState.showDropdownBatch)
         Icons.Filled.KeyboardArrowUp
     else
         Icons.Filled.KeyboardArrowDown
@@ -128,17 +106,15 @@ fun StudentFormScreen() {
                 modifier = Modifier
                     .size(24.dp)
                     .clickable {
-                        // Edit
-                        showPhoneDialog = true
-                        updated = true
+                        viewModel.onEditRegistration()
                     }
             )
         }
 
         // Name input
         OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
+            value = uiState.name,
+            onValueChange = { viewModel.onNameChange(it) },
             label = { Text("Name") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -153,8 +129,8 @@ fun StudentFormScreen() {
         ) {
             // Phone input field
             OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
+                value = uiState.phone,
+                onValueChange = { viewModel.onPhoneChange(it) },
                 label = { Text("Phone") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier
@@ -170,11 +146,11 @@ fun StudentFormScreen() {
                     .align(Alignment.CenterEnd) // Align to the right
                     .padding(16.dp) // Adjust padding for aesthetics
                     .clickable {
-                        if (phone.length == 10 && phone.all { it.isDigit() }) {
-                            sendWhatsAppMessage(
+                        if (uiState.phone.length == 10 && uiState.phone.all { it.isDigit() }) {
+                            viewModel.sendWhatsAppMessage(
                                 context,
-                                phone,
-                                name,
+                                uiState.phone,
+                                uiState.name,
                                 "95329450033"
                             )
                         } else {
@@ -192,7 +168,7 @@ fun StudentFormScreen() {
             var textFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
 
             OutlinedTextField(
-                value = facilitator,
+                value = uiState.facilitator,
                 onValueChange = { /* No-op */ },
                 label = { Text("Facilitator") },
                 readOnly = true,
@@ -204,21 +180,20 @@ fun StudentFormScreen() {
                     },
                 trailingIcon = {
                     Icon(icon1, "contentDescription",
-                        Modifier.clickable { showDropdownFacilitator = !showDropdownFacilitator })
+                        Modifier.clickable { viewModel.onDropDownFacilitator() })
                 }
             )
 
             DropdownMenu(
-                expanded = showDropdownFacilitator,
-                onDismissRequest = { showDropdownFacilitator = false },
+                expanded = uiState.showDropdownFacilitator,
+                onDismissRequest = { viewModel.onDismissFacilitator() },
                 modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })
             ) {
                 facilitators.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(text = option) },
                         onClick = {
-                            facilitator = option
-                            showDropdownFacilitator = false
+                         viewModel.onFacilitatorChange(option)
                         }
                     )
                 }
@@ -231,7 +206,7 @@ fun StudentFormScreen() {
             var textFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
 
             OutlinedTextField(
-                value = batch,
+                value = uiState.batch,
                 onValueChange = { /* No-op */ },
                 label = { Text("Batch") },
                 readOnly = true,
@@ -243,20 +218,19 @@ fun StudentFormScreen() {
                     },
                 trailingIcon = {
                     Icon(icon2, "contentDescription",
-                        Modifier.clickable { showDropdownBatch = !showDropdownBatch })
+                        Modifier.clickable { viewModel.onDropDownBatch() } )
                 }
             )
             DropdownMenu(
-                expanded = showDropdownBatch,
-                onDismissRequest = { showDropdownBatch = false },
+                expanded = uiState.showDropdownBatch,
+                onDismissRequest = { viewModel.onDropDownBatch() },
                 modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })
             ) {
                 batches.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(text = option) },
                         onClick = {
-                            batch = option
-                            showDropdownBatch = false
+                           viewModel.onBatchChange(option)
                         }
                     )
                 }
@@ -265,8 +239,8 @@ fun StudentFormScreen() {
 
         // Profession input
         OutlinedTextField(
-            value = profession,
-            onValueChange = { profession = it },
+            value = uiState.profession,
+            onValueChange = { viewModel.onProfessionChange(it) },
             label = { Text("Profession") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -276,8 +250,8 @@ fun StudentFormScreen() {
 
         // Address input
         OutlinedTextField(
-            value = address,
-            onValueChange = { address = it },
+            value = uiState.address,
+            onValueChange = { viewModel.onAddressChange(it) },
             label = { Text("Address") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -289,8 +263,8 @@ fun StudentFormScreen() {
         Button(
             onClick = {
 
-                if (!isSubmitting) {
-                    if (!(phone.length == 10 && phone.all { it.isDigit() })) {
+                if (!uiState.isSubmitting) {
+                    if (!(uiState.phone.length == 10 && uiState.phone.all { it.isDigit() })) {
                         Toast.makeText(
                             context,
                             "Please enter a valid phone number",
@@ -298,31 +272,14 @@ fun StudentFormScreen() {
                         ).show()
                         return@Button
                     }
-                    isSubmitting = true
-                    val currentDate =
-                        LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                    val student = StudentDTO(
-                        name,
-                        phone,
-                        facilitator,
-                        batch,
-                        profession,
-                        address,
-                        currentDate,
-                        "NA"
-                    )
-                    CoroutineScope(Dispatchers.Main).launch {
-                        response = ApiService.registerStudent(student, updated)
-                        isSubmitting = false
-                        showSuccessDialog = true
-                    }
+                    viewModel.onSubmit()
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
         ) {
-            if (isSubmitting) {
+            if (uiState.isSubmitting) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = Color.White,
@@ -334,13 +291,13 @@ fun StudentFormScreen() {
         }
 
         // Success Dialog
-        if (showSuccessDialog) {
+        if (uiState.showSuccessDialog) {
             AlertDialog(
-                onDismissRequest = { showSuccessDialog = false },
-                title = { Text( if(response!!.isSuccessful) "Success" else "Failed")  },
-                text = { Text(if( response!!.isSuccessful ) "Gaurange $name Prabhu Ji, Hari Bol 🙏" else "Hari Bol, ${response!!.message}") },
+                onDismissRequest = { viewModel.onDismissSuccessDialog() },
+                title = { Text( if(uiState.isSuccessfull) "Success" else "Failed")  },
+                text = { Text(if( uiState.isSuccessfull ) "Gaurange ${uiState.name} Prabhu Ji, Hari Bol 🙏" else "Hari Bol, Try Again") },
                 confirmButton = {
-                    TextButton(onClick = { showSuccessDialog = false }) {
+                    TextButton(onClick = { viewModel.onDismissSuccessDialog() }) {
                         Text("Hari Bol")
                     }
                 }
@@ -348,10 +305,10 @@ fun StudentFormScreen() {
         }
 
         // Phone Number Dialog
-        if (showPhoneDialog) {
+        if (uiState.showPhoneDialog) {
             var phoneInput by remember { mutableStateOf("") }
             AlertDialog(
-                onDismissRequest = { showPhoneDialog = false },
+                onDismissRequest = { viewModel.onDismissPhoneDialog() },
                 title = { Text("Enter Phone Number") },
                 text = {
                     OutlinedTextField(
@@ -365,31 +322,14 @@ fun StudentFormScreen() {
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            showPhoneDialog = false
-                            CoroutineScope(Dispatchers.Main).launch {
-                                val student = withContext(Dispatchers.IO) {
-                                    ApiService.findStudentByPhone(phoneInput)
-                                }
-                                if (student != null) {
-                                    Log.d("Student form", student.toString())
-                                    name = student.name
-                                    phone = student.phone
-                                    facilitator = student.facilitator
-                                    batch = student.batch
-                                    profession = student.profession
-                                    address = student.address
-                                    showDataFetchedToast = true
-                                } else {
-                                    showStudentNotFoundDialog = true
-                                }
-                            }
+                            viewModel.onFetchStudentByPhone(phoneInput)
                         }
                     ) {
                         Text("Fetch")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showPhoneDialog = false }) {
+                    TextButton(onClick = { viewModel.onDismissPhoneDialog() }) {
                         Text("Cancel")
                     }
                 }
@@ -397,13 +337,13 @@ fun StudentFormScreen() {
         }
 
         // Student Not Found Dialog
-        if (showStudentNotFoundDialog) {
+        if (uiState.showStudentNotFoundDialog) {
             AlertDialog(
-                onDismissRequest = { showStudentNotFoundDialog = false },
+                onDismissRequest = { viewModel.onStudentNotFound() },
                 title = { Text("Not Found") },
                 text = { Text("Student not found. Please check the phone number.") },
                 confirmButton = {
-                    TextButton(onClick = { showStudentNotFoundDialog = false }) {
+                    TextButton(onClick = { viewModel.onStudentNotFound() }) {
                         Text("Ok")
                     }
                 }
@@ -411,12 +351,12 @@ fun StudentFormScreen() {
         }
 
         // Data Fetched Toast
-        if (showDataFetchedToast) {
+        if ( uiState.showDataFetchedToast) {
             // Use a Toast or Snackbar for data fetched message
             Snackbar(
                 modifier = Modifier.padding(16.dp),
                 action = {
-                    Button(onClick = { showDataFetchedToast = false }) {
+                    Button(onClick = { viewModel.onDataFetched() }) {
                         Text("Close")
                     }
                 }
@@ -431,41 +371,7 @@ fun isValidPhoneNumber(phone: String): Boolean {
     return phone.length == 10 && phone.all { it.isDigit() }
 }
 
-fun sendWhatsAppMessage(
-    context: Context,
-    phoneNumber: String,
-    name: String,
-    contact: String
-) {
-    val message = """
-    Hare Krishna *${name.toCamelCase()} Prabhu Ji* 🙏
-    
-    Thanks for your registration for ISKCON Youth Forum (IYF) classes, it's a life-changing step to discover yourself and unleash your true potential. 💯
-    
-    📢 *We invite you to the Sunday Program*:
-    🕒 *Timing*: 4:30 PM, this Sunday
-    🎉  *Event*: Seminar 🧑‍💻🗣️, Kirtan 🎤, Music 🎸 and Delicious Prasadam 🍛🍰
-    
-    🏛️ *Venue*: ISKCON Temple, Lucknow
-    
-    Hare Krishna Prabhu Ji 🙏
-    Badal Prabhu
-    📞 *Contact*: $contact 
-    (Please save this number)
-""".trimIndent()
 
-    val intent = Intent(Intent.ACTION_VIEW)
-    intent.data = Uri.parse("https://wa.me/$phoneNumber?text=$message")
-    context.startActivity(intent)
-}
-
-fun String.toCamelCase(): String {
-    return this.lowercase()
-        .split(" ")
-        .joinToString(" ") { word ->
-            word.replaceFirstChar { it.uppercase() }
-        }
-}
 
 
 @RequiresApi(Build.VERSION_CODES.O)
