@@ -15,6 +15,7 @@ import com.example.otp_class_app.data.models.StudentDTO
 import com.example.otp_class_app.data.models.StudentPOJO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -141,8 +142,12 @@ class StudentRepository(
     // Fetch list of registrations by date with counts
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getRegistrationList(): List<RegistrationStatus>? {
+
+
+        val userData = AttendanceDataStore.getUserData().first()
+
         // Attempt to get the data from the local database (Room)
-        var registrationCounts = studentDao.getRegistrationList()
+        var registrationCounts = userData.second?.let { studentDao.getRegistrationList(it) }
 
         // If local data is empty, check for internet and fetch from remote
         if (registrationCounts.isNullOrEmpty()) {
@@ -153,7 +158,7 @@ class StudentRepository(
                     syncStudentData()
 
                     // Get the updated data from the local database
-                    registrationCounts = studentDao.getRegistrationList()
+                    registrationCounts = userData.second?.let { studentDao.getRegistrationList(it) }
                 } catch (exception: Exception) {
                     // Handle network or API errors
                     exception.printStackTrace()
@@ -197,16 +202,31 @@ class StudentRepository(
     }
 
     suspend fun syncLocalRegisterations(date: String) {
-        var registerations: List<StudentDTO>?
-        AttendanceDataStore.getUserData().collect { userData ->
-            registerations = userData.first?.let { studentDao.getFullRegistrationsByDate(date, it) }
+        withContext(Dispatchers.IO) {
+            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
 
-
-            registerations?.forEach { registeration ->
-                ApiService.registerStudent(registeration)
+            // Use let to safely work with user data
+            val registrations: List<StudentDTO>? = userData.second?.let {
+                // Fetch registrations from the database in the IO context
+                studentDao.getFullRegistrationsByDate(date, it)
             }
 
+            // Safely iterate over the fetched registrations and sync with the server
+            registrations?.forEach { registration ->
+                try {
+                    // Perform the network operation (API call) within the IO context
+                    Log.d("registration", "syncing : ${registration.toString()}")
+                    val response = ApiService.registerStudent(registration)
+                    Log.d("registration", "Response : ${response.isSuccessful}")
+                } catch (e: Exception) {
+                    // Handle any network-related errors here
+                    e.printStackTrace()
+                }
+            }
+
+            Log.d("registration", "sync over")
         }
     }
+
 
 }

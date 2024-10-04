@@ -1,6 +1,7 @@
 package com.example.otp_class_app.ui.registeration
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -93,12 +94,15 @@ fun RegistrationScreen(
                         // Trigger the sync action
                         if (!syncing) {
                             viewModel.syncRegistrations()
+                            viewModel.getRegistration()
+                            Log.d("Registrations", "Called viewModel sync");
                         }
                     },
                     modifier = Modifier
                         .padding(start = 16.dp) // Add some space between text and icon
                 ) {
                     if (syncing) {
+                        Log.d("Registration", "Sync part runs")
                         // Show loading spinner when syncing
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
@@ -107,6 +111,7 @@ fun RegistrationScreen(
                         )
                     } else {
                         // Show sync icon when not syncing
+                        Log.d("Registration", "Else part runs")
                         Icon(
                             painter = painterResource(R.drawable.baseline_sync_24),
                             contentDescription = "Sync",

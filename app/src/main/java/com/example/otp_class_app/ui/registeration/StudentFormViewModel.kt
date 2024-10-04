@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -56,10 +57,9 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
 
     init {
         viewModelScope.launch {
-            AttendanceDataStore.getUserData().collect { userData ->
-                userName = userData.first ?: "Rajiva Prabhu Ji"
-                userPhone = userData.second ?: "+919807726801"
-            }
+            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
+            userName = userData.first ?: "Rajiva Prabhu Ji"
+            userPhone = userData.second ?: "+919807726801"
         }
 
     }
@@ -235,12 +235,14 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
             uiState.value.profession,
             uiState.value.address,
             currentDate,
-            userName
+            userPhone
         )
         viewModelScope.launch {
             withContext(Dispatchers.IO){
                 studentRepository.insertStudent(student, updated = uiState.value.updated)
                 AttendanceDataStore.addDate(student.date)
+                Log.d("registration","Added date to data store")
+                Log.d("registration","dates ${AttendanceDataStore.getDates.first()}")
             }
 
             _uiState.update { current ->

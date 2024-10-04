@@ -45,15 +45,15 @@ interface StudentDao {
     suspend fun getAllStudents(): List<StudentPOJO>?
 
     // It will get the list of registrations done by date.
-    @Query("SELECT date, count(*) as counts,0 as synced from students group by date order by date DESC")
-    suspend fun getRegistrationList(): List<RegistrationStatus>?
+    @Query("SELECT date, count(*) as counts,0 as synced from students where _by =:by group by date order by date DESC")
+    suspend fun getRegistrationList(by : String ): List<RegistrationStatus>?
 
     // It will load the initial registration data that will later make the calling report.
     @Query("SELECT _name as name, _phone as phone from students where date = :date order by date desc")
     suspend fun getRegistrations(date: String) : List<Registration>?
 
-    @Query("SELECT * from students where date = :date and _by =:userName")
-    suspend fun getFullRegistrationsByDate(date : String, userName : String ) : List<StudentDTO>?
+    @Query("SELECT * from students where date = :date and _by =:userPhone")
+    suspend fun getFullRegistrationsByDate(date : String, userPhone : String ) : List<StudentDTO>?
 
 
 

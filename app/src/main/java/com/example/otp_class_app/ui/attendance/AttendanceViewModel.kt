@@ -58,6 +58,7 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
     }
 
     // Function to fetch students and update UI state
+    @RequiresApi(Build.VERSION_CODES.O)
     fun fetchStudents(filter : Boolean = false) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -81,6 +82,7 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
 
 
     // Function to fetch students from API and filter them
+    @RequiresApi(Build.VERSION_CODES.O)
     fun onRefresh() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
