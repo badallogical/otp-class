@@ -8,14 +8,13 @@ import androidx.room.Update
 import com.example.otp_class_app.data.models.RegistrationStatus
 import com.example.otp_class_app.data.models.StudentDTO
 import com.example.otp_class_app.data.models.StudentPOJO
-
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface StudentDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(student: StudentDTO)
-
 
     @Query("""
         SELECT 
@@ -26,7 +25,8 @@ interface StudentDao {
         FROM students 
         WHERE phone = :phone
     """)
-    suspend fun getStudentByPhone(phone: String): StudentPOJO?
+    fun getStudentByPhone(phone: String): StudentPOJO?
+
 
     @Update
     suspend fun update(student: StudentDTO)
@@ -42,21 +42,32 @@ interface StudentDao {
             _batch AS batch 
         FROM students
     """)
-    suspend fun getAllStudents(): List<StudentPOJO>?
+    fun getAllStudents(): Flow<List<StudentPOJO>>
 
     // It will get the list of registrations done by date.
-    @Query("SELECT date, count(*) as counts,0 as synced from students where _by =:by group by date order by date DESC")
-    suspend fun getRegistrationList(by : String ): List<RegistrationStatus>?
+    @Query("""
+    SELECT date, 
+           COUNT(*) AS counts, 
+           MIN(sync) AS synced 
+    FROM students 
+    WHERE _by = :by 
+    GROUP BY date 
+    ORDER BY date DESC
+""")
+    fun getRegistrationList(by: String): Flow<List<RegistrationStatus>>
 
     // It will load the initial registration data that will later make the calling report.
-    @Query("SELECT _name as name, _phone as phone from students where date = :date order by date desc")
-    suspend fun getRegistrations(date: String) : List<Registration>?
+    @Query("SELECT _name AS name, _phone AS phone FROM students WHERE date = :date ORDER BY date DESC")
+    fun getRegistrations(date: String): Flow<List<Registration>>
 
-    @Query("SELECT * from students where date = :date and _by =:userPhone")
-    suspend fun getFullRegistrationsByDate(date : String, userPhone : String ) : List<StudentDTO>?
+    @Query("SELECT * FROM students WHERE date = :date AND _by = :userPhone")
+    fun getFullRegistrationsByDate(date: String, userPhone: String): Flow<List<StudentDTO>>
 
+    @Query("SELECT * FROM students WHERE date = :date AND _by = :userPhone AND sync = 0")
+    fun getFullRegistrationsByDateNotSynced(date: String, userPhone: String): Flow<List<StudentDTO>>
 
-
+    @Query("UPDATE students SET sync = 1 WHERE _phone = :phone")
+    suspend fun updateToSync(phone: String)
 }
 
 

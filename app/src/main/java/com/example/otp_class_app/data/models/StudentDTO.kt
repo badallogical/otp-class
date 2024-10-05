@@ -19,8 +19,11 @@ data class StudentDTO(
     @SerializedName("Profession") private val _profession: String,
     @SerializedName("Address") private val _address: String,
     @SerializedName("Date") val date: String,
-    @SerializedName("By") private val _by : String? = null
+    @SerializedName("By") private val _by : String? = null,
+
+    var sync: Boolean = false // Now persisted in the database
 ) {
+
     val name: String
         get() = _name.toCamelCase()
 

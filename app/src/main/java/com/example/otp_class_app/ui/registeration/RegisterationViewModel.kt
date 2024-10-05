@@ -19,14 +19,19 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@RequiresApi(Build.VERSION_CODES.O)
 class RegistrationViewModel(private val studentRepository: StudentRepository) : ViewModel() {
-    // Mutable state flow directly holding the list of registrations
+
+    // Mutable state flow holding the list of registrations
     private val _registrations = MutableStateFlow<List<RegistrationStatus>>(emptyList())
     // Publicly exposed immutable state
     val registrations: StateFlow<List<RegistrationStatus>> = _registrations.asStateFlow()
@@ -44,59 +49,43 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
         }
     }
 
+    init {
+        getRegistration() // Fetch registrations when ViewModel is created
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     fun getRegistration() {
         viewModelScope.launch {
-            try {
-                // Fetch the registration list from the repository
-                val registrationList = withContext(Dispatchers.IO) {
-                    studentRepository.getRegistrationList()
+            studentRepository.getRegistrationList()
+                .onEach { registrationList ->
+                    _registrations.value = registrationList ?: emptyList() // Update state
                 }
-
-                // If registrationList is not null, map each registration to fetch the sync status
-                val updatedList = registrationList?.map { registration ->
-                    async(Dispatchers.IO) {
-                        val syncStatus = AttendanceDataStore.dateExists(registration.date)
-                        registration.copy(synced = !syncStatus)
-                    }
-                }?.awaitAll() ?: emptyList()
-
-                // Safely update the state in the main thread
-                withContext(Dispatchers.Main) {
-                    _registrations.update { current ->
-                        updatedList
-                    }
+                .catch { e ->
+                    e.printStackTrace() // Handle errors appropriately
                 }
-            } catch (e: Exception) {
-                // Handle any errors that might occur (e.g., network issues, etc.)
-                e.printStackTrace()
-            }
+                .launchIn(this) // Collect the flow in this coroutine scope
         }
     }
 
-
-
-    fun syncRegistrations(){
+    fun syncRegistrations() {
         // Set syncing to true at the start
-        _syncing.update { true }
+        _syncing.value = true
 
         viewModelScope.launch {
             try {
-                // Switch to IO dispatcher to fetch dates and perform the sync
+                // Fetch dates in IO dispatcher
                 val dates = withContext(Dispatchers.IO) {
-                    AttendanceDataStore.getDates.first()
+                    AttendanceDataStore.getDates.first() // Use first() safely
                 }
 
-                Log.d("registrations", "to sync dates ${dates}")
+                Log.d("registrations", "to sync dates: $dates")
 
                 // Sync local registrations
                 withContext(Dispatchers.IO) {
                     dates.forEach { date ->
-                        studentRepository.syncLocalRegisterations(date)
-                        Log.d("registration","Sync Completed");
-                        Log.d("registration", "dates : ${AttendanceDataStore.getDates.first()}")
-                        AttendanceDataStore.removeDate(date)
-                        Log.d("registration","for ${date} its synced and data removed.")
+                        studentRepository.syncLocalRegistrations(date) // Sync registrations for each date
+                        Log.d("registration", "Sync Completed for date: $date")
+                        AttendanceDataStore.removeDate(date) // Remove synced date
                     }
                 }
             } catch (e: Exception) {
@@ -104,7 +93,7 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
                 e.printStackTrace()
             } finally {
                 // Ensure syncing is set to false even if an error occurs
-                _syncing.update { false }
+                _syncing.value = false
             }
         }
     }

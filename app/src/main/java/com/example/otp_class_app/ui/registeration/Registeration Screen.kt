@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -54,13 +55,11 @@ fun RegistrationScreen(
     navController: NavController,
     viewModel: RegistrationViewModel = viewModel(factory = RegistrationViewModel.Factory)
 ) {
-
+    // Collect state from ViewModel
     val registrations by viewModel.registrations.collectAsState()
     val syncing by viewModel.syncing.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.getRegistration()
-    }
+
 
     Scaffold(
         floatingActionButton = {
@@ -74,52 +73,8 @@ fun RegistrationScreen(
         }
     ) { paddingValues ->
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Registrations",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(4f) // Take up as much space as possible
-                )
+            HeaderSection(viewModel, syncing)
 
-                // Sync Icon Button
-                // Sync Icon Button
-                IconButton(
-                    onClick = {
-                        // Trigger the sync action
-                        if (!syncing) {
-                            viewModel.syncRegistrations()
-                            viewModel.getRegistration()
-                            Log.d("Registrations", "Called viewModel sync");
-                        }
-                    },
-                    modifier = Modifier
-                        .padding(start = 16.dp) // Add some space between text and icon
-                ) {
-                    if (syncing) {
-                        Log.d("Registration", "Sync part runs")
-                        // Show loading spinner when syncing
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        // Show sync icon when not syncing
-                        Log.d("Registration", "Else part runs")
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_sync_24),
-                            contentDescription = "Sync",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
             // Main content
             Box(modifier = Modifier.padding(paddingValues)) {
                 RegistrationListView(registrations, navController)
@@ -130,17 +85,42 @@ fun RegistrationScreen(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegistrationListView(registrations: List<RegistrationStatus>, navController: NavController) {
-    LazyColumn(
+fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean) {
+    Row(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        registrations.forEach { registration ->
+        Text(
+            text = "Registrations",
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(4f) // Take up as much space as possible
+        )
 
-            item {
-                RegistrationItem(
-                    data = registration,
-                    navController = navController,
+        // Sync Icon Button
+        IconButton(
+            onClick = {
+                // Trigger the sync action only if not syncing
+                if (!syncing) {
+                    viewModel.syncRegistrations() // Sync registrations
+                    viewModel.getRegistration()
+                }
+            },
+            modifier = Modifier.padding(start = 16.dp) // Add space between text and icon
+        ) {
+            if (syncing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_sync_24),
+                    contentDescription = "Sync",
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -149,11 +129,22 @@ fun RegistrationListView(registrations: List<RegistrationStatus>, navController:
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
+fun RegistrationListView(registrations: List<RegistrationStatus>, navController: NavController) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(registrations) { registration ->
+            RegistrationItem(data = registration, navController = navController)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
 fun RegistrationItem(data: RegistrationStatus, navController: NavController) {
     val formattedDate = LocalDate.parse(data.date)
-        .format(DateTimeFormatter.ofPattern("EEE, MMMM dd, yyyy")) // Ex: "Mon, October 03, 2024"
+        .format(DateTimeFormatter.ofPattern("EEE, MMMM dd, yyyy")) // Format date
 
-    // Define card layout
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -169,41 +160,29 @@ fun RegistrationItem(data: RegistrationStatus, navController: NavController) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Column for displaying Date and Registration count
             Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Date
-                    Text(
-                        text = "Date: $formattedDate",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // Simple Dot to indicate sync status
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(if (data.synced) Color.Green else Color.Red)
-                    )
-                }
-
+                Text(
+                    text = "Date: $formattedDate",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Text(
                     text = "Registrations: ${data.counts}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-
+            // Sync status indicator
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(if (data.synced) Color.Green else Color.Red)
+            )
         }
     }
 }
+
 
 
 // Example preview for this composable

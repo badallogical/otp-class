@@ -42,10 +42,12 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
 
     fun getCallingRegistrations(date: String = "") {
         viewModelScope.launch {
-            val callingReports = callingReportRepository.getCallingReportsByDate(date)
-
-            _uiState.update { current ->
-                current.copy(registrations = callingReports ?: emptyList())
+            callingReportRepository.getCallingReportsByDate(date).collect { callingReports ->
+                _uiState.update { current ->
+                    current.copy(
+                        registrations = callingReports ?: emptyList(),
+                    )
+                }
             }
         }
     }

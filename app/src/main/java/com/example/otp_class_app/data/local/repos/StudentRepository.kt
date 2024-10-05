@@ -15,14 +15,16 @@ import com.example.otp_class_app.data.models.StudentDTO
 import com.example.otp_class_app.data.models.StudentPOJO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-// Its the repository that will work for registrations.
 class StudentRepository(
     private val studentDao: StudentDao,
     private val callingDao: CallingReportDao
@@ -30,26 +32,17 @@ class StudentRepository(
 
     // Insert a student into the database and update the callings
     suspend fun insertStudent(student: StudentDTO, updated: Boolean = false) {
-        // save to local
+        // Save to local
         studentDao.insert(student)
 
-        // update calling report
+        // Update calling report
         val callingReport =
             CallingReportPOJO(student.phone, student.name, "status", 0, student.date)
         callingDao.insert(callingReport)
-
-
-        // If internet then post it to Google sheet in a background thread.
-//        CoroutineScope(Dispatchers.IO).launch {
-//            if (MyApplication.checkInternetConnection()) {
-//                // Sync with server in the background
-//                ApiService.registerStudent(student, updated)
-//            }
-//        }
     }
 
-    // Get a student by phone
-    suspend fun getStudentByPhone(phone: String): StudentPOJO? {
+    // Get a student by phone as a Flow
+    fun getStudentByPhone(phone: String): StudentPOJO? {
         return studentDao.getStudentByPhone(phone)
     }
 
@@ -88,7 +81,7 @@ class StudentRepository(
 
         // Store the data in the local database for future requests
         withContext(Dispatchers.IO) {
-            Log.d("student Repo", "wring to db")
+            Log.d("student Repo", "writing to db")
             remoteStudents.forEach { student ->
                 Log.d("StudentRepo", "Inserting student: $student")
                 studentDao.insert(student)
@@ -111,117 +104,143 @@ class StudentRepository(
 
     // Fetch all students as a list of StudentPOJO
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun getAllStudents(): List<StudentPOJO>? {
-        // First, attempt to get data from the local database (Room)
-        var students = studentDao.getAllStudents()
+    fun getAllStudents(): Flow<List<StudentPOJO>> = flow {
+        // Attempt to get data from the local database (Room)
+        val localStudents = studentDao.getAllStudents().first() // Collect the first value from Flow
 
-        // If local data is empty or not available, fetch from remote
-        if (students.isNullOrEmpty()) {
-            if (MyApplication.checkInternetConnection()) {
-                // Update data from remote source
-                try {
-
-                    // synced to get the remote data.
-                    syncStudentData()
-
-                    // get the updated date from database
-                    students = studentDao.getAllStudents()
-                } catch (exception: Exception) {
-                    // Handle any network or API errors here
-                    exception.printStackTrace()
-                }
-            } else {
-                // If no network, return null or throw an error
-                throw Exception("No internet connection")
-            }
+        // Emit local data if available
+        if (localStudents.isNotEmpty()) {
+            emit(localStudents)
         }
 
-        return students;
-    }
-
-    // Fetch list of registrations by date with counts
-    @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun getRegistrationList(): List<RegistrationStatus>? {
-
-
-        val userData = AttendanceDataStore.getUserData().first()
-
-        // Attempt to get the data from the local database (Room)
-        var registrationCounts = userData.second?.let { studentDao.getRegistrationList(it) }
-
-        // If local data is empty, check for internet and fetch from remote
-        if (registrationCounts.isNullOrEmpty()) {
+        // If local data is empty, fetch from remote
+        if (localStudents.isEmpty()) {
             if (MyApplication.checkInternetConnection()) {
-                // Fetch remote data if available
                 try {
-                    // Sync student data from the remote source
+                    // Sync to get the remote data
                     syncStudentData()
 
                     // Get the updated data from the local database
-                    registrationCounts = userData.second?.let { studentDao.getRegistrationList(it) }
-                } catch (exception: Exception) {
-                    // Handle network or API errors
-                    exception.printStackTrace()
-                }
-            } else {
-                // If no internet, return null or throw an error
-                throw Exception("No internet connection")
-            }
-        }
-
-        return registrationCounts
-    }
-
-    // Fetch registrations for a specific date
-    @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun getRegistrationsByDate(date: String): List<Registration>? {
-        // Attempt to get registrations for the given date from local database (Room)
-        var registrations = studentDao.getRegistrations(date)
-
-        // If no data, fetch from remote if internet is available
-        if (registrations.isNullOrEmpty()) {
-            if (MyApplication.checkInternetConnection()) {
-                // Sync data from the remote source
-                try {
-                    // Sync registrations from the remote source
-                    syncStudentData()
-
-                    // Get the updated registrations for the given date from the local database
-                    registrations = studentDao.getRegistrations(date)
+                    val remoteStudents = studentDao.getAllStudents().first()
+                    emit(remoteStudents) // Emit the remote data
                 } catch (exception: Exception) {
                     // Handle any network or API errors here
                     exception.printStackTrace()
+                    // Optionally emit an empty list or rethrow the exception
+                    emit(emptyList())
                 }
             } else {
-                // If no internet, return null or throw an error
+                // If no network, throw an error or emit an empty list
                 throw Exception("No internet connection")
             }
         }
-
-        return registrations
     }
 
-    suspend fun syncLocalRegisterations(date: String) {
+
+    // Fetch list of registrations by date with counts
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getRegistrationList(): Flow<List<RegistrationStatus>> = flow {
+        val userData = AttendanceDataStore.getUserData().first()
+
+        // Attempt to get the data from the local database (Room)
+        val localRegistrationCounts = userData.second?.let { studentDao.getRegistrationList(it).first() } // Collect the first value
+
+        // Emit local data if available
+        if (localRegistrationCounts != null && localRegistrationCounts.isNotEmpty()) {
+            emit(localRegistrationCounts)
+        }
+
+        // If local data is empty, check for internet and fetch from remote
+        if (localRegistrationCounts.isNullOrEmpty()) {
+            if (MyApplication.checkInternetConnection()) {
+                try {
+                    // Fetch remote data if available
+                    syncStudentData()
+
+                    // Get the updated data from the local database
+                    val remoteRegistrationCounts = userData.second?.let { studentDao.getRegistrationList(it).first() }
+                    emit(remoteRegistrationCounts ?: emptyList()) // Emit remote data or an empty list
+                } catch (exception: Exception) {
+                    // Handle network or API errors
+                    exception.printStackTrace()
+                    // Optionally emit an empty list
+                    emit(emptyList())
+                }
+            } else {
+                // If no internet, throw an error or emit an empty list
+                throw Exception("No internet connection")
+            }
+        }
+    }
+
+
+    // Fetch registrations for a specific date
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getRegistrationsByDate(date: String): Flow<List<Registration>> = flow {
+        // Attempt to get registrations for the given date from local database (Room)
+        val localRegistrations = studentDao.getRegistrations(date).first() // Collect the first value
+
+        // Emit local data if available
+        if (localRegistrations.isNotEmpty()) {
+            emit(localRegistrations)
+        }
+
+        // If local data is empty, check for internet and fetch from remote
+        if (localRegistrations.isEmpty()) {
+            if (MyApplication.checkInternetConnection()) {
+                try {
+                    // Sync data from the remote source
+                    syncStudentData()
+
+                    // Get the updated registrations for the given date from the local database
+                    val remoteRegistrations = studentDao.getRegistrations(date).first()
+                    emit(remoteRegistrations) // Emit the remote data
+                } catch (exception: Exception) {
+                    // Handle any network or API errors here
+                    exception.printStackTrace()
+                    // Optionally emit an empty list or throw an error
+                    emit(emptyList())
+                }
+            } else {
+                // If no internet, throw an error or emit an empty list
+                throw Exception("No internet connection")
+            }
+        }
+    }
+
+
+    suspend fun syncLocalRegistrations(date: String) {
         withContext(Dispatchers.IO) {
+            // Get user data from DataStore
             val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
 
-            // Use let to safely work with user data
-            val registrations: List<StudentDTO>? = userData.second?.let {
-                // Fetch registrations from the database in the IO context
-                studentDao.getFullRegistrationsByDate(date, it)
-            }
-
-            // Safely iterate over the fetched registrations and sync with the server
-            registrations?.forEach { registration ->
-                try {
-                    // Perform the network operation (API call) within the IO context
-                    Log.d("registration", "syncing : ${registration.toString()}")
-                    val response = ApiService.registerStudent(registration)
-                    Log.d("registration", "Response : ${response.isSuccessful}")
-                } catch (e: Exception) {
-                    // Handle any network-related errors here
-                    e.printStackTrace()
-                }
+            // Check userData and fetch registrations using Flow
+            userData.second?.let { userId ->
+                // Collect registrations from the database using Flow but only take the first emission
+                studentDao.getFullRegistrationsByDateNotSynced(date, userId)
+                    .take(1) // Take only the first emission
+                    .collect { registrations ->
+                        // Safely iterate over the fetched registrations and sync with the server
+                        registrations.forEach { registration ->
+                            try {
+                                // Perform the network operation (API call) within the IO context
+                                Log.d("registration", "syncing : ${registration.toString()}")
+                                val response = ApiService.registerStudent(registration)
+                                if (response.isSuccessful) {
+                                    // Update the local database to mark as synced
+                                    studentDao.updateToSync(registration.phone)
+                                    Log.d("registration", "Response : ${response.isSuccessful}")
+                                } else {
+                                    Log.e("registration", "Failed to sync registration for ${registration.phone}")
+                                }
+                            } catch (e: Exception) {
+                                // Handle any network-related errors here
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+            } ?: run {
+                Log.e("registration", "User data is null or empty")
             }
 
             Log.d("registration", "sync over")
@@ -229,4 +248,21 @@ class StudentRepository(
     }
 
 
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getFullRegistrationsByDateNotSynced(date: String, userPhone: String): Flow<List<StudentDTO>> {
+        // Fetch unsynced registrations for the given date and userPhone from the local database (Room)
+        return studentDao.getFullRegistrationsByDateNotSynced(date, userPhone)
+    }
+
+
+    suspend fun updateStudentToSynced(phone: String) {
+        try {
+            // Update the student's sync status in the local database
+            studentDao.updateToSync(phone)
+        } catch (exception: Exception) {
+            // Handle any errors during the update
+            exception.printStackTrace()
+        }
+    }
 }

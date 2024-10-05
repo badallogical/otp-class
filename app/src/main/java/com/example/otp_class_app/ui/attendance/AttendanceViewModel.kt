@@ -59,23 +59,24 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
 
     // Function to fetch students and update UI state
     @RequiresApi(Build.VERSION_CODES.O)
-    fun fetchStudents(filter : Boolean = false) {
+    fun fetchStudents(filter: Boolean = false) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
-            val fetchedStudents = studentRepository.getAllStudents()
-
-            _uiState.value = fetchedStudents?.let {
-                _uiState.value.copy(
-                    students = it,
-                    filteredStudents = if( !filter ) {
+            // Collect the flow from the repository
+            studentRepository.getAllStudents().collect { fetchedStudents ->
+                _uiState.value = _uiState.value.copy(
+                    students = fetchedStudents,
+                    filteredStudents = if (!filter) {
                         fetchedStudents
-                    }else { fetchedStudents.filter {
-                        it.phone.contains(_uiState.value.searchQuery, ignoreCase = true)
-                    } },
+                    } else {
+                        fetchedStudents.filter {
+                            it.phone.contains(_uiState.value.searchQuery, ignoreCase = true)
+                        }
+                    },
                     isLoading = false
                 )
-            }!!
+            }
         }
     }
 
