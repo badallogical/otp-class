@@ -51,6 +51,7 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
 
     init {
         getRegistration() // Fetch registrations when ViewModel is created
+        Log.d("Registration","ViewModel Init Registration called")
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -87,6 +88,9 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
                         Log.d("registration", "Sync Completed for date: $date")
                         AttendanceDataStore.removeDate(date) // Remove synced date
                     }
+
+                    // update registrations
+                    getRegistration()
                 }
             } catch (e: Exception) {
                 // Handle any errors that occur during the sync process

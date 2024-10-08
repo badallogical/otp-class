@@ -59,7 +59,9 @@ fun RegistrationScreen(
     val registrations by viewModel.registrations.collectAsState()
     val syncing by viewModel.syncing.collectAsState()
 
-
+    LaunchedEffect(Unit){
+        viewModel.getRegistration()
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -105,7 +107,6 @@ fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean) {
                 // Trigger the sync action only if not syncing
                 if (!syncing) {
                     viewModel.syncRegistrations() // Sync registrations
-                    viewModel.getRegistration()
                 }
             },
             modifier = Modifier.padding(start = 16.dp) // Add space between text and icon
