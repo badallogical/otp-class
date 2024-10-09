@@ -9,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.otp_class_app.MyApplication
-import com.example.otp_class_app.data.api.ApiService
 import com.example.otp_class_app.data.api.AttendanceDataStore
 import com.example.otp_class_app.data.local.repos.StudentRepository
 import com.example.otp_class_app.data.models.AttendancePOJO
@@ -20,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,6 +39,15 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
                 AttendanceViewModel(repository)  // Pass the repository to the ViewModel constructor
             }
         }
+    }
+
+    lateinit var userPhone:String
+    init {
+        viewModelScope.launch {
+            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
+            userPhone = userData.second ?: "+919807726801"
+        }
+
     }
 
     // Function to filter students based on search query
@@ -143,17 +152,33 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
 
 
             val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val student = StudentDTO(name, phone, "NA", "NA", "NA", "NA", currentDate,"NA")
+            val student = StudentDTO(name, phone, "NA", "NA", "NA", "NA", currentDate,userPhone)
 
             try {
                 // Perform the network call on IO thread
                 studentRepository.insertStudent(student)
 
+                // Fetch the updated student list after insertion
+                val updatedStudentList = studentRepository.getAllStudents().first()
+
                 // Update the UI after successful registration
                 _uiState.value = _uiState.value.copy(
                     isRegistering = false,
-                    showRegistrationDialog = false // Close registration dialog
+                    showRegistrationDialog = false, // Close registration dialog
+                    students = updatedStudentList
                 )
+
+                // Sync and update sync status in background
+                launch(Dispatchers.IO) {
+                    try {
+                        // Simulate the remote request (for example, syncing to a remote server)
+                        studentRepository.syncStudent(student)
+                        studentRepository.updateStudentToSynced(student.phone)
+                    } catch (e: Exception) {
+                        // Log or handle any errors related to remote sync
+                        Log.e("RemoteSync", "Failed to sync student to remote", e)
+                    }
+                }
             } catch (e: Exception) {
                 // Handle registration failure, e.g., log the error or update the UI
                 _uiState.value = _uiState.value.copy(

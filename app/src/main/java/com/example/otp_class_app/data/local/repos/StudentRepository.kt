@@ -30,6 +30,8 @@ class StudentRepository(
     private val callingDao: CallingReportDao
 ) {
 
+
+
     // Insert a student into the database and update the callings
     suspend fun insertStudent(student: StudentDTO, updated: Boolean = false) {
         // Save to local
@@ -42,7 +44,7 @@ class StudentRepository(
     }
 
     suspend fun syncStudent(student: StudentDTO, updated: Boolean = false){
-        ApiService.registerStudent(student,updated);
+        ApiService.registerStudent(student,updated)
     }
 
     // Get a student by phone as a Flow

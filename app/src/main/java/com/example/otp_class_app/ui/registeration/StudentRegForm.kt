@@ -149,8 +149,7 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
                             viewModel.sendWhatsAppMessage(
                                 context,
                                 uiState.phone,
-                                uiState.name,
-                                "95329450033"
+                                uiState.name
                             )
                         } else {
                             Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_SHORT)

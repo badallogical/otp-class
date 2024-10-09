@@ -30,10 +30,10 @@ import java.time.format.DateTimeFormatter
 data class StudentFormUiState(
     var name: String = "",
     var phone: String = "",
-    var facilitator: String = "Select Facilitator",
-    var batch: String = "Select Batch",
-    var profession: String = "",
-    var address: String = "",
+    var facilitator: String = "NA",
+    var batch: String = "DYS",
+    var profession: String = "student",
+    var address: String = "na",
     var showDropdownFacilitator: Boolean = false,
     var showDropdownBatch: Boolean = false,
     var showSuccessDialog: Boolean = false,
@@ -100,8 +100,8 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
                 launch(Dispatchers.IO) {
                     try {
                         // Simulate the remote request (for example, syncing to a remote server)
-                        studentRepository.syncStudent(student,updated);
-                        studentRepository.updateStudentToSynced(student.phone);
+                        studentRepository.syncStudent(student,updated)
+                        studentRepository.updateStudentToSynced(student.phone)
                     } catch (e: Exception) {
                         // Log or handle any errors related to remote sync
                         Log.e("RemoteSync", "Failed to sync student to remote", e)
@@ -282,8 +282,7 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
     fun sendWhatsAppMessage(
         context: Context,
         phoneNumber: String,
-        name: String,
-        contact: String
+        name: String
     ) {
         val message = """
     Hare Krishna *${name.toCamelCase()} Prabhu Ji* 🙏
