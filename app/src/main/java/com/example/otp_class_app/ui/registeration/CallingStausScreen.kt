@@ -16,12 +16,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -35,12 +37,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.otp_class_app.MyApplication
 import com.example.otp_class_app.data.models.CallingReportPOJO
 
 data class Student(val name: String, val phone: String, var status: String)
@@ -49,6 +53,7 @@ data class Student(val name: String, val phone: String, var status: String)
 fun CallingListScreen(date : String, viewModel: CallingListViewModel = viewModel(factory = CallingListViewModel.Factory)) {
 
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit){
         Log.d("Calling Screen ", date)
@@ -68,6 +73,21 @@ fun CallingListScreen(date : String, viewModel: CallingListViewModel = viewModel
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(4f) // Take up as much space as possible
             )
+
+            // Share button to share message to WhatsApp
+            IconButton(
+                onClick = {
+                   viewModel.sendCallingReportMsg(context,date);
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = "Share",
+                    tint = Color.Gray
+                )
+            }
+
         }
         Spacer(modifier = Modifier.height(16.dp))
         LazyColumn {
