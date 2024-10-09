@@ -18,7 +18,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbz9aydA77dAKqHHyUw0xD-iO27gAp7hWtu2k45B8AnhDdpvE5GL-5ZRhzA_ai-YjSi0/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbzdbHayGBv8EhW41BfFuUZP_N6Hgw4wSEV4gdFiIhgYB8F_aqoaDzoFff7KmIkIrvYJ/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {

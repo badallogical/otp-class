@@ -149,7 +149,7 @@ fun RegistrationItem(data: RegistrationStatus, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 4.dp)
             .clickable { navController.navigate("calling_screen/${data.date}") }, // Navigate on click
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

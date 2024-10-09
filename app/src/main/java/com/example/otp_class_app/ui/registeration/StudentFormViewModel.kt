@@ -76,7 +76,8 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         }
     }
 
-    fun registerStudent(student: StudentDTO, updated: Boolean = false) {
+
+    private fun registerStudent(student: StudentDTO, updated: Boolean = false) {
         viewModelScope.launch {
             // Set isSubmitting to true before starting the registration process
             _uiState.update { current ->
@@ -84,26 +85,39 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
             }
 
             try {
-                // Switch to the I/O dispatcher for I/O-bound operations
+                // Switch to the I/O dispatcher for I/O-bound operations (e.g., inserting into local database)
                 withContext(Dispatchers.IO) {
                     studentRepository.insertStudent(student, updated)
                 }
 
-                // Switch back to the main thread for UI updates
+                // Update UI state to reflect that the submission is successful
                 _uiState.update { current ->
                     current.copy(isSubmitting = false, isSuccessfull = true)
                 }
 
-            } catch (e: Exception) {
-                // Handle the error if something goes wrong
-                _uiState.update { current ->
-                    current.copy(isSubmitting = false)
+                // Now, perform the remote sync operation in a separate thread without blocking the UI
+                // We don't wait for the result of the remote sync before proceeding
+                launch(Dispatchers.IO) {
+                    try {
+                        // Simulate the remote request (for example, syncing to a remote server)
+                        studentRepository.syncStudent(student,updated);
+                        studentRepository.updateStudentToSynced(student.phone);
+                    } catch (e: Exception) {
+                        // Log or handle any errors related to remote sync
+                        Log.e("RemoteSync", "Failed to sync student to remote", e)
+                    }
                 }
-                // Optionally, log or display error feedback
-                e.printStackTrace()
+
+            } catch (e: Exception) {
+                // If there's an error during the local registration process, update UI accordingly
+                _uiState.update { current ->
+                    current.copy(isSubmitting = false, isSuccessfull = false)
+                }
+                Log.e("RegisterStudent", "Failed to register student", e)
             }
         }
     }
+
 
     fun onDismissPhoneDialog(){
         _uiState.update { current ->
@@ -239,7 +253,7 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         )
         viewModelScope.launch {
             withContext(Dispatchers.IO){
-                studentRepository.insertStudent(student, updated = uiState.value.updated)
+                registerStudent(student, updated = uiState.value.updated)
                 AttendanceDataStore.addDate(student.date)
                 Log.d("registration","Added date to data store")
                 Log.d("registration","dates ${AttendanceDataStore.getDates.first()}")

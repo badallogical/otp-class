@@ -41,6 +41,10 @@ class StudentRepository(
         callingDao.insert(callingReport)
     }
 
+    suspend fun syncStudent(student: StudentDTO, updated: Boolean = false){
+        ApiService.registerStudent(student,updated);
+    }
+
     // Get a student by phone as a Flow
     fun getStudentByPhone(phone: String): StudentPOJO? {
         return studentDao.getStudentByPhone(phone)
