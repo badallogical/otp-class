@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.otp_class_app"
+    namespace = "com.harekrishna.otpClasses"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.otp_class_app"
+        applicationId = "com.harekrishna.otpClasses"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
