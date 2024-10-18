@@ -2,7 +2,9 @@ package com.harekrishna.otpClasses.ui.registeration
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -55,6 +57,7 @@ import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 
 data class Student(val name: String, val phone: String, var status: String)
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CallingListScreen(date : String, viewModel: CallingListViewModel = viewModel(factory = CallingListViewModel.Factory)) {
 
@@ -243,6 +246,7 @@ fun showCallingStatusDialog(
 ) {
     var selectedStatus by remember { mutableStateOf(student.status) }
     var reason by remember { mutableStateOf(TextFieldValue("")) }
+    var otherReason by remember { mutableStateOf(TextFieldValue("")) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -277,12 +281,35 @@ fun showCallingStatusDialog(
                         onClick = { selectedStatus = "Will Try" })
                     Text(text = "Will Try")
                 }
+
+                Row( verticalAlignment = Alignment.CenterVertically ){
+                    RadioButton(
+                        selected = selectedStatus == "others",
+                        onClick = { selectedStatus = "others" })
+                    Text(text = "others")
+                }
+                if (selectedStatus == "others") {
+                    TextField(
+                        value = otherReason,
+                        onValueChange = { otherReason = it },
+                        label = { Text(text = "Reason") }
+                    )
+                }
             }
         },
         confirmButton = {
             Button(onClick = {
                 // Save the updated student status
-                onSave(student.copy(status = if( selectedStatus == "No") "No,${reason.text}" else selectedStatus ) )
+                var formattedStatus = ""
+                if(selectedStatus == "No"){
+                    formattedStatus = "No, ${reason.text}"
+                }else if( selectedStatus == "others"){
+                    formattedStatus = "others, ${otherReason.text}"
+                }else{
+                    formattedStatus = selectedStatus
+                }
+
+                onSave(student.copy(status = formattedStatus) )
             }) {
                 Text(text = "Save")
             }
@@ -295,6 +322,7 @@ fun showCallingStatusDialog(
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
 fun previewCallingScreen(){
