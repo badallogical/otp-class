@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -46,8 +47,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -119,7 +122,11 @@ fun CallingListScreen(date : String, viewModel: CallingListViewModel = viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StudentListItem(student: CallingReportPOJO, onStudentUpdated: (CallingReportPOJO) -> Unit,  onMessageIconClicked: (CallingReportPOJO) -> Unit  ) {
+fun StudentListItem(
+    student: CallingReportPOJO,
+    onStudentUpdated: (CallingReportPOJO) -> Unit,
+    onMessageIconClicked: (CallingReportPOJO) -> Unit
+) {
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -127,97 +134,120 @@ fun StudentListItem(student: CallingReportPOJO, onStudentUpdated: (CallingReport
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 8.dp, horizontal = 16.dp)
+            .border(
+                width = 1.dp, // Thin border width
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), // Subtle border color
+                shape = MaterialTheme.shapes.medium // Rounded corners for the border
+            ), // Increased horizontal padding for better alignment
         shape = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), // Adds a subtle shadow
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Subtle background color
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start // Align items at the start of the row
+            verticalArrangement = Arrangement.spacedBy(8.dp) // Space between rows
         ) {
-            // Left side: Name and Phone
-            Column(
-                modifier = Modifier.weight(1f), // Allow the name column to take up most of the space
-                verticalArrangement = Arrangement.spacedBy(4.dp) // Space between name and phone
+            // Top row: Name, phone, status, and icons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween // Space out items evenly
             ) {
-                Text(
-                    text = student.name,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface, // Use onSurface color for better contrast
-                    maxLines = 1, // Limit to one line
-                    overflow = TextOverflow.Ellipsis // Add ellipsis if the name is too long
+                // Left side: Name and Phone
+                Column(
+                    modifier = Modifier.weight(1f), // Allow the name column to take up most of the space
+                    verticalArrangement = Arrangement.spacedBy(4.dp) // Space between name and phone
+                ) {
+                    Text(
+                        text = student.name,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface, // Use onSurface color for better contrast
+                        maxLines = 1, // Limit to one line
+                        overflow = TextOverflow.Ellipsis // Add ellipsis if the name is too long
+                    )
+                    Text(
+                        text = student.phone,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Slightly faded for phone number
+                        maxLines = 1, // Limit to one line for phone
+                        overflow = TextOverflow.Ellipsis // Add ellipsis if the phone number is too long
+                    )
+                }
+
+                // Status Chip
+                AssistChip(
+                    onClick = { showDialog = true },
+                    label = {
+                        Text(
+                            text = student.status.split(",").firstOrNull()?.trim() ?: student.status,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = if (student.isInvited) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSecondary,
+                            textAlign = TextAlign.Center // Centers the text horizontally
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .width(80.dp)
+                        .height(32.dp),
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        labelColor = MaterialTheme.colorScheme.onSecondary
+                    )
                 )
-                Text(
-                    text = student.phone,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Slightly faded for phone number
-                    maxLines = 1, // Limit to one line for phone
-                    overflow = TextOverflow.Ellipsis // Add ellipsis if the phone number is too long
-                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Send message and Phone icons
+                Row(
+                    modifier = Modifier,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send, // Use an appropriate send message icon
+                        contentDescription = "Send Message",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                onStudentUpdated(student.copy(isInvited = true))
+                                onMessageIconClicked(student)
+                            }
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Icon(
+                        imageVector = Icons.Default.Phone,
+                        contentDescription = "Phone",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                val intent = Intent(Intent.ACTION_DIAL).apply {
+                                    data = Uri.parse("tel:${student.phone}")
+                                }
+                                context.startActivity(intent)
+                                showDialog = true
+                            }
+                    )
+                }
             }
 
-
-
-            // Status Chip
-            AssistChip(
-                onClick = { showDialog = true },
-                label = {
-                    Text(
-                        text = student.status.split(",").firstOrNull()?.trim() ?: student.status,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = if( student.isInvited ) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSecondary,
-                    )
-                },
-                modifier = Modifier
-                    .padding(4.dp)
-                    .width(80.dp)
-                    .height(32.dp),
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    labelColor =  MaterialTheme.colorScheme.onSecondary
-                )
-            )
-
-            Spacer(modifier = Modifier.width(8.dp)) // Add space between icon and chip
-
-            // Send message icon
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Send, // Use an appropriate send message icon
-                contentDescription = "Send Message",
-                tint = MaterialTheme.colorScheme.primary, // Add a primary color tint for consistency
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable {
-
-                        onStudentUpdated(student.copy(isInvited = true))
-                        onMessageIconClicked(student)
-
-                    }
-            )
-
-
-
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Phone icon with green tint, fixed width
-            Icon(
-                imageVector = Icons.Default.Phone,
-                contentDescription = "Phone",
-                tint = MaterialTheme.colorScheme.primary, // Green tint for the phone icon
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable {
-                        val intent = Intent(Intent.ACTION_DIAL).apply {
-                            data = Uri.parse("tel:${student.phone}")
-                        }
-                        context.startActivity(intent)
-                        showDialog = true
-                    }
+            // Feedback Text: Full width, italic, and more space
+            Text(
+                text = "\"${student.feedback}\"",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Light,
+                    fontStyle = FontStyle.Italic,
+                    fontSize = 14.sp // Slightly smaller for feedback
+                ),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Slightly faded for feedback
+                modifier = Modifier.fillMaxWidth(), // Feedback takes full width
+                maxLines = 3, // Allow up to 3 lines of feedback
+                overflow = TextOverflow.Ellipsis // Add ellipsis if feedback is too long
             )
         }
     }
@@ -284,11 +314,11 @@ fun showCallingStatusDialog(
 
                 Row( verticalAlignment = Alignment.CenterVertically ){
                     RadioButton(
-                        selected = selectedStatus == "others",
-                        onClick = { selectedStatus = "others" })
-                    Text(text = "others")
+                        selected = selectedStatus == "❗",
+                        onClick = { selectedStatus = "❗" })
+                    Text(text = "❗")
                 }
-                if (selectedStatus == "others") {
+                if (selectedStatus == "❗") {
                     TextField(
                         value = otherReason,
                         onValueChange = { otherReason = it },
@@ -300,11 +330,11 @@ fun showCallingStatusDialog(
         confirmButton = {
             Button(onClick = {
                 // Save the updated student status
-                var formattedStatus = ""
+                var formattedStatus: String
                 if(selectedStatus == "No"){
                     formattedStatus = "No, ${reason.text}"
-                }else if( selectedStatus == "others"){
-                    formattedStatus = "others, ${otherReason.text}"
+                }else if( selectedStatus == "❗"){
+                    formattedStatus = "❗, ${otherReason.text}"
                 }else{
                     formattedStatus = selectedStatus
                 }
@@ -322,9 +352,15 @@ fun showCallingStatusDialog(
     )
 }
 
+@Preview
+@Composable
+fun previewCallingListItem(){
+    StudentListItem(CallingReportPOJO("9532945033","Rohit","Will try",4,"2024-03-01",true,true,"I am busy in my studies, not find time.", "poor", "he is materialistic goals."), {}, {})
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
 fun previewCallingScreen(){
-    CallingListScreen("2024-3-3")
+    CallingListScreen("2024-3-3",viewModel() )
 }

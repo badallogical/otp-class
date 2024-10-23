@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,20 +36,19 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.harekrishna.otpClasses.ui.attendance.AttendanceViewScreen
-import com.harekrishna.otpClasses.ui.dashboard.DashboardScreen
-import com.harekrishna.otpClasses.ui.reporting.ReportingScreen
-import com.harekrishna.otpClasses.ui.screens.AttendanceScreen
-import com.harekrishna.otpClasses.ui.theme.Otp_class_appTheme
-import androidx.compose.runtime.LaunchedEffect
+import com.google.gson.Gson
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore.getUserData
 import com.harekrishna.otpClasses.data.models.ReportDTO
 import com.harekrishna.otpClasses.screens.StudentFormScreen
+import com.harekrishna.otpClasses.ui.attendance.AttendanceViewScreen
+import com.harekrishna.otpClasses.ui.dashboard.DashboardScreen
 import com.harekrishna.otpClasses.ui.dashboard.WelcomeScreen
-import com.harekrishna.otpClasses.ui.registeration.RegistrationScreen
+import com.harekrishna.otpClasses.ui.followup.EditReportScreen
+import com.harekrishna.otpClasses.ui.followup.FollowUpScreen
 import com.harekrishna.otpClasses.ui.registeration.CallingListScreen
-import com.harekrishna.otpClasses.ui.reporting.EditReportScreen
-import com.google.gson.Gson
+import com.harekrishna.otpClasses.ui.registeration.RegistrationScreen
+import com.harekrishna.otpClasses.ui.screens.AttendanceScreen
+import com.harekrishna.otpClasses.ui.theme.Otp_class_appTheme
 import kotlinx.coroutines.flow.first
 
 
@@ -96,7 +96,7 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
                 composable("welcome") { WelcomeScreen(navController) }
                 composable("registration") { RegistrationScreen(navController) }
                 composable("attendance") { AttendanceScreen(navController) }
-                composable("reporting") { ReportingScreen(context, navController) }
+                composable("followup") { FollowUpScreen() }
                 composable("attendance_view") { AttendanceViewScreen(context) }
                 composable("edit_report/{report}") { backStackEntry ->
                     val reportJson = backStackEntry.arguments?.getString("report")

@@ -39,9 +39,9 @@ class StudentRepository(
         // Update calling report, if already existed.
         var callingReport = callingDao.checkIfReportExist(student.phone)
         if( callingReport == null ){
-            callingReport = CallingReportPOJO(student.phone, student.name, "status", 0, student.date, isInvited)
+            callingReport = CallingReportPOJO(student.phone, student.name, "status", 0, student.date, isInvited,true,"","","")
         }else{
-            callingReport = CallingReportPOJO(student.phone, student.name, callingReport.status, callingReport.attendanceCount, student.date,callingReport.isInvited)
+            callingReport = CallingReportPOJO(student.phone, student.name, callingReport.status, callingReport.attendanceCount, student.date,callingReport.isInvited,callingReport.isActive,callingReport.feedback,callingReport.tag, callingReport.remark)
         }
 
         callingDao.insert(callingReport)

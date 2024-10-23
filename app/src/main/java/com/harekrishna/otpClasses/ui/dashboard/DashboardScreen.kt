@@ -108,7 +108,7 @@ fun DashboardScreen(navController: NavController) {
                     icon = painterResource(R.drawable.outline_report_24),
                     title = "Follow Up",
                     subtitle = "Monitor and Track students",
-                    onClick = { navController.navigate("reporting") }
+                    onClick = { navController.navigate("followup") }
                 )
             }
             Spacer(modifier = Modifier.weight(1f)) // Adjust the space between top and bottom content

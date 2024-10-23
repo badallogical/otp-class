@@ -1,4 +1,4 @@
-package com.harekrishna.otpClasses.ui.reporting
+package com.harekrishna.otpClasses.ui.followup
 
 import android.content.Context
 import android.content.Intent
