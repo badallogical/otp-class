@@ -1,5 +1,10 @@
 package com.harekrishna.otpClasses.ui.followup
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore.Downloads
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,12 +22,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -30,12 +38,17 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,128 +56,131 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.harekrishna.otpClasses.R
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.harekrishna.otpClasses.data.models.AttendeeItem
+import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun FollowUpScreen() {
-    var selectedTab by remember { mutableStateOf(0) }
+fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel( factory = FollowUpViewModel.Factory )) {
+
+    val uiState by viewModel.uiState.collectAsState()
+
     val tabs = listOf("Attendee List", "Summary")
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = selectedTab) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Follow Up",
+                style = MaterialTheme.typography.headlineLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(4f) // Take up as much space as possible
+            )
+        }
+
+
+        when (uiState.selectedTab) {
+            0 -> AttendeeListTab( viewModel )  // List of students with attendance > 0
+            1 -> SummaryTab()        // Pie chart summary
+        }
+
+        TabRow(selectedTabIndex = uiState.selectedTab) {
             tabs.forEachIndexed { index, title ->
                 Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
+                    selected = uiState.selectedTab == index,
+                    onClick = { viewModel.onTabSelected(index) },
                     text = { Text(title) }
                 )
             }
         }
-
-        when (selectedTab) {
-            0 -> AttendeeListTab()  // List of students with attendance > 0
-            1 -> SummaryTab()        // Pie chart summary
-        }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AttendeeListTab() {
-    // State to hold the list of students
-    val students = remember { mutableStateOf(mutableListOf<StudentDTOO>()) }
+fun AttendeeListTab(viewModel: FollowUpViewModel) {
 
-    // State to hold the filtered and sorted list of students
-    var filteredStudents by remember { mutableStateOf(students.value) }
-    var sortedStudents by remember { mutableStateOf(students.value) }
-
-    // Update the contents of the `students` list with filtered and sorted students
-    LaunchedEffect(Unit) {
-        // Load the student list (you can replace this with your actual data loading logic)
-        students.value = getFilteredAndSortedStudents().toMutableList()
-        filteredStudents = students.value
-        sortedStudents = filteredStudents
-    }
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     Column {
         // Pass filter and sort logic as lambdas
         FilterAndSortOptions(
             onFilterSelected = { filter ->
-                filteredStudents = filterStudents(filter, students.value)
-                sortedStudents =
-                    sortStudents("None", filteredStudents) // Apply sorting after filtering
+                viewModel.filterStudents(filter)
             },
             onSortSelected = { sort ->
-                sortedStudents = sortStudents(sort, filteredStudents) // Sort after filtering
-            }
+                viewModel.sortStudents(sort)
+            },
+            onFilterDropDownSelected = { viewModel.onFitlerDropDownSelected() },
+            onSortDropDownSelected = { viewModel.onSortDropDownSelected() },
+            onDismissFilterDropDown = { viewModel.onDismissFilterDropDown() },
+            onDismissSortDropDown = { viewModel.onDismissSortDropDown()},
+            uiState = uiState
         )
 
         // Display the list of attendees or an empty state if no students exist
-        if (sortedStudents.isEmpty()) {
+        if (uiState.filteredAttendee.isEmpty()) {
             EmptyState(
                 icon = R.drawable.baseline_search_24,  // Replace with your actual icon
-                message = "No students found with attendance."
+                message = "No devotee found with attendance."
             )
         } else {
             // Display the list of students if it's not empty
             LazyColumn {
-                items(sortedStudents) { student ->
-                    AttendeeListItem(student, {}, {})
+                items(uiState.filteredAttendee) { student ->
+                    AttendeeListItem(student, onStudentUpdated =  { updatedReport: AttendeeItem ->
+                        // Handle student status update
+                        viewModel.updateStudentStatus(updatedReport.phone, updatedReport.callingStatus,updatedReport.isInvited, updatedReport.isActive,updatedReport.feedback)
+                    },  onMessageIconClicked = { report: AttendeeItem ->
+                        viewModel.sendWhatsAppMessage(context,report.phone, report.name)
+                    }, viewModel)
                 }
             }
         }
     }
 }
 
-// Filter logic function
-fun filterStudents(filter: String, students: List<StudentDTOO>): MutableList<StudentDTOO> {
-    return when (filter) {
-        "Present" -> students.filter { it.attendanceStatus == "Present" }.toMutableList()
-        "Absent" -> students.filter { it.attendanceStatus == "Absent" }.toMutableList()
-        "Late" -> students.filter { it.attendanceStatus == "Late" }.toMutableList()
-        else -> students.toMutableList() // "All"
-    }
-}
 
-// Sort logic function
-fun sortStudents(sort: String, filteredStudents: List<StudentDTOO>): MutableList<StudentDTOO> {
-    return when (sort) {
-        "Name" -> filteredStudents.sortedBy { it.name }.toMutableList()
-        "Date" -> filteredStudents.sortedBy { it.attendanceCount }.toMutableList()
-        "Attendance" -> filteredStudents.sortedBy { it.attendanceCount }.toMutableList()
-        else -> filteredStudents.toMutableList() // "None"
-    }
-}
 
 
 @Composable
 fun FilterAndSortOptions(
     onFilterSelected: (String) -> Unit,
     onSortSelected: (String) -> Unit,
-    filterOptions: List<String> = listOf(
-        "All",
-        "Last Present",
-        "Last Absent",
-        "Last 4 Weeks Present",
-        "Last 4 Weeks Absent"
-    ),
-    sortOptions: List<String> = listOf("None", "Name", "Date", "Attendance")
+    onFilterDropDownSelected: () -> Unit,
+    onSortDropDownSelected: () -> Unit,
+    onDismissFilterDropDown: () -> Unit,
+    onDismissSortDropDown: () -> Unit,
+    uiState: FollowUpUiState
 ) {
-    // States for expanded dropdowns
-    var isFilterDropdownExpanded by remember { mutableStateOf(false) }
-    var isSortDropdownExpanded by remember { mutableStateOf(false) }
+    val filterOptions: List<String> = listOf(
+    "All",
+    "Last Present",
+    "Last Absent",
+    "Last 4 Weeks Present",
+    "Last 4 Weeks Absent"
+    )
 
-    // States for selected options
-    var selectedFilter by remember { mutableStateOf("All") }
-    var selectedSort by remember { mutableStateOf("None") }
+    val sortOptions: List<String> = listOf("None", "Name", "Date", "Attendance")
 
     Row(
         modifier = Modifier
@@ -175,14 +191,14 @@ fun FilterAndSortOptions(
     ) {
         // Filter Dropdown
         Box(
-            modifier = Modifier
-                .clickable { isFilterDropdownExpanded = true }
-                .padding(end = 16.dp) // Add some spacing between filter and sort
+            modifier = Modifier.width(150.dp)
+                .clickable { onFilterDropDownSelected() }
+
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Filter: $selectedFilter", modifier = Modifier.padding(end = 8.dp))
+                Text(text = "Filter: ${uiState.selectedFilter}", modifier = Modifier.padding(end = 8.dp))
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = "Filter Dropdown"
@@ -190,15 +206,13 @@ fun FilterAndSortOptions(
             }
 
             DropdownMenu(
-                expanded = isFilterDropdownExpanded,
-                onDismissRequest = { isFilterDropdownExpanded = false }
+                expanded = uiState.isFilterDropdownExpanded,
+                onDismissRequest = { onDismissFilterDropDown() }
             ) {
                 filterOptions.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(text = option) },
                         onClick = {
-                            selectedFilter = option
-                            isFilterDropdownExpanded = false
                             onFilterSelected(option)
                         }
                     )
@@ -209,12 +223,12 @@ fun FilterAndSortOptions(
         // Sort Dropdown
         Box(
             modifier = Modifier
-                .clickable { isSortDropdownExpanded = true }
+                .clickable { onSortDropDownSelected() }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Sort: $selectedSort", modifier = Modifier.padding(end = 8.dp))
+                Text(text = "Sort: ${uiState.selectedSort}", modifier = Modifier.padding(end = 8.dp))
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = "Sort Dropdown"
@@ -222,15 +236,13 @@ fun FilterAndSortOptions(
             }
 
             DropdownMenu(
-                expanded = isSortDropdownExpanded,
-                onDismissRequest = { isSortDropdownExpanded = false }
+                expanded = uiState.isSortDropdownExpanded,
+                onDismissRequest = { onDismissSortDropDown() }
             ) {
                 sortOptions.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(text = option) },
                         onClick = {
-                            selectedSort = option
-                            isSortDropdownExpanded = false
                             onSortSelected(option)
                         }
                     )
@@ -272,36 +284,17 @@ fun EmptyState(icon: Int, message: String) {
     }
 }
 
-// Replace with actual logic for sorting and filtering
-fun getFilteredAndSortedStudents(): List<StudentDTOO> {
-    // Return filtered and sorted list of students
-    return listOf(
-        StudentDTOO("John Doe", "1234567890", 5, "Called", " I will come after diwali"),
-        StudentDTOO("Jane Smith", "0987654321", 3, "Not Called", "I am not interested")
-    )
-}
-
-@Composable
-fun FilterAndSortOptions() {
-    // Replace with actual filter logic
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Filter and sort dropdowns can be implemented here
-        // Example: DropdownMenu() for filtering and sorting options
-    }
-}
 
 
+
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttendeeListItem(
-    student: StudentDTOO,
-    onStudentUpdated: (StudentDTOO) -> Unit,
-    onMessageIconClicked: (StudentDTOO) -> Unit
+    student: AttendeeItem,
+    onStudentUpdated: (AttendeeItem) -> Unit,
+    onMessageIconClicked: (AttendeeItem) -> Unit,
+    viewModel: FollowUpViewModel
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -355,42 +348,22 @@ fun AttendeeListItem(
                     )
                 }
 
-                // Status Chip centered
-                AssistChip(
-                    onClick = { showDialog = true },
-                    label = {
-                        Text(
-                            text = student.attendanceStatus.split(",").firstOrNull()?.trim()
-                                ?: student.attendanceStatus,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = MaterialTheme.colorScheme.onSecondary,
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .width(80.dp)
-                        .height(32.dp),
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        labelColor = MaterialTheme.colorScheme.onSecondary
-                    )
-                )
+
 
                 Spacer(modifier = Modifier.width(4.dp))
 
                 // Attendance Count in Circle
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(30.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(MaterialTheme.colorScheme.onPrimary).border(width = 1.dp, color = MaterialTheme.colorScheme.primary, shape = CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = student.attendanceCount.toString(),
+                        text = student.attendances.size.toString(),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -402,36 +375,42 @@ fun AttendeeListItem(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
 
-                Switch(
-                    checked = true,
-                    onCheckedChange = {
-//                        onStudentUpdated(student.copy(isInvited = it))
-                    }
-                )
 
 
 
-
-
-                    Icon(
-                        imageVector = Icons.Default.Phone,
-                        contentDescription = "Phone",
-                        tint = MaterialTheme.colorScheme.primary,
-//                        modifier = Modifier
-//                            .size(24.dp)
-//                            .clickable {
-//                                val intent = Intent(Intent.ACTION_DIAL).apply {
-//                                    data = Uri.parse("tel:${student.phone}")
-//                                }
-//                                context.startActivity(intent)
-//                                showDialog = true
-//                            }
+                    // Status Chip centered
+                    AssistChip(
+                        onClick = { showDialog = true },
+                        label = {
+                            Text(
+                                text = student.callingStatus.split(",").firstOrNull()?.trim()
+                                    ?: student.callingStatus,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = MaterialTheme.colorScheme.onSecondary,
+                                textAlign = TextAlign.Center
+                            )
+                        },
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .width(80.dp)
+                            .height(32.dp),
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onSecondary
+                        )
                     )
 
 
+
+                ThinSwitch(
+                    checked = student.isActive,
+                    onCheckedChange = { viewModel.onSwitchChange(student) },
+                    modifier = Modifier.padding(8.dp)
+                )
+
             }
 
-            // Switch On/Off
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -444,7 +423,7 @@ fun AttendeeListItem(
                             modifier = Modifier
                                 .size(20.dp, 6.dp)
                                 .background(
-                                    if (index < student.attendanceCount) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                    if (index < student.attendances.size ) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                                 )
                                 .padding(4.dp)
                         )
@@ -452,17 +431,39 @@ fun AttendeeListItem(
                     }
                 }
 
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send Message",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-//                                onStudentUpdated(student.copy(isInvited = true))
-//                                onMessageIconClicked(student)
-                        }
-                )
+                Row(){
+
+                    Icon(
+                        imageVector = Icons.Default.Phone,
+                        contentDescription = "Phone",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                val intent = Intent(Intent.ACTION_DIAL).apply {
+                                    data = Uri.parse("tel:${student.phone}")
+                                }
+                                context.startActivity(intent)
+                                showDialog = true
+                            }
+                    )
+
+                    Spacer( modifier = Modifier.width(8.dp))
+
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Send Message",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                onStudentUpdated(student.copy(isInvited = true))
+                                onMessageIconClicked(student)
+                            }
+                    )
+                }
+
+
 
 
             }
@@ -483,31 +484,144 @@ fun AttendeeListItem(
         }
     }
 
-//    // Dialog to show calling status
-//    if (showDialog) {
-//        showCallingStatusDialog(
-//            student = student,
-//            onDismiss = { showDialog = false },
-//            onSave = { updatedStudent: CallingReportPOJO ->
-//                onStudentUpdated(updatedStudent)
-//                showDialog = false
-//            }
-//        )
-//    }
+    // Dialog to show calling status
+    if (showDialog) {
+        showCallingStatusDialog(
+            student = student,
+            onDismiss = { showDialog = false },
+            onSave = { updatedStudent: AttendeeItem ->
+                onStudentUpdated(updatedStudent)
+                showDialog = false
+            }
+        )
+    }
 }
 
 
-fun makeCall(phone: String) {
-    // Intent to make a phone call
+
+@Composable
+fun ThinSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val trackColor = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
+    val thumbColor = if( checked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+
+    Box(
+        modifier = modifier
+            .width(36.dp)
+            .height(16.dp) // Adjust the height to make it thin
+            .clip(RoundedCornerShape(8.dp))
+            .background(trackColor)
+            .clickable { onCheckedChange(!checked) }
+            .padding(2.dp) // Padding for the thumb space
+    ) {
+        Box(
+            modifier = Modifier
+                .size(12.dp) // Size of the thumb
+                .align(if (checked) Alignment.CenterEnd else Alignment.CenterStart)
+                .clip(CircleShape)
+                .background(thumbColor)
+        )
+    }
 }
 
-data class StudentDTOO(
-    val name: String,
-    val phone: String,
-    val attendanceCount: Int,
-    val attendanceStatus: String,
-    val feedback: String
-)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun showCallingStatusDialog(
+    student: AttendeeItem,
+    onDismiss: () -> Unit,
+    onSave: (AttendeeItem) -> Unit
+) {
+    var selectedStatus by remember { mutableStateOf(student.callingStatus) }
+    var reason by remember { mutableStateOf(TextFieldValue("")) }
+    var otherReason by remember { mutableStateOf(TextFieldValue("")) }
+    var feedback by remember { mutableStateOf(TextFieldValue("")) }  // New feedback variable
+
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text(text = "Update Calling Status") },
+        text = {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = selectedStatus == "Yes",
+                        onClick = { selectedStatus = "Yes" }
+                    )
+                    Text(text = "Yes")
+                }
+
+                Row( verticalAlignment = Alignment.CenterVertically ){
+                    RadioButton(
+                        selected = selectedStatus == "No",
+                        onClick = { selectedStatus = "No" })
+                    Text(text = "No")
+                }
+                if (selectedStatus == "No") {
+                    TextField(
+                        value = reason,
+                        onValueChange = { reason = it },
+                        label = { Text(text = "Reason") }
+                    )
+                }
+
+                Row( verticalAlignment = Alignment.CenterVertically ){
+                    RadioButton(
+                        selected = selectedStatus == "Will Try",
+                        onClick = { selectedStatus = "Will Try" })
+                    Text(text = "Will Try")
+                }
+
+                Row( verticalAlignment = Alignment.CenterVertically ){
+                    RadioButton(
+                        selected = selectedStatus == "❗",
+                        onClick = { selectedStatus = "❗" })
+                    Text(text = "❗")
+                }
+                if (selectedStatus == "❗") {
+                    TextField(
+                        value = otherReason,
+                        onValueChange = { otherReason = it },
+                        label = { Text(text = "Reason") }
+                    )
+                }
+
+                // Feedback section
+                TextField(
+                    value = feedback,
+                    onValueChange = { feedback = it },
+                    label = { Text(text = "Feedback") },  // Feedback label
+                    placeholder = { Text(text = "Enter your feedback...") }  // Optional placeholder
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                // Save the updated student status
+                // Save the updated student status
+                val formattedStatus: String = when (selectedStatus) {
+                    "No" -> "No, ${reason.text}"
+                    "❗" -> "❗, ${otherReason.text}"
+                    else -> selectedStatus
+                }
+
+               onSave(student.copy(callingStatus = formattedStatus, feedback = feedback.text.ifEmpty { student.feedback }) )
+            }) {
+                Text(text = "Save")
+            }
+        },
+        dismissButton = {
+            Button(onClick = { onDismiss() }) {
+                Text(text = "Cancel")
+            }
+        }
+    )
+}
+
+
 
 // Sample implementation for the SummaryTab
 @Composable
@@ -519,5 +633,18 @@ fun SummaryTab() {
 @Preview
 @Composable
 fun PreviewFollowUpScreen() {
-    FollowUpScreen()
+
+    val sampleAttendee= AttendeeItem(
+        name = "John Doe",
+        phone = "123-456-7890",
+        callingStatus = "Called",
+        attendances = listOf("2023-12-20", "2023-12-22", "2023-12-27"),
+        isActive = true,
+        isInvited = false,
+        feedback = "Great session!",
+        registrationDate = "2023-12-15"
+    )
+
+//    AttendeeListItem( sampleAttendee, {},{})
+
 }

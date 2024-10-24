@@ -12,13 +12,15 @@ class RepoContainer(private val context : Context) {
     }
 
     val studentRepository : StudentRepository by lazy{
-        StudentRepository(database.getStudentDao(), database.getCallingReportDao())
+        StudentRepository(database.getStudentDao(), database.getCallingReportDao(), database.getAttendanceResponseDao())
     }
 
     val callingReportRepository : CallingReportRepository by lazy{
         CallingReportRepository(database.getCallingReportDao())
     }
 
-
+    val attendanceResponseRepository : AttendanceResponseRepository by lazy{
+        AttendanceResponseRepository(database.getCallingReportDao(),database.getAttendanceResponseDao())
+    }
 
 }

@@ -14,6 +14,7 @@ import com.harekrishna.otpClasses.data.local.repos.StudentRepository
 import com.harekrishna.otpClasses.data.models.AttendancePOJO
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
+import com.harekrishna.otpClasses.ui.followup.FollowUpViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,7 @@ import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.random.Random
 
 class AttendanceViewModel(private val studentRepository: StudentRepository) : ViewModel(){
     private var _uiState = MutableStateFlow(AttendanceUiState())
@@ -49,6 +51,8 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
         }
 
     }
+
+
 
     // Function to filter students based on search query
     fun filterStudents() {
@@ -207,20 +211,26 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
         return currentDate.format(formatter)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun postAttendance(student: StudentPOJO) {
         viewModelScope.launch {
             // Update UI state to show that submission is in progress
             _uiState.value = _uiState.value.copy(isPostingAttendance = true)
 
-            val currentDate = "2024-01-07"
-//   val currentDate = getCurrentOrNextSunday()
-            //val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            val currentDate = FollowUpViewModel.getLastFourSundays()[Random.nextInt(0, 4)]
+            //   val currentDate = getCurrentOrNextSunday()
+            //   val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
             val attendance = AttendancePOJO(student.phone, currentDate, student.name)
 
             try {
                 // Save attendance locally using the data store
                 withContext(Dispatchers.IO) {
+                    // save to local room database.
+                    studentRepository.markAttendance(student.phone, currentDate)
+
+                    // save to data store for syncing.
                     AttendanceDataStore.saveNewAttendance(attendance)
+
                 }
 
                 delay(500)

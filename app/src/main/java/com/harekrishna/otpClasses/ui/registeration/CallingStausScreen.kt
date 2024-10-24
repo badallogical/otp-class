@@ -108,7 +108,7 @@ fun CallingListScreen(date : String, viewModel: CallingListViewModel = viewModel
                     student = registrationReport,
                     onStudentUpdated = { updatedReport: CallingReportPOJO ->
                         // Handle student status update
-                        viewModel.updateStudentStatus(updatedReport.phone, updatedReport.status,updatedReport.isInvited)
+                        viewModel.updateStudentStatus(updatedReport.phone, updatedReport.status,updatedReport.isInvited, updatedReport.feedback)
                     },
                     onMessageIconClicked = { report: CallingReportPOJO ->
                         viewModel.sendWhatsAppMessage(context,report.phone, report.name)
@@ -238,7 +238,7 @@ fun StudentListItem(
 
             // Feedback Text: Full width, italic, and more space
             Text(
-                text = "\"${student.feedback}\"",
+                text = "\"${student.feedback.ifEmpty { "No Feedback Yet" }}\"",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Light,
                     fontStyle = FontStyle.Italic,
@@ -277,6 +277,7 @@ fun showCallingStatusDialog(
     var selectedStatus by remember { mutableStateOf(student.status) }
     var reason by remember { mutableStateOf(TextFieldValue("")) }
     var otherReason by remember { mutableStateOf(TextFieldValue("")) }
+    var feedback by remember { mutableStateOf(TextFieldValue("")) }  // New feedback variable
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -325,21 +326,27 @@ fun showCallingStatusDialog(
                         label = { Text(text = "Reason") }
                     )
                 }
+
+                // Feedback section
+                TextField(
+                    value = feedback,
+                    onValueChange = { feedback = it },
+                    label = { Text(text = "Feedback") },  // Feedback label
+                    placeholder = { Text(text = "Enter your feedback...") }  // Optional placeholder
+                )
             }
         },
         confirmButton = {
             Button(onClick = {
                 // Save the updated student status
-                var formattedStatus: String
-                if(selectedStatus == "No"){
-                    formattedStatus = "No, ${reason.text}"
-                }else if( selectedStatus == "❗"){
-                    formattedStatus = "❗, ${otherReason.text}"
-                }else{
-                    formattedStatus = selectedStatus
+                val formattedStatus: String = when (selectedStatus) {
+                    "No" -> "No, ${reason.text}"
+                    "❗" -> "❗, ${otherReason.text}"
+                    else -> selectedStatus
                 }
 
-                onSave(student.copy(status = formattedStatus) )
+
+                onSave(student.copy(status = formattedStatus, feedback = feedback.text ) )
             }) {
                 Text(text = "Save")
             }

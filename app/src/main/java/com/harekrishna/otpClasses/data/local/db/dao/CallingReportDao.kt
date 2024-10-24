@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import kotlinx.coroutines.flow.Flow
 
@@ -30,6 +31,15 @@ interface CallingReportDao  {
     @Query("UPDATE calling_report SET isInvited = :invited WHERE phone = :phone")
     suspend fun updateCallingReportInvite(phone : String, invited: Boolean)
 
+    @Query("UPDATE calling_report SET feedback = :feedback WHERE phone = :phone")
+    suspend fun updateCallingReportFeedback(phone : String, feedback : String )
+
+    @Query("UPDATE calling_report SET isActive = :isActive WHERE phone = :phone ")
+    suspend fun updateCallingReportActivation( phone: String, isActive : Boolean )
+
     @Query("Select * from calling_report where phone = :phone ")
     suspend fun checkIfReportExist(phone : String ): CallingReportPOJO?
+
+    @Query("SELECT * FROM calling_report WHERE date BETWEEN :startDate AND :endDate")
+    fun getReportsFromLastFourWeeks(startDate: String, endDate: String): List<CallingReportPOJO>
 }

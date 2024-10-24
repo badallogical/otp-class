@@ -9,7 +9,7 @@ data class CallingReportPOJO(
     val name: String,
     val status : String,            // calling status
     val attendanceCount : Int,
-    val date : String,
+    val date : String,              // registration date
     val isInvited: Boolean,
     val isActive: Boolean,
     val feedback: String,

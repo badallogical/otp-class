@@ -38,3 +38,15 @@ data class AttendanceWithDates(
     val attendanceDates: List<AttendanceDate>
 )
 
+
+data class AttendeeItem(
+    val name: String,
+    val phone: String,
+    val callingStatus: String,
+    val attendances : List<String>,   // Last 4 attendance.
+    val isActive : Boolean = false,
+    val isInvited : Boolean = false,
+    val feedback: String = "",
+    val registrationDate: String = ""
+)
+

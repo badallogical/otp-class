@@ -72,7 +72,7 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
         }
     }
 
-    fun updateStudentStatus(phone: String, status: String, invited : Boolean) {
+    fun updateStudentStatus(phone: String, status: String, invited : Boolean, feedback : String) {
 
         val viewStatus = status.split(",").firstOrNull()?.trim() ?: status
 
@@ -88,6 +88,7 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
             withContext(Dispatchers.IO) {
                 callingReportRepository.updateCallingReportStatus(phone, status)
                 callingReportRepository.updateCallingReportInvited(phone,invited)
+                callingReportRepository.updateCallingReportFeedback(phone,feedback)
             }
         }
     }
@@ -110,7 +111,7 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
 
                     for (report in reports) {
                         // Append the default information for each report
-                        reportMsg += "👤 *${report.name}* \n📞 ${report.phone}"
+                        reportMsg += "👤 *${report.name.trim()}* \n📞 ${report.phone.trim()}"
 
                         // Check if the report is invited and append the message sent icons if true
                         if (report.isInvited) {
@@ -151,7 +152,7 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
         val phone = formatPhoneNumber(phoneNumber)
 
         val message = """
-    Hare Krishna *${name.toCamelCase()} Prabhu Ji* 🙏
+    Hare Krishna *${name.toCamelCase().trim()} Prabhu Ji* 🙏
     
     Thanks for your registration for ISKCON Youth Forum (IYF) classes, it's a life-changing step to discover yourself and unleash your true potential. 💯
     

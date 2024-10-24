@@ -6,9 +6,12 @@ import androidx.annotation.RequiresApi
 import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.data.api.ApiService
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
+import com.harekrishna.otpClasses.data.local.db.dao.AttendanceDao
 import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
 import com.harekrishna.otpClasses.data.local.db.dao.Registration
 import com.harekrishna.otpClasses.data.local.db.dao.StudentDao
+import com.harekrishna.otpClasses.data.models.AttendanceDate
+import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import com.harekrishna.otpClasses.data.models.RegistrationStatus
 import com.harekrishna.otpClasses.data.models.StudentDTO
@@ -27,21 +30,44 @@ import java.time.format.DateTimeFormatter
 
 class StudentRepository(
     private val studentDao: StudentDao,
-    private val callingDao: CallingReportDao
+    private val callingDao: CallingReportDao,
+    private val attendanceDao: AttendanceDao,
 ) {
 
 
     // Insert a student into the database and update the callings
-    suspend fun insertStudent(student: StudentDTO, isInvited : Boolean = false) {
+    suspend fun insertStudent(student: StudentDTO, isInvited: Boolean = false) {
         // Save to local
         studentDao.insert(student)
 
         // Update calling report, if already existed.
         var callingReport = callingDao.checkIfReportExist(student.phone)
-        if( callingReport == null ){
-            callingReport = CallingReportPOJO(student.phone, student.name, "status", 0, student.date, isInvited,true,"","","")
-        }else{
-            callingReport = CallingReportPOJO(student.phone, student.name, callingReport.status, callingReport.attendanceCount, student.date,callingReport.isInvited,callingReport.isActive,callingReport.feedback,callingReport.tag, callingReport.remark)
+        if (callingReport == null) {
+            callingReport = CallingReportPOJO(
+                student.phone,
+                student.name,
+                "status",
+                0,
+                student.date,
+                isInvited,
+                true,
+                "",
+                "",
+                ""
+            )
+        } else {
+            callingReport = CallingReportPOJO(
+                student.phone,
+                student.name,
+                callingReport.status,
+                callingReport.attendanceCount,
+                student.date,
+                callingReport.isInvited,
+                callingReport.isActive,
+                callingReport.feedback,
+                callingReport.tag,
+                callingReport.remark
+            )
         }
 
         callingDao.insert(callingReport)
@@ -80,6 +106,12 @@ class StudentRepository(
         callingDao.delete(phone)
     }
 
+    suspend fun markAttendance(phoneNo : String, _date: String){
+
+        attendanceDao.insertAttendanceResponse(AttendanceResponse(phoneNo))
+        attendanceDao.insertAttendanceDate(AttendanceDate(date = _date, attendancePhone = phoneNo))
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun syncStudentData() {
         val userData = AttendanceDataStore.getUserData().first();
@@ -99,18 +131,6 @@ class StudentRepository(
                 Log.d("StudentRepo", "Inserting student: $student")
                 studentDao.insert(student.copy(sync = true))
 
-//                if (student.by == phone.toString()) {
-//                    callingDao.insert(
-//                        CallingReportPOJO(
-//                            student.phone,
-//                            student.name,
-//                            "status",
-//                            0,
-//                            student.date
-//                        )
-//                    )
-//                }
-
                 Log.d("StudentRepo", "Student inserted: ${student.name}")
             }
         }
@@ -119,15 +139,17 @@ class StudentRepository(
     // It will load the registration made from remote and insert to database, and update calling.
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun syncMyStudentData() {
-        val userData = withContext(Dispatchers.IO){ AttendanceDataStore.getUserData().first() }
+        val userData = withContext(Dispatchers.IO) { AttendanceDataStore.getUserData().first() }
         Log.d("registration", "USER DATA ${userData.second}")
 
-        val remoteStudents = withContext(Dispatchers.IO){ userData.second?.let {
-            ApiService.fetchStudentsByBy(it).map { student ->
-                val formatteddate = formatDateString(student.date)
-                student.copy(date = formatteddate)
+        val remoteStudents = withContext(Dispatchers.IO) {
+            userData.second?.let {
+                ApiService.fetchStudentsByBy(it).map { student ->
+                    val formatteddate = formatDateString(student.date)
+                    student.copy(date = formatteddate)
+                }
             }
-        } }
+        }
 
         Log.d("registration", "Data Fetched From the remote ${remoteStudents?.size}")
 

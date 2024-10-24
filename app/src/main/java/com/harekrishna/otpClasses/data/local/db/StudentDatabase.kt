@@ -19,7 +19,7 @@ abstract class StudentDatabase : RoomDatabase(){
 
     abstract fun getCallingReportDao(): CallingReportDao
 
-    abstract fun attendanceResponseDao(): AttendanceDao
+    abstract fun getAttendanceResponseDao(): AttendanceDao
 
     companion object{
         @Volatile

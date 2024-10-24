@@ -40,4 +40,13 @@ class CallingReportRepository(private val callingReportDao: CallingReportDao) {
         callingReportDao.updateCallingReportInvite(phone, isInvited)
     }
 
+    suspend fun updateCallingReportFeedback(phone : String, feedback : String ){
+        callingReportDao.updateCallingReportFeedback(phone, feedback)
+    }
+
+    suspend fun updateCallingReportActivation(phone: String, isActive : Boolean ){
+        callingReportDao.updateCallingReportActivation(phone, isActive)
+    }
+
+
 }
