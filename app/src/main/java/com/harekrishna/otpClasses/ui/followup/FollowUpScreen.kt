@@ -3,8 +3,17 @@ package com.harekrishna.otpClasses.ui.followup
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore.Downloads
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,17 +25,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -36,14 +52,18 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Shapes
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -52,12 +72,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -68,47 +87,145 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.harekrishna.otpClasses.R
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.harekrishna.otpClasses.R
 import com.harekrishna.otpClasses.data.models.AttendeeItem
-import com.harekrishna.otpClasses.data.models.CallingReportPOJO
+import kotlinx.coroutines.launch
 
+
+@OptIn(ExperimentalFoundationApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel( factory = FollowUpViewModel.Factory )) {
-
+fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel(factory = FollowUpViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsState()
 
-    val tabs = listOf("Attendee List", "Summary")
+    val scope = rememberCoroutineScope()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        initialPageOffsetFraction = 0f
+    ) {
+        2 // Total number of pages
+    }
+
+    // Custom animation spec for smoother transitions
+    val animationSpec = spring<Float>(
+        dampingRatio = Spring.DampingRatioLowBouncy,
+        stiffness = Spring.StiffnessMediumLow
+    )
+
+    // Effect to sync pagerState with viewModel's selectedTab
+    LaunchedEffect(pagerState.currentPage) {
+        viewModel.onTabSelected(pagerState.currentPage)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            tonalElevation = 3.dp,
+            color = MaterialTheme.colorScheme.surface
         ) {
-            Text(
-                text = "Follow Up",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(4f) // Take up as much space as possible
-            )
-        }
-
-
-        when (uiState.selectedTab) {
-            0 -> AttendeeListTab( viewModel )  // List of students with attendance > 0
-            1 -> SummaryTab()        // Pie chart summary
-        }
-
-        TabRow(selectedTabIndex = uiState.selectedTab) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = uiState.selectedTab == index,
-                    onClick = { viewModel.onTabSelected(index) },
-                    text = { Text(title) }
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Follow Up",
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
+
+                val tabs = listOf("Attendee List", "Summary")
+
+                TabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50)),
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            modifier = Modifier
+                                .tabIndicatorOffset(tabPositions[pagerState.currentPage])
+                                .padding(horizontal = 24.dp),
+                            height = 3.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    divider = { }  // Remove default divider
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(
+                                        page = index
+                                    )
+                                }
+                            },
+                            modifier = Modifier.padding(vertical = 8.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = when (index) {
+                                        0 -> Icons.Rounded.Person
+                                        else -> Icons.Rounded.Info
+                                    },
+                                    contentDescription = title,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = if (pagerState.currentPage == index)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = if (pagerState.currentPage == index)
+                                            FontWeight.Bold
+                                        else
+                                            FontWeight.Normal
+                                    ),
+                                    color = if (pagerState.currentPage == index)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 16.dp),
+            pageSpacing = 16.dp,
+            beyondBoundsPageCount = 1
+        ) { page ->
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn() + slideInHorizontally(),
+                exit = fadeOut() + slideOutHorizontally()
+            ) {
+                when (page) {
+                    0 -> AttendeeListTab(viewModel)
+                    1 -> SummaryTab()
+                }
             }
         }
     }
@@ -121,7 +238,9 @@ fun AttendeeListTab(viewModel: FollowUpViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    Column {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
         // Pass filter and sort logic as lambdas
         FilterAndSortOptions(
             onFilterSelected = { filter ->
@@ -160,8 +279,6 @@ fun AttendeeListTab(viewModel: FollowUpViewModel) {
 }
 
 
-
-
 @Composable
 fun FilterAndSortOptions(
     onFilterSelected: (String) -> Unit,
@@ -173,11 +290,11 @@ fun FilterAndSortOptions(
     uiState: FollowUpUiState
 ) {
     val filterOptions: List<String> = listOf(
-    "All",
-    "Last Present",
-    "Last Absent",
-    "Last 4 Weeks Present",
-    "Last 4 Weeks Absent"
+        "All",
+        "Last Present",
+        "Last Absent",
+        "Last 4 Weeks Present",
+        "Last 4 Weeks Absent"
     )
 
     val sortOptions: List<String> = listOf("None", "Name", "Date", "Attendance")
@@ -185,76 +302,166 @@ fun FilterAndSortOptions(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp), // Adjust padding for cleaner layout
-        horizontalArrangement = Arrangement.Start, // Align items to the start
-        verticalAlignment = Alignment.CenterVertically // Align text and icons vertically
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Filter Dropdown
-        Box(
-            modifier = Modifier.width(150.dp)
-                .clickable { onFilterDropDownSelected() }
-
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "Filter: ${uiState.selectedFilter}", modifier = Modifier.padding(end = 8.dp))
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Filter Dropdown"
+        // Box for Filter Chip and Dropdown
+        Box(modifier = Modifier.weight(1f)) { // Wrap with weight here
+            Column {
+                FilterChip(
+                    selected = uiState.selectedFilter != "All",
+                    onClick = { onFilterDropDownSelected() },
+                    label = {
+                        Text(
+                            text = uiState.selectedFilter,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            imageVector = if (uiState.isFilterDropdownExpanded)
+                                Icons.Rounded.KeyboardArrowUp
+                            else
+                                Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        iconColor = MaterialTheme.colorScheme.primary,
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    modifier = Modifier.width(200.dp)
                 )
-            }
 
-            DropdownMenu(
-                expanded = uiState.isFilterDropdownExpanded,
-                onDismissRequest = { onDismissFilterDropDown() }
-            ) {
-                filterOptions.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(text = option) },
-                        onClick = {
-                            onFilterSelected(option)
-                        }
-                    )
+                // Filter Dropdown
+                DropdownMenu(
+                    expanded = uiState.isFilterDropdownExpanded,
+                    onDismissRequest = onDismissFilterDropDown,
+                    modifier = Modifier
+                        .background(
+                            MaterialTheme.colorScheme.surface,
+                            RoundedCornerShape(12.dp)
+                        )
+                        .width(200.dp)
+                ) {
+                    filterOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = option,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            },
+                            onClick = { onFilterSelected(option) },
+                            leadingIcon = {
+                                RadioButton(
+                                    selected = uiState.selectedFilter == option,
+                                    onClick = null
+                                )
+                            },
+                            colors = MenuDefaults.itemColors(
+                                textColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                    }
                 }
             }
         }
 
-        // Sort Dropdown
-        Box(
-            modifier = Modifier
-                .clickable { onSortDropDownSelected() }
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "Sort: ${uiState.selectedSort}", modifier = Modifier.padding(end = 8.dp))
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Sort Dropdown"
+        // Box for Sort Chip and Dropdown
+        Box(modifier = Modifier.weight(1f)) { // Wrap with weight here
+            Column {
+                FilterChip(
+                    selected = uiState.selectedSort != "None",
+                    onClick = { onSortDropDownSelected() },
+                    label = {
+                        Text(
+                            text = if (uiState.selectedSort == "None") "Sort" else uiState.selectedSort,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            imageVector = if (uiState.isSortDropdownExpanded)
+                                Icons.Rounded.KeyboardArrowUp
+                            else
+                                Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        iconColor = MaterialTheme.colorScheme.primary,
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
                 )
-            }
 
-            DropdownMenu(
-                expanded = uiState.isSortDropdownExpanded,
-                onDismissRequest = { onDismissSortDropDown() }
-            ) {
-                sortOptions.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(text = option) },
-                        onClick = {
-                            onSortSelected(option)
-                        }
-                    )
+                // Sort Dropdown
+                DropdownMenu(
+                    expanded = uiState.isSortDropdownExpanded,
+                    onDismissRequest = onDismissSortDropDown,
+                    modifier = Modifier
+                        .background(
+                            MaterialTheme.colorScheme.surface,
+                            RoundedCornerShape(12.dp)
+                        )
+                        .width(200.dp)
+                ) {
+                    sortOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = option,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            },
+                            onClick = { onSortSelected(option) },
+                            leadingIcon = {
+                                RadioButton(
+                                    selected = uiState.selectedSort == option,
+                                    onClick = null
+                                )
+                            },
+                            colors = MenuDefaults.itemColors(
+                                textColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                    }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.weight(1f)) // Push content to the left, leaving space to the right
-
-
     }
 }
+
+
 
 
 @Composable
@@ -286,7 +493,6 @@ fun EmptyState(icon: Int, message: String) {
 
 
 
-
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -299,197 +505,197 @@ fun AttendeeListItem(
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Card with rounded corners, padding, and shadow
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
-                shape = MaterialTheme.shapes.medium
+                width = 0.5.dp, // Reduced border width for subtlety
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(16.dp)
             ),
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), // Reduced elevation for modern look
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface // Using surface color for cleaner look
+        )
     ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp) // Increased spacing between sections
         ) {
-            // Top row: Name, phone, status, and icons
+            // Header Row: Name, Phone, and Attendance Count
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left side: Name and Phone
+                // Name and Phone section
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-
                     Text(
                         text = student.name,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
                         text = student.phone,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-
-
-                Spacer(modifier = Modifier.width(4.dp))
-
-                // Attendance Count in Circle
-                Box(
+                // Attendance Counter Badge
+                Surface(
                     modifier = Modifier
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onPrimary).border(width = 1.dp, color = MaterialTheme.colorScheme.primary, shape = CircleShape),
-                    contentAlignment = Alignment.Center
+                        .size(32.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            shape = CircleShape
+                        ),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 ) {
-                    Text(
-                        text = student.attendances.size.toString(),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = student.attendances.size.toString(),
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
-            // Middle row: Status, Attendance Stars, and Icons
+            // Status and Active Switch Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-
-
-
-
-                    // Status Chip centered
-                    AssistChip(
-                        onClick = { showDialog = true },
-                        label = {
-                            Text(
-                                text = student.callingStatus.split(",").firstOrNull()?.trim()
-                                    ?: student.callingStatus,
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = MaterialTheme.colorScheme.onSecondary,
-                                textAlign = TextAlign.Center
-                            )
-                        },
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .width(80.dp)
-                            .height(32.dp),
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            labelColor = MaterialTheme.colorScheme.onSecondary
+                AssistChip(
+                    onClick = { showDialog = true },
+                    label = {
+                        Text(
+                            text = student.callingStatus.split(",").firstOrNull()?.trim()
+                                ?: student.callingStatus,
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
+                    },
+                    modifier = Modifier.width(100.dp),
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
-
-
+                )
 
                 ThinSwitch(
                     checked = student.isActive,
-                    onCheckedChange = { viewModel.onSwitchChange(student) },
-                    modifier = Modifier.padding(8.dp)
+                    onCheckedChange = { viewModel.onSwitchChange(student) }
                 )
-
             }
 
-
+            // Progress and Actions Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Attendance Stars
-                Row {
+                // Attendance Progress Indicators
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     repeat(4) { index ->
-                        Box(
+                        Surface(
                             modifier = Modifier
-                                .size(20.dp, 6.dp)
-                                .background(
-                                    if (index < student.attendances.size ) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                                )
-                                .padding(4.dp)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
+                                .size(width = 24.dp, height = 4.dp),
+                            shape = RoundedCornerShape(2.dp),
+                            color = if (index < student.attendances.size)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                        ) {}
                     }
                 }
 
-                Row(){
-
-                    Icon(
-                        imageVector = Icons.Default.Phone,
-                        contentDescription = "Phone",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable {
-                                val intent = Intent(Intent.ACTION_DIAL).apply {
-                                    data = Uri.parse("tel:${student.phone}")
-                                }
-                                context.startActivity(intent)
-                                showDialog = true
+                // Action Icons
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    IconButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:${student.phone}")
                             }
-                    )
+                            context.startActivity(intent)
+                            showDialog = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = "Call",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
 
-                    Spacer( modifier = Modifier.width(8.dp))
-
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = "Send Message",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable {
-                                onStudentUpdated(student.copy(isInvited = true))
-                                onMessageIconClicked(student)
-                            }
-                    )
+                    IconButton(
+                        onClick = {
+                            onStudentUpdated(student.copy(isInvited = true))
+                            onMessageIconClicked(student)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Message",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
-
-
-
-
             }
 
-            // Feedback Text at the bottom
-            Text(
-                text = "\"${student.feedback}\"",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Light,
-                    fontStyle = FontStyle.Italic,
-                    fontSize = 14.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
+            // Feedback Section
+            if (student.feedback.isNotBlank()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = "\"${student.feedback}\"",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontStyle = FontStyle.Italic,
+                            lineHeight = 20.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(12.dp),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 
-    // Dialog to show calling status
     if (showDialog) {
         showCallingStatusDialog(
             student = student,
             onDismiss = { showDialog = false },
-            onSave = { updatedStudent: AttendeeItem ->
+            onSave = { updatedStudent ->
                 onStudentUpdated(updatedStudent)
                 showDialog = false
             }
@@ -497,33 +703,43 @@ fun AttendeeListItem(
     }
 }
 
-
-
 @Composable
 fun ThinSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val trackColor = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
-    val thumbColor = if( checked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+    val transition = updateTransition(checked, label = "Switch State")
+
+    val thumbOffset by transition.animateDp(
+        label = "Thumb Offset",
+        transitionSpec = { spring(stiffness = Spring.StiffnessLow) }
+    ) { if (it) 20.dp else 0.dp }
 
     Box(
         modifier = modifier
-            .width(36.dp)
-            .height(16.dp) // Adjust the height to make it thin
-            .clip(RoundedCornerShape(8.dp))
-            .background(trackColor)
+            .width(40.dp)
+            .height(20.dp)
+            .clip(CircleShape)
+            .background(
+                if (checked)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+            )
             .clickable { onCheckedChange(!checked) }
-            .padding(2.dp) // Padding for the thumb space
+            .padding(2.dp)
     ) {
-        Box(
+        Surface(
             modifier = Modifier
-                .size(12.dp) // Size of the thumb
-                .align(if (checked) Alignment.CenterEnd else Alignment.CenterStart)
-                .clip(CircleShape)
-                .background(thumbColor)
-        )
+                .size(16.dp)
+                .offset(x = thumbOffset),
+            shape = CircleShape,
+            color = if (checked)
+                MaterialTheme.colorScheme.primary
+            else
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+        ) {}
     }
 }
 

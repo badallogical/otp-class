@@ -5,10 +5,12 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +21,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Phone
@@ -34,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -46,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -62,56 +68,49 @@ data class Student(val name: String, val phone: String, var status: String)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CallingListScreen(date : String, viewModel: CallingListViewModel = viewModel(factory = CallingListViewModel.Factory)) {
-
+fun CallingListScreen(
+    date: String,
+    viewModel: CallingListViewModel = viewModel(factory = CallingListViewModel.Factory)
+) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(Unit){
+    LaunchedEffect(Unit) {
         Log.d("Calling Screen ", date)
         viewModel.getCallingRegistrations(date)
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(top = 16.dp)
+    ) {
+        // Header Section
+        TopSection(
+            date = date,
+            onShareClick = { viewModel.sendCallingReportMsg(context, date) }
+        )
+
+        // Registration List
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Registrations",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(4f) // Take up as much space as possible
-            )
-
-            // Share button to share message to WhatsApp
-            IconButton(
-                onClick = {
-                   viewModel.sendCallingReportMsg(context,date);
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Share,
-                    contentDescription = "Share",
-                    tint = Color.Gray
-                )
-            }
-
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        LazyColumn {
             items(uiState.registrations) { registrationReport ->
                 StudentListItem(
                     student = registrationReport,
-                    onStudentUpdated = { updatedReport: CallingReportPOJO ->
-                        // Handle student status update
-                        viewModel.updateStudentStatus(updatedReport.phone, updatedReport.status,updatedReport.isInvited, updatedReport.feedback)
+                    onStudentUpdated = { updatedReport ->
+                        viewModel.updateStudentStatus(
+                            updatedReport.phone,
+                            updatedReport.status,
+                            updatedReport.isInvited,
+                            updatedReport.feedback
+                        )
                     },
-                    onMessageIconClicked = { report: CallingReportPOJO ->
-                        viewModel.sendWhatsAppMessage(context,report.phone, report.name)
+                    onMessageIconClicked = { report ->
+                        viewModel.sendWhatsAppMessage(context, report.phone, report.name)
                     }
                 )
             }
@@ -119,6 +118,57 @@ fun CallingListScreen(date : String, viewModel: CallingListViewModel = viewModel
     }
 }
 
+@Composable
+private fun TopSection(
+    date: String,
+    onShareClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Registrations",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = date,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                IconButton(
+                    onClick = onShareClick,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Share,
+                        contentDescription = "Share",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,134 +180,136 @@ fun StudentListItem(
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Card with rounded corners, padding, and shadow
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp)
             .border(
-                width = 1.dp, // Thin border width
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), // Subtle border color
-                shape = MaterialTheme.shapes.medium // Rounded corners for the border
-            ), // Increased horizontal padding for better alignment
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), // Adds a subtle shadow
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Subtle background color
+                width = 0.5.dp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(16.dp)
+            ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp) // Space between rows
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Top row: Name, phone, status, and icons
+            // Student Info and Actions Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween // Space out items evenly
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                // Left side: Name and Phone
+                // Student Details
                 Column(
-                    modifier = Modifier.weight(1f), // Allow the name column to take up most of the space
-                    verticalArrangement = Arrangement.spacedBy(4.dp) // Space between name and phone
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         text = student.name,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface, // Use onSurface color for better contrast
-                        maxLines = 1, // Limit to one line
-                        overflow = TextOverflow.Ellipsis // Add ellipsis if the name is too long
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+
                     Text(
                         text = student.phone,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Slightly faded for phone number
-                        maxLines = 1, // Limit to one line for phone
-                        overflow = TextOverflow.Ellipsis // Add ellipsis if the phone number is too long
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                // Status Chip
-                AssistChip(
-                    onClick = { showDialog = true },
-                    label = {
-                        Text(
-                            text = student.status.split(",").firstOrNull()?.trim() ?: student.status,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = if (student.isInvited) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSecondary,
-                            textAlign = TextAlign.Center // Centers the text horizontally
-                        )
-                    },
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .width(80.dp)
-                        .height(32.dp),
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        labelColor = MaterialTheme.colorScheme.onSecondary
-                    )
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Send message and Phone icons
+                // Action Buttons
                 Row(
-                    modifier = Modifier,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send, // Use an appropriate send message icon
-                        contentDescription = "Send Message",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable {
-                                onStudentUpdated(student.copy(isInvited = true))
-                                onMessageIconClicked(student)
-                            }
+                    ActionButton(
+                        icon = Icons.AutoMirrored.Filled.Send,
+                        description = "Send Message",
+                        onClick = {
+                            onStudentUpdated(student.copy(isInvited = true))
+                            onMessageIconClicked(student)
+                        },
+                        isActive = student.isInvited
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer( modifier = Modifier.width(4.dp))
 
-                    Icon(
-                        imageVector = Icons.Default.Phone,
-                        contentDescription = "Phone",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable {
-                                val intent = Intent(Intent.ACTION_DIAL).apply {
-                                    data = Uri.parse("tel:${student.phone}")
-                                }
-                                context.startActivity(intent)
-                                showDialog = true
+                    ActionButton(
+                        icon = Icons.Default.Phone,
+                        description = "Call",
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:${student.phone}")
                             }
+                            context.startActivity(intent)
+                            showDialog = true
+                        }
                     )
                 }
             }
 
-            // Feedback Text: Full width, italic, and more space
-            Text(
-                text = "\"${student.feedback.ifEmpty { "No Feedback Yet" }}\"",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Light,
-                    fontStyle = FontStyle.Italic,
-                    fontSize = 14.sp // Slightly smaller for feedback
-                ),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Slightly faded for feedback
-                modifier = Modifier.fillMaxWidth(), // Feedback takes full width
-                maxLines = 3, // Allow up to 3 lines of feedback
-                overflow = TextOverflow.Ellipsis // Add ellipsis if feedback is too long
+            // Status Chip
+            AssistChip(
+                onClick = { showDialog = true },
+                label = {
+                    Text(
+                        text = student.status.split(",").firstOrNull()?.trim() ?: student.status,
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                modifier = Modifier.width(120.dp),
+                colors = AssistChipDefaults.assistChipColors(
+                    containerColor = if (student.isInvited)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    else
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                    labelColor = if (student.isInvited)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSecondaryContainer
+                )
             )
+
+            // Feedback Section
+            if (student.feedback.isNotBlank()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = "\"${student.feedback}\"",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontStyle = FontStyle.Italic,
+                            lineHeight = 20.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(12.dp),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 
-    // Dialog to show calling status (when showDialog is true)
     if (showDialog) {
         showCallingStatusDialog(
             student = student,
             onDismiss = { showDialog = false },
-            onSave = { updatedStudent: CallingReportPOJO ->
+            onSave = { updatedStudent ->
                 onStudentUpdated(updatedStudent)
                 showDialog = false
             }
@@ -265,6 +317,36 @@ fun StudentListItem(
     }
 }
 
+@Composable
+private fun ActionButton(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit,
+    isActive: Boolean = false
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(32.dp)
+            .background(
+                color = if (isActive)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                else
+                    MaterialTheme.colorScheme.surfaceVariant,
+                shape = CircleShape
+            )
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = description,
+            tint = if (isActive)
+                MaterialTheme.colorScheme.primary
+            else
+                MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)

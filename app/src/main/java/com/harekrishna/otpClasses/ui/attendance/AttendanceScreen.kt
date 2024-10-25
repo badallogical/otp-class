@@ -3,6 +3,7 @@ package com.harekrishna.otpClasses.ui.screens
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,8 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -24,12 +27,15 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -52,23 +59,27 @@ import com.harekrishna.otpClasses.data.models.StudentPOJO
 import com.harekrishna.otpClasses.ui.attendance.AttendanceUiState
 import com.harekrishna.otpClasses.ui.attendance.AttendanceViewModel
 
-
-
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel = viewModel(factory = AttendanceViewModel.Factory) ) {
-
+fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewModel = viewModel(factory = AttendanceViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsState()
 
     // Fetch students from API and set the initial list
-   LaunchedEffect(Unit){
-       if(uiState.students.isEmpty()) {
-           viewModel.fetchStudents()
-           Log.d("Attendance", "Launched Called");
-       }
-   }
+    LaunchedEffect(Unit) {
+        if (uiState.students.isEmpty()) {
+            viewModel.fetchStudents()
+            Log.d("Attendance", "Launched Called")
+        }
+    }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // Header Row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,8 +93,9 @@ fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel
                 modifier = Modifier.weight(4f) // Take up as much space as possible
             )
 
+            // Refresh Icon
             Icon(
-                painter = painterResource(id = R.drawable.baseline_refresh_24), // Replace with your refresh icon resource
+                painter = painterResource(id = R.drawable.baseline_refresh_24),
                 contentDescription = "Refresh Icon",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -94,6 +106,7 @@ fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel
                     }
             )
 
+            // Save & Sync Icon
             Icon(
                 painter = painterResource(id = R.drawable.baseline_view_list_24),
                 contentDescription = "Save & Sync",
@@ -107,11 +120,11 @@ fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel
             )
         }
 
+        // Search Bar
         OutlinedTextField(
             value = uiState.searchQuery,
             onValueChange = { newQuery ->
-                            // Update the filtered list on search query change
-                viewModel.onSearchQueryChanged(newQuery)
+                viewModel.onSearchQueryChanged(newQuery) // Update the filtered list on search query change
             },
             label = { Text("Search by phone number") },
             modifier = Modifier
@@ -120,34 +133,28 @@ fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel
             shape = MaterialTheme.shapes.medium, // Round corners
             leadingIcon = {
                 Icon(
-                    painter = painterResource(id = R.drawable.baseline_search_24), // Replace with your search icon resource
+                    painter = painterResource(id = R.drawable.baseline_search_24),
                     contentDescription = "Search Icon",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             },
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Done // Set the IME action to "Done"
-            ),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), // Set the IME action to "Done"
             keyboardActions = KeyboardActions(
                 onDone = {
-                    // Action when the "Done" button is pressed on the keyboard
-                    viewModel.onSearchQueryChanged(uiState.searchQuery)
+                    viewModel.onSearchQueryChanged(uiState.searchQuery) // Action when the "Done" button is pressed on the keyboard
                 }
-            ),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.DarkGray, // Dark border when focused
-                unfocusedBorderColor = Color.LightGray, // Light border when not focused
-                cursorColor = MaterialTheme.colorScheme.primary // Cursor color
             ),
             singleLine = true, // Make the text field single-lined
             maxLines = 1 // Limit the text input to one line
         )
 
+        // Loading State
         if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         } else if (uiState.filteredStudents.isEmpty()) {
+            // No Students Found
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -160,11 +167,12 @@ fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel
                     color = Color.Gray
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { viewModel.onClickQuickRegisteration() } ) {
+                Button(onClick = { viewModel.onClickQuickRegisteration() }) {
                     Text("Quick Registration")
                 }
             }
         } else {
+            // List of Students
             LazyColumn {
                 items(uiState.filteredStudents) { student ->
                     StudentItem(student = student) {
@@ -194,26 +202,25 @@ fun AttendanceScreen(navController: NavController,viewModel: AttendanceViewModel
             uiState,
             onDismiss = { viewModel.onDismissRegisterationDialog() },
             onRegister = { name, phone ->
-                viewModel.onRegisterStudent(name,phone)
-            })
+                viewModel.onRegisterStudent(name, phone)
+            }
+        )
     }
 }
+
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AttendanceDialog(uiState: AttendanceUiState, onSubmit: (StudentPOJO) -> Unit, onDismiss: () -> Unit) {
-
     val student = uiState.selectedStudent
-
     val currentDate = "2024-01-07"
-//   val currentDate = getCurrentOrNextSunday()
 
-    if( currentDate == ""){
-       // no class today
+    if (currentDate == "") {
+        // no class today
         NoClassesDialog()
-        return;
+        return
     }
-
 
     if (uiState.showCongratsAfterPosting) {
         AlertDialog(
@@ -273,10 +280,7 @@ fun AttendanceDialog(uiState: AttendanceUiState, onSubmit: (StudentPOJO) -> Unit
             }
         )
     }
-
-
 }
-
 
 @Composable
 fun NoClassesDialog() {
@@ -313,23 +317,7 @@ fun NoClassesDialog() {
 
 
 @Composable
-fun StudentItem(student: StudentPOJO, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = student.name, style = MaterialTheme.typography.headlineSmall)
-            Text(text = student.phone, style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
-
-@Composable
-fun QuickRegistrationDialog(uiState: AttendanceUiState , onDismiss: () -> Unit, onRegister: (String, String) -> Unit) {
+fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, onRegister: (String, String) -> Unit) {
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
 
@@ -355,30 +343,27 @@ fun QuickRegistrationDialog(uiState: AttendanceUiState , onDismiss: () -> Unit, 
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium
                 )
-
-                if (uiState.isRegistering) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                if (isClicked) {
+                    Text(
+                        text = "Phone number should be 10 digits",
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    isClicked = !isClicked
-                    onRegister(name, phone)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isClicked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-                )
+                    if (phone.length == 10) {
+                        onRegister(name, phone)
+                        onDismiss()
+                    } else {
+                        isClicked = true
+                    }
+                }
             ) {
-                Text("Hari Bol")
+                Text("Register")
             }
         },
         dismissButton = {
@@ -389,6 +374,8 @@ fun QuickRegistrationDialog(uiState: AttendanceUiState , onDismiss: () -> Unit, 
     )
 }
 
+
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 @Preview(showBackground = true)
@@ -397,3 +384,75 @@ fun AttendancePreview() {
         AttendanceScreen(navController = rememberNavController())
     }
 }
+
+
+@Composable
+fun StudentItem(
+    student: StudentPOJO,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp, horizontal = 4.dp)
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Circular initials or profile placeholder
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = student.name.first().uppercase(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Student's name and phone details
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = student.name,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Phone: ${student.phone}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+//            // Attendance status or indicator icon
+//            Icon(
+//                painter = painterResource(id = R.drawable.baseline_done_outline_24),
+//                contentDescription = "Attendance Marked",
+//                tint = MaterialTheme.colorScheme.secondary
+//            )
+        }
+    }
+}
+
