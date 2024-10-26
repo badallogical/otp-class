@@ -17,6 +17,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
+import com.harekrishna.otpClasses.data.api.ApiService
+import com.harekrishna.otpClasses.data.api.AttendanceDataStore
 import com.harekrishna.otpClasses.data.local.repos.AttendanceResponseRepository
 import com.harekrishna.otpClasses.data.models.AttendeeItem
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
@@ -26,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,6 +63,9 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
 
     init {
         getAllLastFourWeekAttendees()
+        viewModelScope.launch {
+            fetchAndUpdateAttendance()
+        }
     }
 
     // get all last 4 attendees.
@@ -80,11 +86,14 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
         // Get the current date
         val today = LocalDate.now()
 
-        // Find the last Sunday by adjusting the date to the previous Sunday
-        val lastSunday = today.with(DayOfWeek.SUNDAY)
+        // Calculate days to subtract to get to the last Sunday
+        val daysSinceSunday = (today.dayOfWeek.value % 7)
+        val lastSunday = today.minusDays(daysSinceSunday.toLong())
 
         // Format the date as "YYYY-MM-DD"
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+        Log.d("followup", lastSunday.format(formatter))
         return lastSunday.format(formatter)
     }
 
@@ -114,6 +123,29 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
             }
         )
     }
+
+    fun fetchAndUpdateAttendance() {
+        viewModelScope.launch {
+            try {
+                // Collecting the first emitted user data
+                val userData = AttendanceDataStore.getUserData().first()
+                val userId = userData.second
+
+                // Ensure userId is not null before making the API call
+                if (userId != null) {
+                    val attendances = ApiService.getAttendanceResponses(userId)
+                    attendances.forEach { attendance ->
+                        attendanceResponseRepository.insertMultipleAttendance(attendance.phone, attendance.attendanceDates)
+                    }
+                } else {
+                    Log.e("fetchAndUpdateAttendance", "User ID is null")
+                }
+            } catch (e: Exception) {
+                Log.e("fetchAndUpdateAttendance", "Error fetching attendance: ${e.message}", e)
+            }
+        }
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun filterByLastFourWeekPresent(sundays: List<String>) {
@@ -281,22 +313,26 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
         fun getLastFourSundays(): List<String> {
             val today = LocalDate.now()
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            var current = today
 
-            // Check if today is Sunday, if not, find the most recent Sunday
-            if (today.dayOfWeek != DayOfWeek.SUNDAY) {
-                current = today.with(DayOfWeek.SUNDAY) // Move to the most recent Sunday
+            // If today is Sunday, start with today; otherwise, go to the previous Sunday
+            var current = if (today.dayOfWeek == DayOfWeek.SUNDAY) {
+                today
+            } else {
+                today.minusDays((today.dayOfWeek.value % 7).toLong())
             }
 
-            // Collect last 4 Sundays including today (if it's Sunday)
+            // Collect the last 4 Sundays
             val sundays = mutableListOf<String>()
             for (i in 0..3) {
                 sundays.add(current.format(formatter))
                 current = current.minusWeeks(1) // Go back one week
             }
 
+            Log.d("followup",sundays.toString())
+
             return sundays
         }
+
 
         // Function to get today's date and the date 4 weeks ago
         fun getLastFourWeeksRange(): Pair<String, String> {

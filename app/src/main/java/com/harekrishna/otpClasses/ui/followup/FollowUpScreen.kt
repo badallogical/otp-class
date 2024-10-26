@@ -504,6 +504,7 @@ fun AttendeeListItem(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val lastFourSundays = FollowUpViewModel.getLastFourSundays()
 
     Card(
         modifier = Modifier
@@ -618,12 +619,12 @@ fun AttendeeListItem(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    repeat(4) { index ->
+                    repeat(lastFourSundays.size) { index ->
                         Surface(
                             modifier = Modifier
                                 .size(width = 24.dp, height = 4.dp),
                             shape = RoundedCornerShape(2.dp),
-                            color = if (index < student.attendances.size)
+                            color = if (student.attendances.contains(lastFourSundays[3-index]))
                                 MaterialTheme.colorScheme.primary
                             else
                                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)

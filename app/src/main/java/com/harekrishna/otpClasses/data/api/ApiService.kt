@@ -8,6 +8,7 @@ import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.ReportDTO
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
+import com.harekrishna.otpClasses.data.models.UserAttendance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -19,7 +20,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbwRHQJSY0r7Fl9a9CXDXMg9Zma8LgFiFdMURVEwgszdigqONck5hTFvhocdg21o8xdi/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbwuSDnRbamfq8eUhyIfeh3Zhvv8TVzxEBOpwYw1dfk8_huwscjdOEYRQHJ-ZiUUTJM6/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -328,7 +329,7 @@ object ApiService {
     }
 
     // getAttendances
-    suspend fun getAttendanceResponses(userID : String ): List<AttendanceResponse> {
+    suspend fun getAttendanceResponses(userID : String ): List<UserAttendance> {
         return withContext(Dispatchers.IO) {
 
             try {
@@ -345,16 +346,8 @@ object ApiService {
                         val jsonString = responseBody.string()
                         Log.d("ApiService JSON", "JSON String: $jsonString")
 
-                        // Create custom Gson instance with Date parsing support
-//                        val gson = GsonBuilder()
-//                            .registerTypeAdapter(Date::class.java, JsonDeserializer { json, _, _ ->
-//                                val dateFormat = SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss zzz", Locale.ENGLISH)
-//                                dateFormat.parse(json.asString)
-//                            })
-//                            .create()
-
-                        val attendanceListType = object : TypeToken<List<AttendanceResponse>>() {}.type
-                        val attendanceList: List<AttendanceResponse> = Gson().fromJson(jsonString, attendanceListType) ?: emptyList()
+                        val attendanceListType = object : TypeToken<List<UserAttendance>>() {}.type
+                        val attendanceList: List<UserAttendance> = Gson().fromJson(jsonString, attendanceListType) ?: emptyList()
                         Log.d("ApiService", attendanceList.toString())
                         attendanceList
                     } ?: emptyList()
@@ -369,29 +362,6 @@ object ApiService {
         }
     }
 
-
-
-//    suspend fun syncAttendance(attendanceMap: Map<String, List<AttendanceDTO>>): Boolean {
-//        return withContext(Dispatchers.IO) {
-//            var success = true
-//
-//            // Iterate over each date in the attendanceMap
-//            for ((date, attendanceList) in attendanceMap) {
-//                for (attendance in attendanceList) {
-//                    // Post each attendance entry
-//                    val result = postAttendance(attendance)
-//                    if (!result) {
-//                        success = false
-//                        // Optionally, you could log or handle failed attendance post requests here
-//                        Log.e("SyncService", "Failed to post attendance for studentID: ${attendance.studentId} on date: $date")
-//                        return@withContext false
-//                    }
-//                }
-//            }
-//
-//            true
-//        }
-//    }
 
     suspend fun syncAttendance(
         attendanceMap: Map<String, List<AttendanceDTO>>,

@@ -1,6 +1,7 @@
 package com.harekrishna.otpClasses.data.local.repos
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import com.harekrishna.otpClasses.data.local.db.dao.AttendanceDao
 import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
@@ -23,6 +24,13 @@ class AttendanceResponseRepository(
     suspend fun insertAttendance(_phone: String, _date: String) {
         attendanceDao.insertAttendanceResponse(AttendanceResponse(_phone))
         attendanceDao.insertAttendanceDate(AttendanceDate(date = _date, attendancePhone = _phone))
+    }
+
+    suspend fun insertMultipleAttendance(_phone: String, attendances : List<String>){
+        attendanceDao.insertAttendanceResponse(AttendanceResponse(_phone))
+        for(date in attendances){
+            attendanceDao.insertAttendanceDate(AttendanceDate(date = date, attendancePhone = _phone))
+        }
     }
 
     suspend fun deleteAttendance(attendanceDate: AttendanceDate) {
@@ -65,6 +73,7 @@ class AttendanceResponseRepository(
 
             // Fetch the last four attendance dates for the current report's phone number
             val lastFourDatesOfAttendee = attendanceDao.getLastFourAttendanceDates(report.phone)
+            Log.d("followup", "${report.name} : ${lastFourDatesOfAttendee}")
 
             result.add(
                 AttendeeItem(

@@ -15,18 +15,19 @@ data class AttendanceResponse(
 
 @Entity(
     tableName = "attendance_dates",
-    foreignKeys = [ForeignKey(
-        entity = AttendanceResponse::class,
-        parentColumns = ["phone"],
-        childColumns = ["attendancePhone"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index(value = ["attendancePhone"])] // Add index to improve query performance
+    primaryKeys = ["date", "attendancePhone"],
+    foreignKeys = [
+        ForeignKey(
+            entity = AttendanceResponse::class, // Replace with actual class
+            parentColumns = ["phone"],          // Parent column in the referenced table
+            childColumns = ["attendancePhone"], // Column in this table that references the parent
+            onDelete = ForeignKey.CASCADE       // Handle deletion rules (optional)
+        )
+    ]
 )
 data class AttendanceDate(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val date: String,  // Store attendance date as String or Date (with TypeConverter)
-    val attendancePhone: String  // This is the foreign key that references AttendanceResponse
+    val date: String,               // Attendance date
+    val attendancePhone: String     // Foreign key to AttendanceResponse
 )
 
 data class AttendanceWithDates(

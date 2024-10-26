@@ -56,6 +56,8 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
             val userData = AttendanceDataStore.getUserData().first()
             userName = userData.first ?: "Rajiva Prabhu Ji"
             userPhone = userData.second ?: "+919807726801"
+
+
         }
     }
 
