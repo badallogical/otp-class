@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.harekrishna.otpClasses.MyApplication
+import com.harekrishna.otpClasses.MyApplication.Companion.toCamelCase
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -115,7 +117,7 @@ fun WelcomeScreen(navController: NavController) {
                     } else {
                         // Call the method to save to DataStore
                         CoroutineScope(Dispatchers.IO).launch {
-                            AttendanceDataStore.saveUserData(name, phone)
+                            AttendanceDataStore.saveUserData(name.toCamelCase(), phone)
 
                             // Navigate to the dashboard on the main thread
                             withContext(Dispatchers.Main) {

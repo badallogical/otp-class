@@ -75,6 +75,8 @@ class AttendanceResponseRepository(
             val lastFourDatesOfAttendee = attendanceDao.getLastFourAttendanceDates(report.phone)
             Log.d("followup", "${report.name} : ${lastFourDatesOfAttendee}")
 
+
+
             result.add(
                 AttendeeItem(
                     name = report.name,

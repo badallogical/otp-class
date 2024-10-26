@@ -38,6 +38,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
@@ -100,6 +101,7 @@ fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel(factory = FollowUpVi
     val uiState by viewModel.uiState.collectAsState()
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -132,14 +134,33 @@ fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel(factory = FollowUpVi
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = "Follow Up",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        text = "Follow Up",
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    IconButton(
+                        onClick = { viewModel.sendFollowUpReport(context) },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                shape = CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Share,
+                            contentDescription = "Share",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
 
                 val tabs = listOf("Attendee List", "Summary")
 

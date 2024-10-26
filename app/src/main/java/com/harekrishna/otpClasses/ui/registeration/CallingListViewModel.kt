@@ -108,8 +108,10 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
                     val formattedDate = parsedDate.format(DateTimeFormatter.ofPattern("EEE, d MMM, yyyy"))
 
                     // Start building the message 🗓️
-                    var reportMsg = "\uD83D\uDCDD *$formattedDate Welcome Calling Report* \n\n"
-                    val reports = callingReportRepository.getCallingReportsByDate(date).first()
+                    var reportMsg = "\uD83D\uDCDD *$formattedDate Welcome Calling Report* \n"
+                    val reports = uiState.value.registrations
+
+                    reportMsg += "Total Strength : ${reports.size}\n\n"
 
                     for (report in reports) {
                         // Append the default information for each report
@@ -121,11 +123,20 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
                         }
 
                         // Add status and a newline for the next report
-                        reportMsg += "\n📊 Status: *${report.status}*\n\n"
+                        reportMsg += "\n📊 Status: *${report.status}*\n"
+
+                        // Show feedback only if it's not empty
+                        if (report.feedback.isNotEmpty()) {
+                            reportMsg += "💬 Feedback: *${report.feedback.trim()}*\n"
+                        }
+
+
+                        reportMsg += "\n\n"
                     }
 
                     // Add the closing message with emojis
-                    reportMsg += "🙏 Hare Krishna Prabhu Ji \n🙇‍♂️ Dandwat Pranam"
+                    reportMsg += "Your Servant \uD83D\uDE4F \n${userName.toCamelCase()}"
+
 
                     reportMsg
                 }

@@ -60,10 +60,16 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
     private var _uiState = MutableStateFlow(FollowUpUiState())
     val uiState: StateFlow<FollowUpUiState> = _uiState.asStateFlow()
 
+    private lateinit var userName : String
+    private lateinit var userPhone: String
 
     init {
         getAllLastFourWeekAttendees()
         viewModelScope.launch {
+            AttendanceDataStore.getUserData().collect { userData ->
+                userName = userData.first ?: "Rajiva Prabhu Ji"
+                userPhone = userData.second ?: "+919807726801"
+            }
             fetchAndUpdateAttendance()
         }
     }
@@ -112,6 +118,26 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
         _uiState.value = _uiState.value.copy(filteredAttendee = result)
     }
 
+    suspend fun filterByLastAbsent() {
+        val date = getLastSundayDate()
+        val result = mutableListOf<AttendeeItem>()
+
+        // Get the list of attendees who were present on the last Sunday
+        val presents = attendanceResponseRepository.getAttendeePresentOn(date)
+
+        // Iterate through each attendee in the state
+        for (attendee in _uiState.value.attendees) {
+            // If the attendee is not in the present list, add them to the result as absent
+            if (!presents.contains(attendee.phone)) {
+                result.add(attendee)
+            }
+        }
+
+        // Update the UI state with the filtered absent attendees
+        _uiState.value = _uiState.value.copy(filteredAttendee = result)
+    }
+
+
     fun filterByLastFourWeeks() {
         _uiState.value = _uiState.value.copy( filteredAttendee = uiState.value.attendees)
     }
@@ -148,7 +174,9 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
 
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun filterByLastFourWeekPresent(sundays: List<String>) {
+    suspend fun filterByLastFourWeekPresent() {
+
+        val sundays = getLastFourSundays()
 
         val result = mutableListOf<AttendeeItem>()
 
@@ -171,6 +199,34 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
         _uiState.value = _uiState.value.copy(filteredAttendee = result)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun filterByLastFourWeekAbsent() {
+
+        val sundays = getLastFourSundays()
+
+        val result = mutableListOf<AttendeeItem>()
+
+        // Iterate through each calling report
+        for (attendee in _uiState.value.attendees) {
+
+            // Fetch the last four attendance dates for the current report's phone number
+            val lastFourDatesOfAttendee =
+                attendanceResponseRepository.getLastFourAttendanceDate(attendee.phone)
+
+            // Check if none of the last four attendance dates match the Sundays
+            val absentOnAllSundays = lastFourDatesOfAttendee.none { date -> sundays.contains(date) }
+
+            // If the student was absent on all of the last four Sundays, add to result
+            if (absentOnAllSundays) {
+                result.add(attendee)
+            }
+        }
+
+        // Update the UI state with the filtered absent attendees
+        _uiState.value = _uiState.value.copy(filteredAttendee = result)
+    }
+
+
     fun onTabSelected(_selectedTab: Int) {
         _uiState.value = _uiState.value.copy(selectedTab = _selectedTab)
     }
@@ -183,7 +239,10 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
             when (filter) {
                 "All" -> filterByLastFourWeeks()
                 "Last Present" -> filterByLastPresent()
-                "Last 4 Weeks Present" -> filterByLastFourWeekPresent(getLastFourSundays())
+                "Last Absent" -> filterByLastAbsent()
+                "Last 4 Weeks Present" -> filterByLastFourWeekPresent()
+                "Last 4 Weeks Absent" -> filterByLastFourWeekAbsent()
+                else -> filterByLastFourWeeks()
             }
 
             sortStudents(uiState.value.selectedSort)
@@ -296,6 +355,82 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
             .joinToString(" ") { word ->
                 word.replaceFirstChar { it.uppercase() }
             }
+    }
+
+    fun countOfLastFourSundaysPresent(lastFourAttendance : List<String>) : Int{
+        // Fetch the last four attendance dates for the current report's phone number
+
+        val sundays = getLastFourSundays()
+        var count : Int = 0;
+
+        for( date in lastFourAttendance ){
+            if( sundays.contains(date) )
+                count += 1;
+        }
+
+        return count
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun sendFollowUpReport(context: Context) {
+        viewModelScope.launch {
+            try {
+                // Fetch the message content in a background thread
+                val msg = withContext(Dispatchers.IO) {
+
+                    val reports = uiState.value.filteredAttendee
+
+//                    // Parse the date string (assuming it's in 'yyyy-MM-dd' format)
+//                    val parsedDate = LocalDate.parse(reports[0].registrationDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+//
+//                    // Format the date into "Mon, 8 Oct, 2024"
+//                    val formattedDate = parsedDate.format(DateTimeFormatter.ofPattern("EEE, d MMM, yyyy"))
+
+                    // Start building the message 🗓️
+                    var reportMsg = "\uD83D\uDCDD *Last 4 Weeks Follow Up Calling Report* \n"
+
+                    reportMsg += "Total Strength : ${reports.size}\n\n"
+
+                    for (report in reports) {
+                        // Append the default information for each report
+                        reportMsg += "👤 *${report.name.trim()}* \n📞 ${report.phone.trim()}"
+
+                        // Check if the report is invited and append the message sent icons if true
+                        if (report.isInvited) {
+                            reportMsg += " ✉️ ✅"
+                        }
+
+                        // Add status and a newline for the next report
+                        reportMsg += "\n📊 Status: *${report.callingStatus}*\n"
+
+                        // Add attendance count
+                        reportMsg += "\n📅 Attendance Count: *${countOfLastFourSundaysPresent(report.attendances)}*\n"
+
+                        // Show feedback only if it's not empty
+                        if (report.feedback.isNotEmpty()) {
+                            reportMsg += "💬 Feedback: *${report.feedback.trim()}*\n"
+                        }
+
+                        // Show feedback
+                        reportMsg += "\n\n"
+                    }
+
+                    // Add the closing message with emojis
+                    reportMsg += "Your Servant \uD83D\uDE4F \n${userName.toCamelCase()}"
+
+                    reportMsg
+                }
+
+                // Send the message via WhatsApp
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("https://api.whatsapp.com/send?phone=&text=$msg")
+                }
+                context.startActivity(intent)
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     companion object {

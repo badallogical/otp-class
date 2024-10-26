@@ -26,6 +26,14 @@ class MyApplication : Application() {
             return instance.applicationContext
         }
 
+        fun String.toCamelCase(): String {
+            return this.lowercase()
+                .split(" ")
+                .joinToString(" ") { word ->
+                    word.replaceFirstChar { it.uppercase() }
+                }
+        }
+
         fun checkInternetConnection(): Boolean {
             val connectivityManager =
                 instance.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

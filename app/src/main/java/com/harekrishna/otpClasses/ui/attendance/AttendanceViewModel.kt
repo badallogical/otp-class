@@ -123,6 +123,7 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
     }
 
     fun onStudentItemClicked(student: StudentPOJO){
+
         _uiState.update { currentState ->
             currentState.copy(
                 selectedStudent = student,
@@ -212,12 +213,24 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
+    fun isTodayWeekend(): Boolean {
+        // Get today's date
+        val today = LocalDate.now()
+
+        // Get the day of the week
+        val dayOfWeek = today.dayOfWeek
+
+        // Check if today is Saturday or Sunday
+        return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     fun postAttendance(student: StudentPOJO) {
         viewModelScope.launch {
             // Update UI state to show that submission is in progress
             _uiState.value = _uiState.value.copy(isPostingAttendance = true)
 
-            val currentDate = FollowUpViewModel.getLastFourSundays()[Random.nextInt(0, 4)]
+            val currentDate = FollowUpViewModel.getLastFourSundays()[Random.nextInt(0, 4)]  // Testing
             //   val currentDate = getCurrentOrNextSunday()
             //   val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
             val attendance = AttendancePOJO(student.phone, currentDate, student.name)
