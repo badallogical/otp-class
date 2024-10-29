@@ -28,7 +28,11 @@ import java.time.format.DateTimeFormatter
 
 data class CallingListUiState(
     val registrations: List<CallingReportPOJO> = emptyList(),
-    val updatingStatus: Boolean = false
+    val updatingStatus: Boolean = false,
+
+    // Add new selection-related states
+    val selectedAttendees: Set<String> = emptySet(), // Store selected phone numbers
+    val isInSelectionMode: Boolean = false
 )
 
 class CallingListViewModel(private val callingReportRepository: CallingReportRepository) :
@@ -109,7 +113,15 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
 
                     // Start building the message 🗓️
                     var reportMsg = "\uD83D\uDCDD *$formattedDate Welcome Calling Report* \n"
-                    val reports = uiState.value.registrations
+
+                    // Use selected attendees if any, otherwise use filtered list
+                    val reports = if (uiState.value.selectedAttendees.isNotEmpty()) {
+                        uiState.value.registrations.filter {
+                            uiState.value.selectedAttendees.contains(it.phone)
+                        }
+                    } else {
+                        uiState.value.registrations
+                    }
 
                     reportMsg += "Total Strength : ${reports.size}\n\n"
 
@@ -147,10 +159,44 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
                 }
                 context.startActivity(intent)
 
+                // Clear selections after sharing
+                clearSelections()
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
+    }
+
+    // Toggle selection mode
+    fun toggleSelectionMode() {
+        _uiState.value = _uiState.value.copy(
+            isInSelectionMode = !_uiState.value.isInSelectionMode,
+            selectedAttendees = emptySet() // Clear selections when toggling off
+        )
+    }
+
+    // Toggle selection for a specific attendee
+    fun toggleAttendeeSelection(phone: String) {
+        val currentSelections = _uiState.value.selectedAttendees.toMutableSet()
+        if (currentSelections.contains(phone)) {
+            currentSelections.remove(phone)
+        } else {
+            currentSelections.add(phone)
+        }
+
+        _uiState.value = _uiState.value.copy(
+            selectedAttendees = currentSelections,
+            isInSelectionMode = currentSelections.isNotEmpty()
+        )
+    }
+
+    // Clear all selections
+    fun clearSelections() {
+        _uiState.value = _uiState.value.copy(
+            selectedAttendees = emptySet(),
+            isInSelectionMode = false
+        )
     }
 
 

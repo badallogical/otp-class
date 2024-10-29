@@ -5,9 +5,11 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,6 +66,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 
 data class Student(val name: String, val phone: String, var status: String)
 
@@ -92,6 +97,28 @@ fun CallingListScreen(
             onShareClick = { viewModel.sendCallingReportMsg(context, date) }
         )
 
+        if (uiState.isInSelectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${uiState.selectedAttendees.size} Selected",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                TextButton(
+                    onClick = { viewModel.clearSelections() }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        }
+
         // Registration List
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -111,6 +138,18 @@ fun CallingListScreen(
                     },
                     onMessageIconClicked = { report ->
                         viewModel.sendWhatsAppMessage(context, report.phone, report.name)
+                    },
+                    isSelected = uiState.selectedAttendees.contains(registrationReport.phone),
+                    onLongClick = {
+                        if (!uiState.isInSelectionMode) {
+                            viewModel.toggleSelectionMode()
+                            viewModel.toggleAttendeeSelection(registrationReport.phone)
+                        }
+                    },
+                    onClick = {
+                        if (uiState.isInSelectionMode) {
+                            viewModel.toggleAttendeeSelection(registrationReport.phone)
+                        }
                     }
                 )
             }
@@ -170,12 +209,15 @@ private fun TopSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun StudentListItem(
     student: CallingReportPOJO,
     onStudentUpdated: (CallingReportPOJO) -> Unit,
-    onMessageIconClicked: (CallingReportPOJO) -> Unit
+    onMessageIconClicked: (CallingReportPOJO) -> Unit,
+    isSelected: Boolean = false,
+    onLongClick: () -> Unit = {},
+    onClick: () -> Unit = {}
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -184,9 +226,16 @@ fun StudentListItem(
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                width = if (isSelected) 2.dp else 0.5.dp,
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                 shape = RoundedCornerShape(16.dp)
+            )
+            .combinedClickable(
+                onClick = { onClick() },
+                onLongClick = { onLongClick() }
             ),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -211,7 +260,8 @@ fun StudentListItem(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
+
+                    CopyableText(
                         text = student.name,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold,
@@ -220,7 +270,7 @@ fun StudentListItem(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Text(
+                    CopyableText(
                         text = student.phone,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -317,6 +367,26 @@ fun StudentListItem(
     }
 }
 
+
+@Composable
+fun CopyableText(
+    text: String,
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyMedium,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    modifier: Modifier = Modifier
+) {
+    val clipboardManager = LocalClipboardManager.current
+
+    Text(
+        text = text,
+        style = style,
+        color = color,
+        modifier = modifier.clickable {
+            clipboardManager.setText(AnnotatedString(text)) // Copy text to clipboard
+        }
+    )
+}
+
 @Composable
 private fun ActionButton(
     icon: ImageVector,
@@ -359,7 +429,7 @@ fun showCallingStatusDialog(
     var selectedStatus by remember { mutableStateOf(student.status) }
     var reason by remember { mutableStateOf(TextFieldValue("")) }
     var otherReason by remember { mutableStateOf(TextFieldValue("")) }
-    var feedback by remember { mutableStateOf(TextFieldValue("")) }  // New feedback variable
+    var feedback by remember { mutableStateOf(TextFieldValue(student.feedback)) }  // New feedback variable
 
     AlertDialog(
         onDismissRequest = { onDismiss() },

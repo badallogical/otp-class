@@ -17,6 +17,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,6 +67,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -91,6 +93,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harekrishna.otpClasses.R
 import com.harekrishna.otpClasses.data.models.AttendeeItem
+import com.harekrishna.otpClasses.ui.registeration.CopyableText
 import kotlinx.coroutines.launch
 
 
@@ -262,6 +265,27 @@ fun AttendeeListTab(viewModel: FollowUpViewModel) {
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
+        if (uiState.isInSelectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${uiState.selectedAttendees.size} Selected",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                TextButton(
+                    onClick = { viewModel.clearSelections() }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        }
         // Pass filter and sort logic as lambdas
         FilterAndSortOptions(
             onFilterSelected = { filter ->
@@ -292,7 +316,21 @@ fun AttendeeListTab(viewModel: FollowUpViewModel) {
                         viewModel.updateStudentStatus(updatedReport.phone, updatedReport.callingStatus,updatedReport.isInvited, updatedReport.isActive,updatedReport.feedback)
                     },  onMessageIconClicked = { report: AttendeeItem ->
                         viewModel.sendWhatsAppMessage(context,report.phone, report.name)
-                    }, viewModel)
+                    }, viewModel,
+                        isSelected = uiState.selectedAttendees.contains(student.phone),
+                        onLongClick = {
+                            if (!uiState.isInSelectionMode) {
+                                viewModel.toggleSelectionMode()
+                                viewModel.toggleAttendeeSelection(student.phone)
+                            }
+                        },
+                        onClick = {
+                            if (uiState.isInSelectionMode) {
+                                viewModel.toggleAttendeeSelection(student.phone)
+                            }
+                        }
+
+                    )
                 }
             }
         }
@@ -514,15 +552,19 @@ fun EmptyState(icon: Int, message: String) {
 
 
 
+// Update the AttendeeListItem composable
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AttendeeListItem(
     student: AttendeeItem,
     onStudentUpdated: (AttendeeItem) -> Unit,
     onMessageIconClicked: (AttendeeItem) -> Unit,
-    viewModel: FollowUpViewModel
-) {
+    viewModel: FollowUpViewModel,
+    isSelected: Boolean = false,
+    onLongClick: () -> Unit = {},
+    onClick: () -> Unit = {}
+){
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val lastFourSundays = FollowUpViewModel.getLastFourSundays()
@@ -532,10 +574,18 @@ fun AttendeeListItem(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .border(
-                width = 0.5.dp, // Reduced border width for subtlety
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                width = if (isSelected) 2.dp else 0.5.dp,
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                 shape = RoundedCornerShape(16.dp)
+            )
+            .combinedClickable(
+                onClick = { onClick() },
+                onLongClick = { onLongClick() }
             ),
+
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), // Reduced elevation for modern look
         colors = CardDefaults.cardColors(
@@ -559,7 +609,7 @@ fun AttendeeListItem(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
+                    CopyableText(
                         text = student.name,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold,
@@ -568,7 +618,7 @@ fun AttendeeListItem(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Text(
+                    CopyableText(
                         text = student.phone,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -589,7 +639,7 @@ fun AttendeeListItem(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
-                            text = student.attendances.size.toString(),
+                            text = student.totalCount.toString(),
                             style = MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),
@@ -776,7 +826,7 @@ fun showCallingStatusDialog(
     var selectedStatus by remember { mutableStateOf(student.callingStatus) }
     var reason by remember { mutableStateOf(TextFieldValue("")) }
     var otherReason by remember { mutableStateOf(TextFieldValue("")) }
-    var feedback by remember { mutableStateOf(TextFieldValue("")) }  // New feedback variable
+    var feedback by remember { mutableStateOf(TextFieldValue(student.feedback)) }  // New feedback variable
 
 
     AlertDialog(
@@ -860,12 +910,17 @@ fun showCallingStatusDialog(
 }
 
 
-
-// Sample implementation for the SummaryTab
 @Composable
 fun SummaryTab() {
-    // Implement the pie chart summary or any other content here
-    Text("Summary will be displayed here.")
+    Box(
+        modifier = Modifier.fillMaxSize(), // Makes the Box fill the available space
+        contentAlignment = Alignment.Center // Centers the content inside the Box
+    ) {
+        Text(
+            text = "Summary will be displayed here. coming soon",
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center // Centers text within its bounds
+        )
+    }
 }
 
 @Preview
@@ -877,6 +932,7 @@ fun PreviewFollowUpScreen() {
         phone = "123-456-7890",
         callingStatus = "Called",
         attendances = listOf("2023-12-20", "2023-12-22", "2023-12-27"),
+        totalCount = 10,
         isActive = true,
         isInvited = false,
         feedback = "Great session!",

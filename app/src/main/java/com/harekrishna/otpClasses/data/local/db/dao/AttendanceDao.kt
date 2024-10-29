@@ -49,6 +49,9 @@ interface AttendanceDao {
     """)
     suspend fun getLastFourAttendanceDates(phone: String): List<String>
 
+    @Query("SELECT count(*) FROM attendance_dates WHERE attendancePhone =:phone ORDER BY date DESC")
+    suspend fun getAttendanceCount(phone: String): Int
+
     @Query("SELECT DISTINCT attendancePhone from attendance_dates where date = :date ")
     suspend fun getAttendeePresentOn(date : String) : List<String>
 

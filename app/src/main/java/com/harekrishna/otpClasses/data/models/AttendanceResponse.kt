@@ -45,6 +45,7 @@ data class AttendeeItem(
     val phone: String,
     val callingStatus: String,
     val attendances : List<String>,   // Last 4 attendance.
+    val totalCount : Int,
     val isActive : Boolean = false,
     val isInvited : Boolean = false,
     val feedback: String = "",

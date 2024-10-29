@@ -48,7 +48,11 @@ data class FollowUpUiState(
 
     // States for selected options
     var selectedFilter: String = "All",
-    var selectedSort: String = "None"
+    var selectedSort: String = "None",
+
+    // Add new selection-related states
+    val selectedAttendees: Set<String> = emptySet(), // Store selected phone numbers
+    val isInSelectionMode: Boolean = false
 )
 
 
@@ -145,6 +149,9 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
     fun onSwitchChange( student : AttendeeItem ){
         _uiState.value = _uiState.value.copy(
             attendees = uiState.value.attendees.map {
+                if (it.phone == student.phone) it.copy(isActive = !student.isActive) else it
+            },
+            filteredAttendee = uiState.value.attendees.map {
                 if (it.phone == student.phone) it.copy(isActive = !student.isActive) else it
             }
         )
@@ -296,8 +303,11 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
         // Update the UI, registrations list with the new status
         _uiState.value = _uiState.value.copy(
             attendees = _uiState.value.attendees.map { student ->
-                if (student.phone == phone) student.copy(callingStatus = viewStatus, isInvited = invited) else student
+                if (student.phone == phone) student.copy(callingStatus = viewStatus, isInvited = invited, isActive = isActive, feedback = feedback) else student
             },
+            filteredAttendee = _uiState.value.filteredAttendee.map{ student ->
+                if( student.phone == phone ) student.copy(callingStatus = viewStatus, isInvited = invited,isActive = isActive, feedback = feedback) else student
+            }
         )
 
         // update the database
@@ -371,24 +381,22 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
         return count
     }
 
+    // Update the sendFollowUpReport function to handle selections
     @RequiresApi(Build.VERSION_CODES.O)
     fun sendFollowUpReport(context: Context) {
         viewModelScope.launch {
             try {
-                // Fetch the message content in a background thread
                 val msg = withContext(Dispatchers.IO) {
+                    // Use selected attendees if any, otherwise use filtered list
+                    val reports = if (uiState.value.selectedAttendees.isNotEmpty()) {
+                        uiState.value.filteredAttendee.filter {
+                            uiState.value.selectedAttendees.contains(it.phone)
+                        }
+                    } else {
+                        uiState.value.filteredAttendee
+                    }
 
-                    val reports = uiState.value.filteredAttendee
-
-//                    // Parse the date string (assuming it's in 'yyyy-MM-dd' format)
-//                    val parsedDate = LocalDate.parse(reports[0].registrationDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-//
-//                    // Format the date into "Mon, 8 Oct, 2024"
-//                    val formattedDate = parsedDate.format(DateTimeFormatter.ofPattern("EEE, d MMM, yyyy"))
-
-                    // Start building the message 🗓️
                     var reportMsg = "\uD83D\uDCDD *Last 4 Weeks Follow Up Calling Report* \n"
-
                     reportMsg += "Total Strength : ${reports.size}\n\n"
 
                     for (report in reports) {
@@ -427,11 +435,46 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
                 }
                 context.startActivity(intent)
 
+                // Clear selections after sharing
+                clearSelections()
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
+
+    // Toggle selection mode
+    fun toggleSelectionMode() {
+        _uiState.value = _uiState.value.copy(
+            isInSelectionMode = !_uiState.value.isInSelectionMode,
+            selectedAttendees = emptySet() // Clear selections when toggling off
+        )
+    }
+
+    // Toggle selection for a specific attendee
+    fun toggleAttendeeSelection(phone: String) {
+        val currentSelections = _uiState.value.selectedAttendees.toMutableSet()
+        if (currentSelections.contains(phone)) {
+            currentSelections.remove(phone)
+        } else {
+            currentSelections.add(phone)
+        }
+
+        _uiState.value = _uiState.value.copy(
+            selectedAttendees = currentSelections,
+            isInSelectionMode = currentSelections.isNotEmpty()
+        )
+    }
+
+    // Clear all selections
+    fun clearSelections() {
+        _uiState.value = _uiState.value.copy(
+            selectedAttendees = emptySet(),
+            isInSelectionMode = false
+        )
+    }
+
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
@@ -444,29 +487,28 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
             }
         }
 
+        // It don't count the current sunday but give me last sundays.
         @RequiresApi(Build.VERSION_CODES.O)
         fun getLastFourSundays(): List<String> {
             val today = LocalDate.now()
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-            // If today is Sunday, start with today; otherwise, go to the previous Sunday
-            var current = if (today.dayOfWeek == DayOfWeek.SUNDAY) {
-                today
-            } else {
-                today.minusDays((today.dayOfWeek.value % 7).toLong())
-            }
+            // Calculate the previous Sunday, even if today is Sunday
+            val daysToPreviousSunday = if (today.dayOfWeek == DayOfWeek.SUNDAY) 7 else today.dayOfWeek.value
+            var current = today.minusDays(daysToPreviousSunday.toLong())
 
             // Collect the last 4 Sundays
             val sundays = mutableListOf<String>()
-            for (i in 0..3) {
+            for (i in 0 until 4) {
                 sundays.add(current.format(formatter))
                 current = current.minusWeeks(1) // Go back one week
             }
 
-            Log.d("followup",sundays.toString())
+            Log.d("followup", sundays.toString())
 
             return sundays
         }
+
 
 
         // Function to get today's date and the date 4 weeks ago

@@ -68,14 +68,15 @@ class AttendanceResponseRepository(
         val callingReports: List<CallingReportPOJO> = withContext(Dispatchers.IO) {
             callingReportDao.getReportsFromLastFourWeeks(fourWeekRange.first, fourWeekRange.second)
         }
+
         // Iterate through each calling report
         for (report in callingReports) {
 
             // Fetch the last four attendance dates for the current report's phone number
             val lastFourDatesOfAttendee = attendanceDao.getLastFourAttendanceDates(report.phone)
-            Log.d("followup", "${report.name} : ${lastFourDatesOfAttendee}")
+            val getAttendanceCount = attendanceDao.getAttendanceCount(report.phone)
 
-
+            Log.d("followup", "${report.name} : $lastFourDatesOfAttendee")
 
             result.add(
                 AttendeeItem(
@@ -83,6 +84,7 @@ class AttendanceResponseRepository(
                     phone = report.phone,
                     callingStatus = report.status,
                     attendances = lastFourDatesOfAttendee,
+                    totalCount = getAttendanceCount,
                     isActive = report.isActive,
                     isInvited = report.isInvited,
                     feedback = report.feedback.ifEmpty { "No Feedback Yet" },

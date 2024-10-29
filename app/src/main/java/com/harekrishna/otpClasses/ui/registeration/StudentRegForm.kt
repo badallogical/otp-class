@@ -63,9 +63,10 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
         "NA",
         "H.G Sadhu Chaitanya Prabhu",
         "H.G Seva Actyute Prabhu",
-        "H.G Rajiv Lochan Prabhu"
+        "H.G Rajiv Lochan Prabhu",
+        "H.G Prakhar Bhatnagar Prabhu"
     )
-    val batches = listOf("DYS", "TSSV", "VL2")
+    val batches = listOf("OTP","DYS", "TSSV", "VL2")
 
     val icon1 = if (uiState.showDropdownFacilitator)
         Icons.Filled.KeyboardArrowUp

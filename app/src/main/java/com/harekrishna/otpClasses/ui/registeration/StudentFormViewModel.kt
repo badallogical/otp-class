@@ -31,7 +31,7 @@ data class StudentFormUiState(
     var name: String = "",
     var phone: String = "",
     var facilitator: String = "NA",
-    var batch: String = "DYS",
+    var batch: String = "OTP",
     var profession: String = "student",
     var address: String = "na",
     var showDropdownFacilitator: Boolean = false,
