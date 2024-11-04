@@ -1,6 +1,7 @@
 package com.harekrishna.otpClasses.ui.followup
 
 import android.content.Intent
+
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -51,6 +52,7 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -80,6 +82,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -252,6 +255,8 @@ fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel(factory = FollowUpVi
                 }
             }
         }
+
+
     }
 }
 
@@ -301,8 +306,19 @@ fun AttendeeListTab(viewModel: FollowUpViewModel) {
             uiState = uiState
         )
 
+        // Show loading indicator overlay when initial loading is true
+        if (uiState.initialLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        }
         // Display the list of attendees or an empty state if no students exist
-        if (uiState.filteredAttendee.isEmpty()) {
+        else if (uiState.filteredAttendee.isEmpty()) {
             EmptyState(
                 icon = R.drawable.baseline_search_24,  // Replace with your actual icon
                 message = "No devotee found with attendance."
@@ -891,12 +907,12 @@ fun showCallingStatusDialog(
                 // Save the updated student status
                 // Save the updated student status
                 val formattedStatus: String = when (selectedStatus) {
-                    "No" -> "No, ${reason.text}"
-                    "❗" -> "❗, ${otherReason.text}"
+                    "No" -> if(reason.text.isEmpty()) "No" else "No, ${reason.text}"
+                    "❗" -> if(otherReason.text.isEmpty() ) "❗" else "❗, ${otherReason.text}"
                     else -> selectedStatus
                 }
 
-               onSave(student.copy(callingStatus = formattedStatus, feedback = feedback.text.ifEmpty { student.feedback }) )
+               onSave(student.copy(callingStatus = formattedStatus.trim(), feedback = feedback.text.ifEmpty { student.feedback.trim() }) )
             }) {
                 Text(text = "Save")
             }
@@ -938,7 +954,5 @@ fun PreviewFollowUpScreen() {
         feedback = "Great session!",
         registrationDate = "2023-12-15"
     )
-
-//    AttendeeListItem( sampleAttendee, {},{})
 
 }

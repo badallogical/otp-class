@@ -92,7 +92,7 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
         // update the database
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                callingReportRepository.updateCallingReportStatus(phone, status)
+                callingReportRepository.updateCallingReportStatus(phone, status.trim())
                 callingReportRepository.updateCallingReportInvited(phone,invited)
                 callingReportRepository.updateCallingReportFeedback(phone,feedback)
             }
@@ -135,7 +135,7 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
                         }
 
                         // Add status and a newline for the next report
-                        reportMsg += "\n📊 Status: *${report.status}*\n"
+                        reportMsg += "\n📊 Status: *${report.status.trim()}*\n"
 
                         // Show feedback only if it's not empty
                         if (report.feedback.isNotEmpty()) {

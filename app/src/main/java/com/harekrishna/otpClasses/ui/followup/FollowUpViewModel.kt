@@ -6,11 +6,6 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,15 +16,11 @@ import com.harekrishna.otpClasses.data.api.ApiService
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
 import com.harekrishna.otpClasses.data.local.repos.AttendanceResponseRepository
 import com.harekrishna.otpClasses.data.models.AttendeeItem
-import com.harekrishna.otpClasses.data.models.CallingReportPOJO
-import com.harekrishna.otpClasses.ui.attendance.AttendanceUiState
-import com.harekrishna.otpClasses.ui.registeration.CallingListViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
@@ -52,7 +43,9 @@ data class FollowUpUiState(
 
     // Add new selection-related states
     val selectedAttendees: Set<String> = emptySet(), // Store selected phone numbers
-    val isInSelectionMode: Boolean = false
+    val isInSelectionMode: Boolean = false,
+
+    val initialLoading: Boolean = true,  // Add initial loading state
 )
 
 
@@ -68,29 +61,59 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
     private lateinit var userPhone: String
 
     init {
-        getAllLastFourWeekAttendees()
-        viewModelScope.launch {
-            AttendanceDataStore.getUserData().collect { userData ->
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Set initial loading state
+                _uiState.value = _uiState.value.copy(initialLoading = true)
+
+                getAllLastFourWeekAttendeesAndRegistration()
+
+                // Fetch user data
+                val userData = AttendanceDataStore.getUserData().first()
                 userName = userData.first ?: "Rajiva Prabhu Ji"
                 userPhone = userData.second ?: "+919807726801"
+
+                fetchAndUpdateAttendance()
+
+            } finally {
+                // Disable initial loading once done
+                withContext(Dispatchers.Main) {
+                    _uiState.value = _uiState.value.copy(initialLoading = false)
+                }
             }
-            fetchAndUpdateAttendance()
         }
     }
 
-    // get all last 4 attendees.
+    // Get all last four week attendees using Dispatchers.IO for database calls
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun getAllLastFourWeekAttendees() {
+    private fun getAllLastFourWeekAttendeesAndRegistration() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val attendeeList = attendanceResponseRepository.getAllLastFourWeekAttendeeAndRegistration()
 
-        viewModelScope.launch {
-            val attendeeList = withContext(Dispatchers.IO) {
-                attendanceResponseRepository.getAllLastFourWeekAttendees()
+            // Switch back to Main dispatcher to update UI
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(
+                    attendees = attendeeList,
+                    filteredAttendee = attendeeList,
+                    isLoading = false  // Stop loading indicator after data fetch
+                )
             }
-            Log.d("FollowUp", attendeeList.toString())
-            _uiState.value =
-                _uiState.value.copy(attendees = attendeeList, filteredAttendee = attendeeList)
         }
     }
+
+    fun filterByLastFourWeekPresentAttendees(){
+        viewModelScope.launch(Dispatchers.IO) {
+            val attendeeList = attendanceResponseRepository.getAllLastFourWeekAttendee()
+
+            // Switch back to Main dispatcher to update UI
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(
+                    filteredAttendee = attendeeList
+                )
+            }
+        }
+    }
+
 
     fun getLastSundayDate(): String {
         // Get the current date
@@ -103,46 +126,36 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
         // Format the date as "YYYY-MM-DD"
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-        Log.d("followup", lastSunday.format(formatter))
         return lastSunday.format(formatter)
     }
 
 
-    suspend fun filterByLastPresent() {
+    fun filterByLastPresent() {
         val date = getLastSundayDate()
-        val result = mutableListOf<AttendeeItem>()
+        viewModelScope.launch(Dispatchers.IO) {
+            val presents = attendanceResponseRepository.getAttendeePresentOn(date)
+            val result = _uiState.value.attendees.filter { presents.contains(it.phone) }
 
-        val presents = attendanceResponseRepository.getAttendeePresentOn(date)
-        for (attendee in _uiState.value.attendees) {
-            if (presents.contains(attendee.phone)) {
-                result.add(attendee)
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(filteredAttendee = result)
             }
         }
-
-        _uiState.value = _uiState.value.copy(filteredAttendee = result)
     }
 
-    suspend fun filterByLastAbsent() {
+    fun filterByLastAbsent() {
         val date = getLastSundayDate()
-        val result = mutableListOf<AttendeeItem>()
+        viewModelScope.launch(Dispatchers.IO) {
+            val presents = attendanceResponseRepository.getAttendeePresentOn(date)
+            val result = _uiState.value.attendees.filterNot { presents.contains(it.phone) }
 
-        // Get the list of attendees who were present on the last Sunday
-        val presents = attendanceResponseRepository.getAttendeePresentOn(date)
-
-        // Iterate through each attendee in the state
-        for (attendee in _uiState.value.attendees) {
-            // If the attendee is not in the present list, add them to the result as absent
-            if (!presents.contains(attendee.phone)) {
-                result.add(attendee)
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(filteredAttendee = result)
             }
         }
-
-        // Update the UI state with the filtered absent attendees
-        _uiState.value = _uiState.value.copy(filteredAttendee = result)
     }
 
 
-    fun filterByLastFourWeeks() {
+    fun filterByAll() {
         _uiState.value = _uiState.value.copy( filteredAttendee = uiState.value.attendees)
     }
 
@@ -158,21 +171,21 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
     }
 
     fun fetchAndUpdateAttendance() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Collecting the first emitted user data
-                val userData = AttendanceDataStore.getUserData().first()
-                val userId = userData.second
 
-                // Ensure userId is not null before making the API call
-                if (userId != null) {
-                    val attendances = ApiService.getAttendanceResponses(userId)
-                    attendances.forEach { attendance ->
-                        attendanceResponseRepository.insertMultipleAttendance(attendance.phone, attendance.attendanceDates)
-                    }
-                } else {
-                    Log.e("fetchAndUpdateAttendance", "User ID is null")
+                Log.d("followup", "fetch and Update called")
+                val userId = userPhone
+
+                val attendances = ApiService.getAttendanceResponses(userId)
+                attendances.forEach { attendance ->
+                    attendanceResponseRepository.insertMultipleAttendance(
+                        attendance.phone, attendance.attendanceDates
+                    )
                 }
+
+                // Update Log on IO thread
+                Log.d("followup fetching", attendances.toString())
             } catch (e: Exception) {
                 Log.e("fetchAndUpdateAttendance", "Error fetching attendance: ${e.message}", e)
             }
@@ -244,12 +257,12 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
 
         viewModelScope.launch {
             when (filter) {
-                "All" -> filterByLastFourWeeks()
+                "All" -> filterByAll()
                 "Last Present" -> filterByLastPresent()
                 "Last Absent" -> filterByLastAbsent()
-                "Last 4 Weeks Present" -> filterByLastFourWeekPresent()
+                "Last 4 Weeks Present" -> filterByLastFourWeekPresentAttendees()
                 "Last 4 Weeks Absent" -> filterByLastFourWeekAbsent()
-                else -> filterByLastFourWeeks()
+                else -> filterByLastFourWeekPresentAttendees()
             }
 
             sortStudents(uiState.value.selectedSort)
@@ -296,28 +309,37 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
 
     }
 
-    fun updateStudentStatus(phone: String, status: String, invited : Boolean, isActive : Boolean, feedback : String ) {
-
-        val viewStatus = status.split(",").firstOrNull()?.trim() ?: status
-
-        // Update the UI, registrations list with the new status
+    fun updateStudentStatus(
+        phone: String,
+        status: String,
+        invited: Boolean,
+        isActive: Boolean,
+        feedback: String
+    ) {
         _uiState.value = _uiState.value.copy(
             attendees = _uiState.value.attendees.map { student ->
-                if (student.phone == phone) student.copy(callingStatus = viewStatus, isInvited = invited, isActive = isActive, feedback = feedback) else student
+                if (student.phone == phone) student.copy(
+                    callingStatus = status,
+                    isInvited = invited,
+                    isActive = isActive,
+                    feedback = feedback
+                ) else student
             },
-            filteredAttendee = _uiState.value.filteredAttendee.map{ student ->
-                if( student.phone == phone ) student.copy(callingStatus = viewStatus, isInvited = invited,isActive = isActive, feedback = feedback) else student
+            filteredAttendee = _uiState.value.filteredAttendee.map { student ->
+                if (student.phone == phone) student.copy(
+                    callingStatus = status,
+                    isInvited = invited,
+                    isActive = isActive,
+                    feedback = feedback
+                ) else student
             }
         )
 
-        // update the database
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                attendanceResponseRepository.updateCallingReportStatus(phone, status)
-                attendanceResponseRepository.updateCallingReportInvited(phone,invited)
-                attendanceResponseRepository.updateCallingReportFeedback(phone,feedback)
-                attendanceResponseRepository.updateCallingReportActivation(phone, isActive)
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+            attendanceResponseRepository.updateCallingReportStatus(phone, status)
+            attendanceResponseRepository.updateCallingReportInvited(phone, invited)
+            attendanceResponseRepository.updateCallingReportFeedback(phone, feedback)
+            attendanceResponseRepository.updateCallingReportActivation(phone, isActive)
         }
     }
 
@@ -409,7 +431,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
                         }
 
                         // Add status and a newline for the next report
-                        reportMsg += "\n📊 Status: *${report.callingStatus}*\n"
+                        reportMsg += "\n📊 Status: *${report.callingStatus.trim()}*\n"
 
                         // Add attendance count
                         reportMsg += "\n📅 Attendance Count: *${countOfLastFourSundaysPresent(report.attendances)}*\n"
@@ -504,7 +526,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
                 current = current.minusWeeks(1) // Go back one week
             }
 
-            Log.d("followup", sundays.toString())
+
 
             return sundays
         }

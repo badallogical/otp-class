@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import com.harekrishna.otpClasses.data.models.AttendanceDate
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.AttendanceWithDates
+import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 
 @Dao
 interface AttendanceDao {
@@ -54,5 +55,8 @@ interface AttendanceDao {
 
     @Query("SELECT DISTINCT attendancePhone from attendance_dates where date = :date ")
     suspend fun getAttendeePresentOn(date : String) : List<String>
+
+    @Query("SELECT attendancePhone FROM attendance_dates WHERE date BETWEEN :startDate AND :endDate")
+    fun getAttendeeFromLastFourWeeks(startDate: String, endDate: String): List<String>
 
 }

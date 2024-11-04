@@ -138,12 +138,28 @@ fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegistrationListView(registrations: List<RegistrationStatus>, navController: NavController) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(registrations) { registration ->
-            RegistrationItem(data = registration, navController = navController)
-            Spacer(modifier = Modifier.height(8.dp)) // Add spacing between items
+    if (registrations.isEmpty()) {
+        // Display empty state message if the list is empty
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No registrations available",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(registrations) { registration ->
+                RegistrationItem(data = registration, navController = navController)
+                Spacer(modifier = Modifier.height(8.dp)) // Add spacing between items
+            }
         }
     }
 }

@@ -107,7 +107,6 @@ class StudentRepository(
     }
 
     suspend fun markAttendance(phoneNo : String, _date: String){
-
         attendanceDao.insertAttendanceResponse(AttendanceResponse(phoneNo))
         attendanceDao.insertAttendanceDate(AttendanceDate(date = _date, attendancePhone = phoneNo))
     }

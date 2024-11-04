@@ -20,7 +20,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbwuSDnRbamfq8eUhyIfeh3Zhvv8TVzxEBOpwYw1dfk8_huwscjdOEYRQHJ-ZiUUTJM6/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbzmUCPBaGoml2ta88HjOQ9Ibul49IDNvJK5wW29dIQKfABxVSR6pqAFHmwds9G3pKgu/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -349,6 +349,7 @@ object ApiService {
                         val attendanceListType = object : TypeToken<List<UserAttendance>>() {}.type
                         val attendanceList: List<UserAttendance> = Gson().fromJson(jsonString, attendanceListType) ?: emptyList()
                         Log.d("ApiService", attendanceList.toString())
+                        Log.d("followup", "Online : ${attendanceList.toString()}")
                         attendanceList
                     } ?: emptyList()
                 } else {
