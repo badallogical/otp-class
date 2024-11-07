@@ -56,6 +56,9 @@ interface AttendanceDao {
     @Query("SELECT DISTINCT attendancePhone from attendance_dates where date = :date ")
     suspend fun getAttendeePresentOn(date : String) : List<String>
 
+    @Query("SELECT count(*) FROM attendance_dates")
+    fun isAttendanceEmpty() : Int
+
     @Query("SELECT attendancePhone FROM attendance_dates WHERE date BETWEEN :startDate AND :endDate")
     fun getAttendeeFromLastFourWeeks(startDate: String, endDate: String): List<String>
 

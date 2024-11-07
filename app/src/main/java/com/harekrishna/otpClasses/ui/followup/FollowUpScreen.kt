@@ -125,7 +125,12 @@ fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel(factory = FollowUpVi
     // Effect to sync pagerState with viewModel's selectedTab
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onTabSelected(pagerState.currentPage)
+        if(pagerState.currentPage == 0 ){
+            viewModel.initialLoading()
+        }
     }
+
+
 
     Column(
         modifier = Modifier
@@ -148,8 +153,31 @@ fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel(factory = FollowUpVi
                             fontWeight = FontWeight.Bold
                         ),
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.padding(bottom = 16.dp).weight(1f)
                     )
+
+                    // Sync Icon Button with Tooltip
+                    IconButton(
+                        onClick = { if (!uiState.isRefreshing) viewModel.refresh() },
+                        modifier = Modifier
+                            .size(40.dp)
+                    ) {
+                        if (uiState.isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_sync_24),
+                                contentDescription = "refresh",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
 
                     IconButton(
                         onClick = { viewModel.sendFollowUpReport(context) },
@@ -307,18 +335,10 @@ fun AttendeeListTab(viewModel: FollowUpViewModel) {
         )
 
         // Show loading indicator overlay when initial loading is true
-        if (uiState.initialLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-        }
+        LoadingOverlay(isLoading = uiState.isLoading || uiState.initialLoading)
+
         // Display the list of attendees or an empty state if no students exist
-        else if (uiState.filteredAttendee.isEmpty()) {
+        if (uiState.filteredAttendee.isEmpty()) {
             EmptyState(
                 icon = R.drawable.baseline_search_24,  // Replace with your actual icon
                 message = "No devotee found with attendance."
@@ -349,6 +369,15 @@ fun AttendeeListTab(viewModel: FollowUpViewModel) {
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun LoadingOverlay(isLoading: Boolean) {
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
     }
 }

@@ -18,6 +18,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeUnit
 
 object ApiService {
     private const val BASE_URL = "https://script.google.com/macros/s/AKfycbzmUCPBaGoml2ta88HjOQ9Ibul49IDNvJK5wW29dIQKfABxVSR6pqAFHmwds9G3pKgu/exec"
@@ -26,6 +28,9 @@ object ApiService {
         .addInterceptor(HttpLoggingInterceptor().apply {
             setLevel(HttpLoggingInterceptor.Level.BODY)
         })
+        .connectTimeout(30, TimeUnit.SECONDS)  // Time to establish a connection
+        .readTimeout(30, TimeUnit.SECONDS)     // Time to read the data
+        .writeTimeout(30, TimeUnit.SECONDS)    // Time to write data to the connection .connectTimeout(30, TimeUnit.SECONDS)  // Time to establish a connection
         .build()
 
     suspend fun registerStudent(student: StudentDTO, updated : Boolean = false ): Response {
@@ -329,11 +334,9 @@ object ApiService {
     }
 
     // getAttendances
-    suspend fun getAttendanceResponses(userID : String ): List<UserAttendance> {
+    suspend fun getAttendanceResponses(userID: String): List<UserAttendance> {
         return withContext(Dispatchers.IO) {
-
             try {
-
                 val url = "$BASE_URL?userID=$userID"
                 val request = Request.Builder()
                     .url(url)
@@ -356,6 +359,9 @@ object ApiService {
                     Log.e("ApiService", "GET request failed with code: ${response.code}")
                     emptyList()
                 }
+            } catch (e: SocketTimeoutException) {
+                Log.e("ApiService", "GET request timed out: ${e.message}")
+                emptyList()  // Handle timeout separately if needed
             } catch (e: Exception) {
                 Log.e("ApiService", "GET request failed: ${e.message}")
                 emptyList()

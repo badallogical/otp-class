@@ -32,6 +32,7 @@ data class FollowUpUiState(
     var filteredAttendee: List<AttendeeItem> = emptyList(), // also include sorting.
     var selectedTab: Int = 0,
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
 
     // States for expanded dropdowns
     val isFilterDropdownExpanded: Boolean = false,
@@ -60,27 +61,56 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
     private lateinit var userName : String
     private lateinit var userPhone: String
 
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
+    fun initialLoading() {
+        viewModelScope.launch {
+            // Start initial loading in the UI state on the main thread
+            _uiState.value = _uiState.value.copy(initialLoading = true)
+
             try {
-                // Set initial loading state
-                _uiState.value = _uiState.value.copy(initialLoading = true)
+                withContext(Dispatchers.IO) {
+                    // Fetch user data on the IO dispatcher
+                    val userData = AttendanceDataStore.getUserData().first()
+                    userName = userData.first ?: "Rajiva Prabhu Ji"
+                    userPhone = userData.second ?: "+919807726801"
 
-                getAllLastFourWeekAttendeesAndRegistration()
+                    // Fetch attendees data based on userPhone
+                    val attendees = attendanceResponseRepository.getData(userPhone)
 
-                // Fetch user data
-                val userData = AttendanceDataStore.getUserData().first()
-                userName = userData.first ?: "Rajiva Prabhu Ji"
-                userPhone = userData.second ?: "+919807726801"
-
-                fetchAndUpdateAttendance()
-
-            } finally {
-                // Disable initial loading once done
-                withContext(Dispatchers.Main) {
-                    _uiState.value = _uiState.value.copy(initialLoading = false)
+                    // Update _uiState with attendees data on the main thread
+                    withContext(Dispatchers.Main) {
+                        _uiState.value = _uiState.value.copy(attendees = attendees)
+                        filterByAll()
+                    }
                 }
+            } catch (e: Exception) {
+                // Handle error, maybe log or update a separate error state in _uiState if needed
+                Log.d("FollowUpViewModel", "error : ${e.localizedMessage}")
+            } finally {
+                // Disable initial loading state on the main thread
+                _uiState.value = _uiState.value.copy(initialLoading = false, isRefreshing = false)
             }
+        }
+    }
+
+    fun refresh(){
+        _uiState.value = _uiState.value.copy(isRefreshing = true)
+        initialLoading()
+    }
+
+
+    fun fetchRemoteData(){
+        viewModelScope.launch() {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            attendanceResponseRepository.fetchAndUpdateAttendance(userPhone)
+            _uiState.value = _uiState.value.copy(isLoading = false)
+        }
+    }
+
+    // Fetch from local Data.
+    fun fetchLocalData(){
+        viewModelScope.launch {
+            _uiState.value = uiState.value.copy( isLoading = true )
+            getAllLastFourWeekAttendeesAndRegistration()    // database call
         }
     }
 
@@ -95,7 +125,8 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
                 _uiState.value = _uiState.value.copy(
                     attendees = attendeeList,
                     filteredAttendee = attendeeList,
-                    isLoading = false  // Stop loading indicator after data fetch
+                    isLoading = false,  // Stop loading indicator after data fetch,
+                    isRefreshing = false
                 )
             }
         }
@@ -168,28 +199,6 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
                 if (it.phone == student.phone) it.copy(isActive = !student.isActive) else it
             }
         )
-    }
-
-    fun fetchAndUpdateAttendance() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-
-                Log.d("followup", "fetch and Update called")
-                val userId = userPhone
-
-                val attendances = ApiService.getAttendanceResponses(userId)
-                attendances.forEach { attendance ->
-                    attendanceResponseRepository.insertMultipleAttendance(
-                        attendance.phone, attendance.attendanceDates
-                    )
-                }
-
-                // Update Log on IO thread
-                Log.d("followup fetching", attendances.toString())
-            } catch (e: Exception) {
-                Log.e("fetchAndUpdateAttendance", "Error fetching attendance: ${e.message}", e)
-            }
-        }
     }
 
 

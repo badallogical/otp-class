@@ -32,6 +32,9 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
     private val _syncing = MutableStateFlow(false)
     val syncing: StateFlow<Boolean> = _syncing.asStateFlow()
 
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -46,25 +49,35 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
 
     init {
         viewModelScope.launch {
-            getRegistration() // Fetch registrations when ViewModel is created
+            _loading.value = true
+
+            getRegistration()  // This will now manage the loading state internally
+
             Log.d("Registration", "ViewModel Init Registration called")
         }
     }
 
-        // get all the registrations from the local
-        @RequiresApi(Build.VERSION_CODES.O)
-        fun getRegistration() {
-            viewModelScope.launch {
+    // Get all the registrations from the local
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getRegistration() {
+        viewModelScope.launch {
+            try {
+                // Start loading
+                _loading.value = true
 
-                // fetch the registrations from the local <registration status>
+                // Fetch the registrations from the local <registration status>
                 studentRepository.getRegistrationList().collect { registrationList ->
-                    _registrations.value = registrationList ?: emptyList() // Update state
-                    Log.d("Registrations","Registrations loaded  ${registrations.value.size}")
+                    _registrations.value = registrationList ?: emptyList()  // Update state
+                    Log.d("Registrations", "Registrations loaded ${_registrations.value.size}")
                 }
+            } finally {
+                // End loading
+                _loading.value = false
             }
         }
+    }
 
-        // Sync the local registrations to Remote.
+    // Sync the local registrations to Remote.
         fun syncRegistrations() {
             // Set syncing to true at the start
             _syncing.value = true

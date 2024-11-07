@@ -62,6 +62,7 @@ fun RegistrationScreen(
     // Collect state from ViewModel
     val registrations by viewModel.registrations.collectAsState()
     val syncing by viewModel.syncing.collectAsState()
+    val isLoading by viewModel.loading.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.getRegistration()
@@ -87,7 +88,15 @@ fun RegistrationScreen(
         ) {
             HeaderSection(viewModel, syncing)
             Spacer(modifier = Modifier.height(8.dp))
-            RegistrationListView(registrations, navController)
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            else{
+                RegistrationListView(registrations, navController)
+            }
+
         }
     }
 }
@@ -138,6 +147,8 @@ fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegistrationListView(registrations: List<RegistrationStatus>, navController: NavController) {
+
+
     if (registrations.isEmpty()) {
         // Display empty state message if the list is empty
         Box(
