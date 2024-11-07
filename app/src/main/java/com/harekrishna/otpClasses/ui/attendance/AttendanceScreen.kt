@@ -206,6 +206,18 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
             }
         )
     }
+
+    if( uiState.showAttendanceNotAllowed ){
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissShowNoAttendance() },
+            title = { Text("Hare Krishna Prabhu Ji 🙏\nNo classes for today") },
+            confirmButton = {
+                Button(onClick = { viewModel.onDismissShowNoAttendance() } ) {
+                    Text("Hari Bol")
+                }
+            }
+        )
+    }
 }
 
 

@@ -12,5 +12,6 @@ data class AttendanceUiState (
     val showRegistrationDialog: Boolean = false,
     val isRegistering: Boolean = false,
     val isPostingAttendance : Boolean = false,
-    val showCongratsAfterPosting : Boolean = false
+    val showCongratsAfterPosting : Boolean = false,
+    val showAttendanceNotAllowed : Boolean  = false,
 )

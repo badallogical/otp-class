@@ -12,7 +12,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
-import com.harekrishna.otpClasses.data.api.ApiService
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
 import com.harekrishna.otpClasses.data.local.repos.AttendanceResponseRepository
 import com.harekrishna.otpClasses.data.models.AttendeeItem
@@ -87,32 +86,34 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
                 Log.d("FollowUpViewModel", "error : ${e.localizedMessage}")
             } finally {
                 // Disable initial loading state on the main thread
-                _uiState.value = _uiState.value.copy(initialLoading = false, isRefreshing = false)
+                _uiState.value = _uiState.value.copy(initialLoading = false)
             }
         }
     }
 
     fun refresh(){
-        _uiState.value = _uiState.value.copy(isRefreshing = true)
-        initialLoading()
-    }
-
-
-    fun fetchRemoteData(){
-        viewModelScope.launch() {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            attendanceResponseRepository.fetchAndUpdateAttendance(userPhone)
-            _uiState.value = _uiState.value.copy(isLoading = false)
-        }
-    }
-
-    // Fetch from local Data.
-    fun fetchLocalData(){
         viewModelScope.launch {
-            _uiState.value = uiState.value.copy( isLoading = true )
-            getAllLastFourWeekAttendeesAndRegistration()    // database call
+            _uiState.value = _uiState.value.copy(isRefreshing = true)
+
+            withContext(Dispatchers.IO){
+                attendanceResponseRepository.fetchAndUpdateAttendance(userPhone)
+            }
+
+            // Fetch attendees data based on userPhone
+            val attendees = withContext(Dispatchers.IO) {
+                attendanceResponseRepository.getAllLastFourWeekAttendeeAndRegistration()
+            }
+
+            // Update _uiState with attendees data on the main thread
+            _uiState.value = _uiState.value.copy(attendees = attendees)
+            filterByAll()
+
+            _uiState.value = _uiState.value.copy( isRefreshing = false)
         }
+
+
     }
+
 
     // Get all last four week attendees using Dispatchers.IO for database calls
     @RequiresApi(Build.VERSION_CODES.O)

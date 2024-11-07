@@ -122,13 +122,31 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun onStudentItemClicked(student: StudentPOJO){
 
-        _uiState.update { currentState ->
-            currentState.copy(
-                selectedStudent = student,
-                showDialog = true
-            )
+        if( isTodayWeekend() ){
+            _uiState.update { currentState ->
+                currentState.copy(
+                    selectedStudent = student,
+                    showDialog = true
+                )
+            }
+        }else{
+            _uiState.update { currentState ->
+                currentState.copy(
+                   showAttendanceNotAllowed = true
+                )
+            }
+        }
+
+
+
+    }
+
+    fun onDismissShowNoAttendance(){
+        _uiState.update { state ->
+            state.copy( showAttendanceNotAllowed = false )
         }
     }
 
@@ -227,13 +245,14 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
     @RequiresApi(Build.VERSION_CODES.O)
     fun postAttendance(student: StudentPOJO) {
         viewModelScope.launch {
+
             // Update UI state to show that submission is in progress
             _uiState.value = _uiState.value.copy(isPostingAttendance = true)
 
-            val currentDate = FollowUpViewModel.getLastFourSundays()[Random.nextInt(0, 4)]  // Testing
-            //   val currentDate = getCurrentOrNextSunday()
-            //   val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val attendance = AttendancePOJO(student.phone, currentDate, student.name)
+            //val currentDate = FollowUpViewModel.getLastFourSundays()[Random.nextInt(0, 4)]  // Testing
+
+            val currentDate = getCurrentOrNextSunday()
+           val attendance = AttendancePOJO(student.phone, currentDate, student.name)
 
             try {
                 // Save attendance locally using the data store
