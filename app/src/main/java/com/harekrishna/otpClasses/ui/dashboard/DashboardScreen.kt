@@ -37,47 +37,6 @@ import com.harekrishna.otpClasses.ui.theme.Otp_class_appTheme
 @Composable
 fun DashboardScreen(navController: NavController) {
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        // Align the content to the far sides
-                    ) {
-                        Text(
-                            text = "Hari Bol",
-                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        )
-                        {
-                            Image(
-                                painter = painterResource(id = R.drawable.iyflogo), // Replace with your refresh icon resource
-                                contentDescription = "iyf logo",
-                                modifier = Modifier
-                                    .size(50.dp)
-                            )
-
-                            Text(
-                                text = " IYF Classes",
-                                style = MaterialTheme.typography.bodyLarge,
-                            )
-                        }
-                    }
-
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary, // Background color from the theme
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary // Title text color from the theme
-                )
-
-            )
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -113,12 +72,6 @@ fun DashboardScreen(navController: NavController) {
             }
             Spacer(modifier = Modifier.weight(1f)) // Adjust the space between top and bottom content
 
-//            Image(
-//                painter = painterResource(id = R.drawable.iyf), // Replace with your image resource
-//                contentDescription = null,
-//                modifier = Modifier
-//                    .size(100.dp) // Adjust size as needed
-//            )
             Text(
                 text = "ISKCON Youth Forum",
                 color = MaterialTheme.colorScheme.primary,
