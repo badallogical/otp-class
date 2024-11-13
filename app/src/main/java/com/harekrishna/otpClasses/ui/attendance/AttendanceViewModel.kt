@@ -169,27 +169,28 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
 
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun onRegisterStudent(name: String, phone: String) {
+    fun onRegisterStudent(name: String, phone: String, takenStatus : Boolean) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRegistering = true)
 
-
+            val authority = if (takenStatus) userPhone else "NA"
             val currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val student = StudentDTO(name, phone, "NA", "NA", "NA", "NA", currentDate,userPhone)
+            val student = StudentDTO(name, phone, "NA", "OTP", "NA", "NA", currentDate, authority)
 
             try {
-                // Perform the network call on IO thread
-                studentRepository.insertStudent(student)
 
-                // Fetch the updated student list after insertion
-                val updatedStudentList = studentRepository.getAllStudents().first()
+                    // Perform the network call on IO thread
+                    studentRepository.insertStudent(student)
 
-                // Update the UI after successful registration
-                _uiState.value = _uiState.value.copy(
-                    isRegistering = false,
-                    showRegistrationDialog = false, // Close registration dialog
-                    students = updatedStudentList
-                )
+                    // Fetch the updated student list after insertion
+                    val updatedStudentList = studentRepository.getAllStudents().first()
+
+                    // Update the UI after successful registration
+                    _uiState.value = _uiState.value.copy(
+                        isRegistering = false,
+                        showRegistrationDialog = false, // Close registration dialog
+                        students = updatedStudentList
+                    )
 
                 // Sync and update sync status in background
                 launch(Dispatchers.IO) {

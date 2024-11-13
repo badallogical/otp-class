@@ -26,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -51,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -201,8 +204,8 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
         QuickRegistrationDialog(
             uiState,
             onDismiss = { viewModel.onDismissRegisterationDialog() },
-            onRegister = { name, phone ->
-                viewModel.onRegisterStudent(name, phone)
+            onRegister = { name, phone, taken ->
+                viewModel.onRegisterStudent(name, phone, taken)
             }
         )
     }
@@ -329,9 +332,10 @@ fun NoClassesDialog() {
 
 
 @Composable
-fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, onRegister: (String, String) -> Unit) {
+fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, onRegister: (String, String,Boolean) -> Unit) {
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
+    var taken by remember { mutableStateOf(false) }
 
     var isClicked by remember { mutableStateOf(false) }
 
@@ -355,6 +359,25 @@ fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, o
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Checkbox(
+                        checked = taken,
+                        onCheckedChange = { taken = it } // Toggle `taken` state
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "Own this registration",
+                        fontSize = 12.sp, // Smaller font size for less emphasis
+                        fontWeight = FontWeight.Light, // Lighter font weight for a subtle appearance
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f) // Reduced opacity for softer look
+                    )
+                }
+
                 if (isClicked) {
                     Text(
                         text = "Phone number should be 10 digits",
@@ -368,7 +391,7 @@ fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, o
             Button(
                 onClick = {
                     if (phone.length == 10) {
-                        onRegister(name, phone)
+                        onRegister(name, phone, taken)
                         onDismiss()
                     } else {
                         isClicked = true
