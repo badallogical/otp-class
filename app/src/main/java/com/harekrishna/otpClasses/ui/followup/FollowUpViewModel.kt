@@ -371,10 +371,13 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
     
     🏛️ *Venue*: ISKCON Temple, Lucknow
     
-    Hare Krishna Prabhu Ji 🙏
+    Your Servent
+    ${userName} 
     We look forward to seeing you again!
     
-    📞 *Contact*: (Your Name Prabhu), Phone (Please save this number)
+    📞 *Contact*: ${userPhone}
+    (Please save this number)
+ 
 """.trimIndent()
 
         val intent = Intent(Intent.ACTION_VIEW)

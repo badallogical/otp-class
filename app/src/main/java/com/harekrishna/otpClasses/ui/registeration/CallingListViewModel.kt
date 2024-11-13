@@ -221,8 +221,8 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
     
     🏛️ *Venue*: ISKCON Temple, Lucknow
     
-    Hare Krishna Prabhu Ji 🙏
-    ${userName} Prabhu
+    Your Servent
+    ${userName}
     📞 *Contact*: ${userPhone} 
     (Please save this number)
 """.trimIndent()
