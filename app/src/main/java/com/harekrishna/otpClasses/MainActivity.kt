@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material.icons.Icons
@@ -52,6 +54,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -65,6 +68,7 @@ import com.harekrishna.otpClasses.data.models.ReportDTO
 import com.harekrishna.otpClasses.screens.StudentFormScreen
 import com.harekrishna.otpClasses.ui.attendance.AttendanceViewScreen
 import com.harekrishna.otpClasses.ui.dashboard.DashboardScreen
+import com.harekrishna.otpClasses.ui.dashboard.SettingsScreen
 import com.harekrishna.otpClasses.ui.dashboard.WelcomeScreen
 import com.harekrishna.otpClasses.ui.followup.EditReportScreen
 import com.harekrishna.otpClasses.ui.followup.FollowUpScreen
@@ -81,176 +85,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             Otp_class_appTheme { // Wrap content in AppTheme
-                val navController = rememberNavController()
-                    MainScreen(navController)
+                MainNavHost()
             }
         }
     }
 }
 
-
-@RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainScreen(navController: NavController) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            SideNavigationBar(navController = navController)
-        },
-        content = {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                // Align the content to the far sides
-                            ) {
-                                Text(
-                                    text = "Hari Bol",
-                                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                                    modifier = Modifier.weight(1f).clickable {
-                                        scope.launch {
-                                            drawerState.open()
-                                        }
-                                    }
-                                )
-
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                )
-                                {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.iyflogo), // Replace with your refresh icon resource
-                                        contentDescription = "iyf logo",
-                                        modifier = Modifier
-                                            .size(50.dp)
-                                    )
-
-                                    Text(
-                                        text = " IYF Classes",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                    )
-                                }
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primary, // Background color from the theme
-                            titleContentColor = MaterialTheme.colorScheme.onPrimary // Title text color from the theme
-                        ),
-//                        navigationIcon = {
-//                            IconButton(onClick = {
-//                                scope.launch {
-//                                    drawerState.open()
-//                                }
-//                            }) {
-//                                Icon(
-//                                    painter = painterResource(id = R.drawable.baseline_view_list_24),
-//                                    contentDescription = "Menu"
-//                                )
-//                            }
-//                        }
-                    )
-                },
-                content = { padding ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .pointerInput(Unit) {
-                                detectHorizontalDragGestures { change, dragAmount ->
-                                    if (dragAmount > 10) {
-                                        scope.launch { drawerState.open() }
-                                    }
-                                }
-                            }
-                    ) {
-                        MainNavHost()
-                    }
-                }
-            )
-        }
-    )
-}
-
-
-@Composable
-fun SideNavigationBar(
-    navController: NavController
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(240.dp)
-            .background(color = Color.Gray.copy(alpha = 0.1f))
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.iyflogo),
-                contentDescription = "App Logo",
-                modifier = Modifier.size(80.dp)
-            )
-        }
-
-        Divider(
-            modifier = Modifier.padding(vertical = 8.dp),
-            color = Color.Gray.copy(alpha = 0.3f)
-        )
-
-        NavigationMenuItem(
-            label = "Home",
-            icon = R.drawable.iyf,
-            onClick = { navController.navigate("dashboard") }
-        )
-
-        NavigationMenuItem(
-            label = "Settings",
-            icon = R.drawable.baseline_view_list_24,
-            onClick = { navController.navigate("settings") }
-        )
-
-        NavigationMenuItem(
-            label = "About",
-            icon = R.drawable.baseline_search_24,
-            onClick = { navController.navigate("about") }
-        )
-    }
-}
-
-@Composable
-fun NavigationMenuItem(
-    label: String,
-    icon: Int,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            painter = painterResource(id = icon),
-            contentDescription = label,
-            modifier = Modifier.size(24.dp),
-            tint = Color.Gray
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(label, style = MaterialTheme.typography.bodyLarge)
-    }
-}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -276,8 +116,8 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
             // Show the main content if connected
             NavHost(navController = navController, startDestination = startDestination) {
                 composable("dashboard") { DashboardScreen(navController) }
-                composable("settings") { SettingsScreen(navController) }
-                composable("about") { AboutScreen(navController) }
+                composable("settings") { SettingsScreen() }
+                composable("about") { AboutScreen() }
                 composable("welcome") { WelcomeScreen(navController) }
                 composable("registration") { RegistrationScreen(navController) }
                 composable("attendance") { AttendanceScreen(navController) }
@@ -356,16 +196,79 @@ fun checkInternetConnection(context: Context): Boolean {
     }
 }
 
-@Composable
-fun SettingsScreen(navController: NavController) {
-    // Implement your settings screen content here
-    Text("Settings Screen")
-}
 
+
+// AboutScreen.kt
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutScreen(navController: NavController) {
-    // Implement your about screen content here
-    Text("About Screen")
+fun AboutScreen() {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("About") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // App Logo/Image
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center // Centers content inside the Box
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.iyflogo), // Use painterResource for drawable resources
+                    contentDescription = "App Logo",
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            // App Title
+            Text(
+                text = "OTP Registration",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            // App Objective
+            Text(
+                text = "Our mission is to provide a simple and intuitive platform for managing registrations and fostering healthy connections with our youth. We believe in creating user-friendly experiences that make your life easier.",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Justify, // Center-align the text
+                modifier = Modifier
+                    .fillMaxWidth() // Ensures the text spans the full width for proper centering
+                    .padding(horizontal = 16.dp, vertical = 8.dp) // Adds consistent spacing around the text
+            )
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // Version Info
+            Text(
+                text = "Version 1.0.0",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            // Copyright Info
+            Text(
+                text = "© 2024 IYF. All rights reserved.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

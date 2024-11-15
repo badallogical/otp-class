@@ -76,115 +76,122 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background) // Set the background color here
+            .padding(16.dp) // Padding applied to the content inside the Box
     ) {
-        // Header Row
-        Row(
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
         ) {
-            Text(
-                text = "Attendance",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(4f) // Take up as much space as possible
-            )
-
-            // Refresh Icon
-            Icon(
-                painter = painterResource(id = R.drawable.baseline_refresh_24),
-                contentDescription = "Refresh Icon",
-                tint = MaterialTheme.colorScheme.primary,
+            // Header Row
+            Row(
                 modifier = Modifier
-                    .size(24.dp)
-                    .weight(0.5f)
-                    .clickable {
-                        viewModel.onRefresh() // Fetch students again when refresh icon is clicked
-                    }
-            )
-
-            // Save & Sync Icon
-            Icon(
-                painter = painterResource(id = R.drawable.baseline_view_list_24),
-                contentDescription = "Save & Sync",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .size(24.dp)
-                    .weight(1f)
-                    .clickable {
-                        navController.navigate("attendance_view")
-                    }
-            )
-        }
-
-        // Search Bar
-        OutlinedTextField(
-            value = uiState.searchQuery,
-            onValueChange = { newQuery ->
-                viewModel.onSearchQueryChanged(newQuery) // Update the filtered list on search query change
-            },
-            label = { Text("Search by phone number") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            shape = MaterialTheme.shapes.medium, // Round corners
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.baseline_search_24),
-                    contentDescription = "Search Icon",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), // Set the IME action to "Done"
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    viewModel.onSearchQueryChanged(uiState.searchQuery) // Action when the "Done" button is pressed on the keyboard
-                }
-            ),
-            singleLine = true, // Make the text field single-lined
-            maxLines = 1 // Limit the text input to one line
-        )
-
-        // Loading State
-        if (uiState.isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else if (uiState.filteredStudents.isEmpty()) {
-            // No Students Found
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    "No Student found",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Gray
+                    text = "Attendance",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(4f) // Take up as much space as possible
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { viewModel.onClickQuickRegisteration() }) {
-                    Text("Quick Registration")
-                }
+
+                // Refresh Icon
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_refresh_24),
+                    contentDescription = "Refresh Icon",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .weight(0.5f)
+                        .clickable {
+                            viewModel.onRefresh() // Fetch students again when refresh icon is clicked
+                        }
+                )
+
+                // Save & Sync Icon
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_view_list_24),
+                    contentDescription = "Save & Sync",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .weight(1f)
+                        .clickable {
+                            navController.navigate("attendance_view")
+                        }
+                )
             }
-        } else {
-            // List of Students
-            LazyColumn {
-                items(uiState.filteredStudents) { student ->
-                    StudentItem(student = student) {
-                        viewModel.onStudentItemClicked(student)
+
+            // Search Bar
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = { newQuery ->
+                    viewModel.onSearchQueryChanged(newQuery) // Update the filtered list on search query change
+                },
+                label = { Text("Search by phone number") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = MaterialTheme.shapes.medium, // Round corners
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_search_24),
+                        contentDescription = "Search Icon",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), // Set the IME action to "Done"
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        viewModel.onSearchQueryChanged(uiState.searchQuery) // Action when the "Done" button is pressed on the keyboard
+                    }
+                ),
+                singleLine = true, // Make the text field single-lined
+                maxLines = 1 // Limit the text input to one line
+            )
+
+            // Loading State
+            if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (uiState.filteredStudents.isEmpty()) {
+                // No Students Found
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        "No Student found",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { viewModel.onClickQuickRegisteration() }) {
+                        Text("Quick Registration")
+                    }
+                }
+            } else {
+                // List of Students
+                LazyColumn {
+                    items(uiState.filteredStudents) { student ->
+                        StudentItem(student = student) {
+                            viewModel.onStudentItemClicked(student)
+                        }
                     }
                 }
             }
         }
     }
+
 
     // Dialog to mark attendance
     if (uiState.showDialog && uiState.selectedStudent != null) {

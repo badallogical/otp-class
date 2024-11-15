@@ -2,8 +2,11 @@ package com.harekrishna.otpClasses.ui.registeration
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -11,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
+import com.harekrishna.otpClasses.MyApplication.Companion.toCamelCase
 import com.harekrishna.otpClasses.data.local.repos.CallingReportRepository
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +26,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -43,6 +49,9 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
     lateinit var userName : String
     lateinit var userPhone : String
 
+    lateinit var welcomeMsg : String
+    var welcomeImgUri : String? = null
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -61,6 +70,8 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
             userName = userData.first ?: "Rajiva Prabhu Ji"
             userPhone = userData.second ?: "+919807726801"
 
+            welcomeMsg = AttendanceDataStore.getWelcomeMessage()
+            welcomeImgUri = AttendanceDataStore.getWelcomeImageUri()
 
         }
     }
@@ -149,7 +160,6 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
                     // Add the closing message with emojis
                     reportMsg += "Your Servant \uD83D\uDE4F \n${userName.toCamelCase()}"
 
-
                     reportMsg
                 }
 
@@ -199,9 +209,6 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
         )
     }
 
-
-
-
     fun sendWhatsAppMessage(
         context: Context,
         phoneNumber: String,
@@ -210,29 +217,19 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
 
         val phone = formatPhoneNumber(phoneNumber)
 
-        val message = """
-    Hare Krishna *${name.toCamelCase().trim()} Prabhu Ji* 🙏
-    
-    Thanks for your registration for ISKCON Youth Forum (IYF) classes, it's a life-changing step to discover yourself and unleash your true potential. 💯
-    
-    📢 *We invite you to the Sunday Program*:
-    🕒 *Timing*: 4:30 PM, this Sunday
-    🎉  *Event*: Seminar 🧑‍💻🗣️, Kirtan 🎤, Music 🎸 and Delicious Prasadam 🍛🍰
-    
-    🏛️ *Venue*: ISKCON Temple, Lucknow
-    
-    Your Servent
-    ${userName}
-    📞 *Contact*: ${userPhone} 
-    (Please save this number)
-""".trimIndent()
+        val greeting = "Hare Krishna *${name.toCamelCase().trim()} Prabhu Ji* \uD83D\uDE4F";
+        val footer = "Your Servent\n${userName}\n\uD83D\uDCDE *Contact*: ${userPhone}\n(Please save this number)"
+        val message = greeting + "\n\n" + welcomeMsg + "\n\n" + footer;
+
 
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("https://wa.me/${phone}?text=$message")
+        intent.data = Uri.parse("https://wa.me/${phone}?text=${message.trimIndent()}")
         context.startActivity(intent)
 
 
     }
+
+
 
     fun formatPhoneNumber(phone: String): String {
         // Check if the phone number starts with the country code +91

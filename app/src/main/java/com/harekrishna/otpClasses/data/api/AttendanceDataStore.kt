@@ -1,6 +1,7 @@
 package com.harekrishna.otpClasses.data.api
 
 import android.content.Context
+import android.net.Uri
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -28,6 +29,12 @@ object AttendanceDataStore {
     private val ATTENDANCE_KEY = stringPreferencesKey("attendance_map")
 
     private val DATE_KEY = stringSetPreferencesKey("date_list")
+
+    // Define keys for the  settings
+    private val WELCOME_MESSAGE_KEY = stringPreferencesKey("welcome_message")
+    private val THANKS_MESSAGE_KEY = stringPreferencesKey("thanks_message")
+    private val WELCOME_IMAGE_URI_KEY = stringPreferencesKey("welcome_image_uri")
+    private val THANKS_IMAGE_URI_KEY = stringPreferencesKey("thanks_image_uri")
 
     // Function to save attendance data to DataStore
     suspend fun saveNewAttendance(attendance: AttendancePOJO) {
@@ -161,6 +168,52 @@ object AttendanceDataStore {
         return date in currentDates // Check if the date exists
     }
 
+
+    // Function to save a setting in DataStore
+    suspend fun saveWelcomeMessage(message: String) {
+        context.dataStore.edit { preferences ->
+            preferences[WELCOME_MESSAGE_KEY] = message
+        }
+    }
+
+    suspend fun saveThanksMessage(message: String) {
+        context.dataStore.edit { preferences ->
+            preferences[THANKS_MESSAGE_KEY] = message
+        }
+    }
+
+    suspend fun saveWelcomeImageUri(uri: String) {
+        context.dataStore.edit { preferences ->
+            preferences[WELCOME_IMAGE_URI_KEY] = uri
+        }
+    }
+
+    suspend fun saveThanksImageUri(uri: String) {
+        context.dataStore.edit { preferences ->
+            preferences[THANKS_IMAGE_URI_KEY] = uri
+        }
+    }
+
+    // Retrieve settings from DataStore
+    suspend fun getWelcomeMessage(): String {
+        val preferences = context.dataStore.data.first() // This suspends until data is available
+        return preferences[WELCOME_MESSAGE_KEY] ?: ""
+    }
+
+    suspend fun getThanksMessage(): String {
+        val preferences = context.dataStore.data.first() // This suspends until data is available
+        return preferences[THANKS_MESSAGE_KEY] ?: ""
+    }
+
+    suspend fun getWelcomeImageUri(): String? {
+        val preferences = context.dataStore.data.first() // This suspends until data is available
+        return preferences[WELCOME_IMAGE_URI_KEY]
+    }
+
+    suspend fun getThanksImageUri(): String? {
+        val preferences = context.dataStore.data.first() // This suspends until data is available
+        return preferences[THANKS_IMAGE_URI_KEY]
+    }
 
 
 }

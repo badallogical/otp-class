@@ -59,6 +59,8 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
 
     private lateinit var userName : String
     private lateinit var userPhone: String
+    private lateinit var ThanksMsg : String
+
 
     fun initialLoading() {
         viewModelScope.launch {
@@ -71,6 +73,8 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
                     val userData = AttendanceDataStore.getUserData().first()
                     userName = userData.first ?: "Rajiva Prabhu Ji"
                     userPhone = userData.second ?: "+919807726801"
+
+                    ThanksMsg = AttendanceDataStore.getThanksMessage()
 
                     // Fetch attendees data based on userPhone
                     val attendees = attendanceResponseRepository.getData(userPhone)
@@ -363,13 +367,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
         val message = """
     Hare Krishna *${name.toCamelCase()} Prabhu Ji* 🙏
     
-    Thank you for attending our ISKCON Youth Forum (IYF) session! 🌟 We're glad you joined, and we hope it was a fruitful experience for your spiritual journey. 🌱
-    
-    📢 *We warmly invite you to our next Sunday Program*:
-    🕒 *Timing*: 4:30 PM, this Sunday
-    🎉 *Highlights*: Engaging Seminar 🧑‍💻🗣️, Soul-stirring Kirtan 🎤, Live Music 🎸, and Delicious Prasadam 🍛🍰.
-    
-    🏛️ *Venue*: ISKCON Temple, Lucknow
+    $ThanksMsg
     
     Your Servent
     ${userName} 
