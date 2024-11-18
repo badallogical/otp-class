@@ -8,6 +8,10 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -26,6 +30,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
+import com.harekrishna.otpClasses.data.models.AttendeeItem
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
@@ -35,10 +43,13 @@ import java.time.format.DateTimeFormatter
 data class CallingListUiState(
     val registrations: List<CallingReportPOJO> = emptyList(),
     val updatingStatus: Boolean = false,
+    val date: String = "",
 
     // Add new selection-related states
     val selectedAttendees: Set<String> = emptySet(), // Store selected phone numbers
-    val isInSelectionMode: Boolean = false
+    val isInSelectionMode: Boolean = false,
+    val showDeleteDialog : Boolean =  false,
+    val isDeleting : Boolean = false
 )
 
 class CallingListViewModel(private val callingReportRepository: CallingReportRepository) :
@@ -50,7 +61,6 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
     lateinit var userPhone : String
 
     lateinit var welcomeMsg : String
-    var welcomeImgUri : String? = null
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
@@ -71,7 +81,7 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
             userPhone = userData.second ?: "+919807726801"
 
             welcomeMsg = AttendanceDataStore.getWelcomeMessage()
-            welcomeImgUri = AttendanceDataStore.getWelcomeImageUri()
+
 
         }
     }
@@ -86,6 +96,8 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
                     )
                 }
             }
+
+            _uiState.value = _uiState.value.copy(date = date )
         }
     }
 
@@ -109,6 +121,53 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
             }
         }
     }
+
+    fun deleteSelectedStudents() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDeleting = true)
+
+            try {
+                coroutineScope {
+                    val successfulDeletions = uiState.value.selectedAttendees.map { phone ->
+                        async(Dispatchers.IO) {
+                            try {
+                                // Delete from the database
+                                callingReportRepository.deleteCallingReportByPhone(phone)
+                                phone // Return phone if successful
+                            } catch (e: Exception) {
+                                Log.e("DeleteError", "Error deleting $phone: ${e.message}")
+                                null // Return null if failed
+                            }
+                        }
+                    }.awaitAll().filterNotNull() // Filter out failed deletions
+
+                    // Update local state by removing deleted reports
+                    _uiState.value = _uiState.value.copy(
+                        registrations = _uiState.value.registrations.filterNot { it.phone in successfulDeletions },
+                        selectedAttendees = emptySet() // Clear selections after deletion,
+                    )
+
+                    Log.d("DeleteStatus", "Successfully deleted: $successfulDeletions")
+                }
+            } catch (e: Exception) {
+                Log.e("DeleteError", "Error in deleteSelectedStudents: ${e.message}")
+            } finally {
+                _uiState.value = _uiState.value.copy(isDeleting = false, showDeleteDialog = false, isInSelectionMode = false)
+            }
+        }
+    }
+
+
+    fun onClickDelete(){
+        _uiState.value = _uiState.value.copy( showDeleteDialog = true );
+    }
+
+    fun onDismissDelete(){
+        _uiState.value = _uiState.value.copy( showDeleteDialog = false )
+    }
+
+
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun sendCallingReportMsg(context: Context, date: String) {

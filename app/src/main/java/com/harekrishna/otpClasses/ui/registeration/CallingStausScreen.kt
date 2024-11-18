@@ -35,6 +35,7 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,6 +81,7 @@ fun CallingListScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+
     LaunchedEffect(Unit) {
         Log.d("Calling Screen ", date)
         viewModel.getCallingRegistrations(date)
@@ -111,13 +113,24 @@ fun CallingListScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                TextButton(
-                    onClick = { viewModel.clearSelections() }
-                ) {
-                    Text("Cancel")
+                Row {
+                    TextButton(
+                        onClick = { viewModel.clearSelections() }
+                    ) {
+                        Text("Cancel")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    TextButton(
+                        onClick = { viewModel.onClickDelete() }
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }
+
 
         // Registration List
         LazyColumn(
@@ -155,7 +168,61 @@ fun CallingListScreen(
             }
         }
     }
+
+    DeleteConfirmationDialog(uiState,viewModel)
 }
+
+@Composable
+fun DeleteConfirmationDialog(
+    uiState: CallingListUiState,
+    viewModel: CallingListViewModel
+) {
+    if (uiState.showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissDelete() },
+            title = { Text("Delete Selected") },
+            text = {
+                if (uiState.isDeleting) {
+                    // Show CircularProgressIndicator while deleting
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text("Deleting...")
+                    }
+                } else {
+                    // Confirmation message when not deleting
+                    Text("Are you sure you want to delete the selected items?")
+                }
+            },
+            confirmButton = {
+                if (uiState.isDeleting) {
+                    // Disable the confirm button while deleting
+                    TextButton(onClick = { /* No action during deletion */ }) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                } else {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteSelectedStudents() // Start deletion
+                        }
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onDismissDelete() }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
 
 @Composable
 private fun TopSection(

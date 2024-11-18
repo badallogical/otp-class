@@ -67,7 +67,7 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
 
                 // Fetch the registrations from the local <registration status>
                 studentRepository.getRegistrationList().collect { registrationList ->
-                    _registrations.value = registrationList ?: emptyList()  // Update state
+                    _registrations.value = registrationList  // Update state
                     Log.d("Registrations", "Registrations loaded ${_registrations.value.size}")
                 }
             } finally {
