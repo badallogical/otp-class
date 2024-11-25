@@ -493,9 +493,38 @@ fun showCallingStatusDialog(
     onDismiss: () -> Unit,
     onSave: (CallingReportPOJO) -> Unit
 ) {
-    var selectedStatus by remember { mutableStateOf(student.status) }
-    var reason by remember { mutableStateOf(TextFieldValue("")) }
-    var otherReason by remember { mutableStateOf(TextFieldValue("")) }
+    var selectedStatus by remember { mutableStateOf(student.status.trim().let { status ->
+        if(status.contains(",")){
+            status.split(",")[0].trim()
+        }else{
+            status
+        }
+    }) }
+
+    var reason by remember {
+        mutableStateOf(
+            TextFieldValue(
+                if (student.status.startsWith("No,")) {
+                    student.status.split(",", limit = 2).getOrNull(1)?.trim() ?: ""
+                } else {
+                    ""
+                }
+            )
+        )
+    }
+
+    var otherReason by remember {
+        mutableStateOf(
+            TextFieldValue(
+                if (student.status.startsWith("❗,")) {
+                    student.status.split(",", limit = 2).getOrNull(1)?.trim() ?: ""
+                } else {
+                    ""
+                }
+            )
+        )
+    }
+
     var feedback by remember { mutableStateOf(TextFieldValue(student.feedback)) }  // New feedback variable
 
     AlertDialog(
@@ -559,8 +588,8 @@ fun showCallingStatusDialog(
             Button(onClick = {
                 // Save the updated student status
                 val formattedStatus: String = when (selectedStatus) {
-                    "No" -> "No, ${reason.text}"
-                    "❗" -> "❗, ${otherReason.text}"
+                    "No" -> if(reason.text.isEmpty()) "No" else "No, ${reason.text}"
+                    "❗" -> if(otherReason.text.isEmpty() ) "❗" else "❗, ${otherReason.text}"
                     else -> selectedStatus
                 }
 

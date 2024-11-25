@@ -1,4 +1,5 @@
 [versions]
+accompanistPager = "0.32.0"
 agp = "8.5.0"
 gson = "2.8.9"
 kotlin = "1.9.23"
@@ -22,6 +23,8 @@ room_version = "2.6.1"
 
 
 [libraries]
+accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanistPager" }
+accompanist-pager-indicators = { module = "com.google.accompanist:accompanist-pager-indicators", version.ref = "accompanistPager" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room_version" }

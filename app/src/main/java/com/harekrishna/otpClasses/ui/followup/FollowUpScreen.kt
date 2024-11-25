@@ -868,9 +868,38 @@ fun showCallingStatusDialog(
     onDismiss: () -> Unit,
     onSave: (AttendeeItem) -> Unit
 ) {
-    var selectedStatus by remember { mutableStateOf(student.callingStatus) }
-    var reason by remember { mutableStateOf(TextFieldValue("")) }
-    var otherReason by remember { mutableStateOf(TextFieldValue("")) }
+    var selectedStatus by remember { mutableStateOf(student.callingStatus.trim().let { status ->
+        if(status.contains(",")){
+            status.split(",")[0].trim()
+        }else{
+            status
+        }
+    }) }
+
+    var reason by remember {
+        mutableStateOf(
+            TextFieldValue(
+                if (student.callingStatus.startsWith("No,")) {
+                    student.callingStatus.split(",", limit = 2).getOrNull(1)?.trim() ?: ""
+                } else {
+                    ""
+                }
+            )
+        )
+    }
+
+    var otherReason by remember {
+        mutableStateOf(
+            TextFieldValue(
+                if (student.callingStatus.startsWith("❗,")) {
+                    student.callingStatus.split(",", limit = 2).getOrNull(1)?.trim() ?: ""
+                } else {
+                    ""
+                }
+            )
+        )
+    }
+
     var feedback by remember { mutableStateOf(TextFieldValue(student.feedback)) }  // New feedback variable
 
 

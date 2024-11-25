@@ -12,8 +12,8 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3 // version 1.1.1 - Fixed status dialog
+        versionName = "1.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -54,10 +54,11 @@ android {
 
 dependencies {
 
-    implementation("com.google.accompanist:accompanist-pager:0.32.0")
-    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
+    implementation(libs.accompanist.pager)
+    implementation(libs.accompanist.pager.indicators)
 
     implementation("io.coil-kt:coil-compose:2.4.0")
+
     // Room
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.runtime)
@@ -100,4 +101,5 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(kotlin("script-runtime"))
 }
