@@ -39,7 +39,6 @@ import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-
 data class CallingListUiState(
     val registrations: List<CallingReportPOJO> = emptyList(),
     val updatingStatus: Boolean = false,
@@ -81,8 +80,6 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
             userPhone = userData.second ?: "+919807726801"
 
             welcomeMsg = AttendanceDataStore.getWelcomeMessage()
-
-
         }
     }
 
@@ -118,6 +115,21 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
                 callingReportRepository.updateCallingReportStatus(phone, status.trim())
                 callingReportRepository.updateCallingReportInvited(phone,invited)
                 callingReportRepository.updateCallingReportFeedback(phone,feedback)
+            }
+        }
+    }
+
+    fun updateStudentRemark(phone: String, remark : String ){
+        _uiState.update { currentState ->
+            currentState.copy( registrations = _uiState.value.registrations.map{ student ->
+                if( student.phone == phone ) student.copy( remark = remark) else student
+            })
+        }
+
+        // update the database
+        viewModelScope.launch{
+            withContext(Dispatchers.IO){
+                callingReportRepository.updateCallingReportRemark(phone,remark)
             }
         }
     }
@@ -284,8 +296,6 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
         val intent = Intent(Intent.ACTION_VIEW)
         intent.data = Uri.parse("https://wa.me/${phone}?text=${message.trimIndent()}")
         context.startActivity(intent)
-
-
     }
 
 

@@ -37,6 +37,9 @@ interface CallingReportDao  {
     @Query("UPDATE calling_report SET isActive = :isActive WHERE phone = :phone ")
     suspend fun updateCallingReportActivation( phone: String, isActive : Boolean )
 
+    @Query("UPDATE calling_report SET remark = :remark WHERE phone = :phone ")
+    suspend fun updateCallingReportRemark(phone: String, remark : String )
+
     @Query("Select * from calling_report where phone = :phone ")
     suspend fun checkIfReportExist(phone : String ): CallingReportPOJO?
 

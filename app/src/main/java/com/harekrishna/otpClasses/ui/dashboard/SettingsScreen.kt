@@ -30,6 +30,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
 import com.harekrishna.otpClasses.ui.followup.FollowUpUiState
@@ -46,7 +48,7 @@ import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
+fun SettingsScreen( navController: NavController,
     viewModel: SettingsViewModel = viewModel()
 ) {
     var showWelcomeImagePicker by remember { mutableStateOf(false) }
@@ -145,7 +147,8 @@ fun SettingsScreen(
                     }
                 }
 
-                SaveButton() { viewModel.saveSettings() }
+                SaveButton(navController) { viewModel.saveSettings()
+                }
             }
         }
     }
@@ -153,6 +156,7 @@ fun SettingsScreen(
 
 @Composable
 fun SaveButton(
+    navController: NavController,
     onClick: () -> Unit
 ) {
     // State to track the button's scale for the popping effect
@@ -177,6 +181,8 @@ fun SaveButton(
             // Trigger the pop effect
             isPressed = true
             onClick() // Call the save logic
+            navController.popBackStack()
+
         },
         modifier = Modifier
             .fillMaxWidth()

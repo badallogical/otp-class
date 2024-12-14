@@ -14,5 +14,5 @@ data class CallingReportPOJO(
     val isActive: Boolean,
     val feedback: String,
     val tag: String,
-    val remark: String // for personal use.
+    val remark: String // for personal use. will work like about.
 )

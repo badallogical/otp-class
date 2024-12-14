@@ -116,7 +116,7 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
             // Show the main content if connected
             NavHost(navController = navController, startDestination = startDestination) {
                 composable("dashboard") { DashboardScreen(navController) }
-                composable("settings") { SettingsScreen() }
+                composable("settings") { SettingsScreen(navController) }
                 composable("about") { AboutScreen() }
                 composable("welcome") { WelcomeScreen(navController) }
                 composable("registration") { RegistrationScreen(navController) }

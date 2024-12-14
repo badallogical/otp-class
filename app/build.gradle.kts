@@ -12,8 +12,8 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3 // version 1.1.1 - Fixed status dialog
-        versionName = "1.1.1"
+        versionCode = 4 // version 1.1.2 - Add about section
+        versionName = "1.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

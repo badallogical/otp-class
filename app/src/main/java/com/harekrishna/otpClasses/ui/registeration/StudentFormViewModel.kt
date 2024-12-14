@@ -55,12 +55,15 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
 
     lateinit var userName: String
     lateinit var userPhone: String
+    lateinit var welcomeMsg: String
 
     init {
         viewModelScope.launch {
             val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
             userName = userData.first ?: "Rajiva Prabhu Ji"
             userPhone = userData.second ?: "+919807726801"
+
+            welcomeMsg = AttendanceDataStore.getWelcomeMessage()
         }
 
     }
@@ -296,33 +299,20 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         name: String
     ) {
 
-       val phone = formatPhoneNumber(phoneNumber)
+        val phone = formatPhoneNumber(phoneNumber)
 
-        val message = """
-    Hare Krishna *${name.toCamelCase()} Prabhu Ji* 🙏
-    
-    Thanks for your registration for ISKCON Youth Forum (IYF) classes, it's a life-changing step to discover yourself and unleash your true potential. 💯
-    
-    📢 *We invite you to the Sunday Program*:
-    🕒 *Timing*: 4:30 PM, this Sunday
-    🎉  *Event*: Seminar 🧑‍💻🗣️, Kirtan 🎤, Music 🎸 and Delicious Prasadam 🍛🍰
-    
-    🏛️ *Venue*: ISKCON Temple, Lucknow
-    
-    Hare Krishna Prabhu Ji 🙏
-    ${userName} Prabhu
-    📞 *Contact*: ${userPhone} 
-    (Please save this number)
-""".trimIndent()
+        val greeting = "Hare Krishna *${name.toCamelCase().trim()} Prabhu Ji* \uD83D\uDE4F";
+        val footer = "Your Servent\n${userName}\n\uD83D\uDCDE *Contact*: ${userPhone}\n(Please save this number)"
+        val message = greeting + "\n\n" + welcomeMsg + "\n\n" + footer;
+
 
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("https://wa.me/${phone}?text=$message")
+        intent.data = Uri.parse("https://wa.me/${phone}?text=${message.trimIndent()}")
         context.startActivity(intent)
 
         _uiState.update{ current ->
             current.copy(isInvited = true)
         }
-
     }
 
     fun formatPhoneNumber(phone: String): String {

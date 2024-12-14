@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +27,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -60,7 +62,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -69,6 +70,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.text.input.ImeAction
 
 data class Student(val name: String, val phone: String, var status: String)
 
@@ -80,7 +91,6 @@ fun CallingListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-
 
     LaunchedEffect(Unit) {
         Log.d("Calling Screen ", date)
@@ -131,7 +141,6 @@ fun CallingListScreen(
             }
         }
 
-
         // Registration List
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -148,6 +157,9 @@ fun CallingListScreen(
                             updatedReport.isInvited,
                             updatedReport.feedback
                         )
+                    },
+                    onRemarkChanged = { updatedReport ->
+                        viewModel.updateStudentRemark(updatedReport.phone, updatedReport.remark)
                     },
                     onMessageIconClicked = { report ->
                         viewModel.sendWhatsAppMessage(context, report.phone, report.name)
@@ -170,6 +182,7 @@ fun CallingListScreen(
     }
 
     DeleteConfirmationDialog(uiState,viewModel)
+
 }
 
 @Composable
@@ -284,9 +297,13 @@ fun StudentListItem(
     onMessageIconClicked: (CallingReportPOJO) -> Unit,
     isSelected: Boolean = false,
     onLongClick: () -> Unit = {},
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onRemarkChanged: (CallingReportPOJO) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    var editAboutDialog by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
 
     Card(
@@ -312,6 +329,11 @@ fun StudentListItem(
     ) {
         Column(
             modifier = Modifier
+                .animateContentSize(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    ))
                 .padding(16.dp)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -375,29 +397,39 @@ fun StudentListItem(
                 }
             }
 
-            // Status Chip
-            AssistChip(
-                onClick = { showDialog = true },
-                label = {
-                    Text(
-                        text = student.status.split(",").firstOrNull()?.trim() ?: student.status,
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+            Row(modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                // Status Chip
+                AssistChip(
+                    onClick = { showDialog = true },
+                    label = {
+                        Text(
+                            text = student.status.split(",").firstOrNull()?.trim()
+                                ?: student.status,
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    modifier = Modifier.width(120.dp),
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = if (student.isInvited)
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        else
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                        labelColor = if (student.isInvited)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSecondaryContainer
                     )
-                },
-                modifier = Modifier.width(120.dp),
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = if (student.isInvited)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    else
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                    labelColor = if (student.isInvited)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.onSecondaryContainer
                 )
-            )
+
+                IconButton(onClick = { expanded = !expanded }){
+                    Icon( imageVector = if(expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = "",)
+                }
+
+            }
 
             // Feedback Section
             if (student.feedback.isNotBlank()) {
@@ -419,6 +451,60 @@ fun StudentListItem(
                     )
                 }
             }
+
+            var about by remember { mutableStateOf(student.remark)}
+            // About section
+            if( expanded ){
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        color =  MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Column( // Using a Column to provide padding around the OutlinedTextField
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp) // Add padding to avoid clipping the outline
+                        ) {
+
+                            // Message TextField
+                            OutlinedTextField(
+                                value = about,
+                                onValueChange = {
+                                    about = it
+                                    onRemarkChanged(student.copy(remark = about))
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 120.dp),
+                                label = { Text("About") },
+                                keyboardOptions = KeyboardOptions.Default.copy(
+                                    imeAction = ImeAction.Done
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        // Handle the "Done" action
+                                        expanded = !expanded
+                                        // Hide keyboard or trigger any other logic
+                                    }
+                                ),
+                                placeholder = { Text("Enter your details here...") }, // Removed duplicate
+                                textStyle = MaterialTheme.typography.bodyMedium,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(
+                                        alpha = 0.5f
+                                    )
+                                ),
+                                minLines = 4,
+                                maxLines = Int.MAX_VALUE
+                            )
+
+                        }
+                    }
+            }
+
+
         }
     }
 
@@ -610,7 +696,12 @@ fun showCallingStatusDialog(
 @Preview
 @Composable
 fun previewCallingListItem(){
-    StudentListItem(CallingReportPOJO("9532945033","Rohit","Will try",4,"2024-03-01",true,true,"I am busy in my studies, not find time.", "poor", "he is materialistic goals."), {}, {})
+    StudentListItem(
+        CallingReportPOJO("9532945033","Rohit","Will try",4,"2024-03-01",true,true,"I am busy in my studies, not find time.", "poor", "he is materialistic goals."),
+        {},
+        {},
+        onRemarkChanged = {
+        })
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

@@ -17,6 +17,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Phone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +47,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -116,6 +121,10 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
             value = uiState.name,
             onValueChange = { viewModel.onNameChange(it) },
             label = { Text("Name") },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Next
+            ),
+            leadingIcon = { Icon( Icons.Rounded.Person , null, tint = MaterialTheme.colorScheme.primary) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
@@ -135,7 +144,11 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
                 textStyle = TextStyle(
                     color = if (uiState.isInvited) MaterialTheme.colorScheme.primary else Color.Black // Set the text color based on isInvited
                 ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Phone,
+                    imeAction = ImeAction.Next
+                ),
+                leadingIcon = { Icon( Icons.Rounded.Phone , null, tint = MaterialTheme.colorScheme.primary) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(backgroundColor, shape = MaterialTheme.shapes.small)
@@ -182,6 +195,9 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
                     .onGloballyPositioned { coordinates ->
                         textFieldSize = coordinates.size.toSize()
                     },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Next
+                ),
                 trailingIcon = {
                     Icon(icon1, "contentDescription",
                         Modifier.clickable { viewModel.onDropDownFacilitator() })
@@ -220,6 +236,9 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
                     .onGloballyPositioned { coordinates ->
                         textFieldSize = coordinates.size.toSize()
                     },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Next
+                ),
                 trailingIcon = {
                     Icon(icon2, "contentDescription",
                         Modifier.clickable { viewModel.onDropDownBatch() } )
@@ -246,7 +265,10 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
             value = uiState.profession,
             onValueChange = { viewModel.onProfessionChange(it) },
             label = { Text("Profession") },
-            modifier = Modifier
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Next
+            ),
+           modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
                 .background(backgroundColor, shape = MaterialTheme.shapes.small)
@@ -257,6 +279,10 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
             value = uiState.address,
             onValueChange = { viewModel.onAddressChange(it) },
             label = { Text("Address") },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Done
+            ),
+            leadingIcon = { Icon( Icons.Rounded.LocationOn , null, tint = MaterialTheme.colorScheme.primary) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)

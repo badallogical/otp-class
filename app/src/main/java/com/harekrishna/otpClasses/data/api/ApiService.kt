@@ -29,7 +29,7 @@ object ApiService {
             setLevel(HttpLoggingInterceptor.Level.BODY)
         })
         .connectTimeout(30, TimeUnit.SECONDS)  // Time to establish a connection
-        .readTimeout(30, TimeUnit.SECONDS)     // Time to read the data
+        .readTimeout(45, TimeUnit.SECONDS)     // Time to read the data
         .writeTimeout(30, TimeUnit.SECONDS)    // Time to write data to the connection .connectTimeout(30, TimeUnit.SECONDS)  // Time to establish a connection
         .build()
 
