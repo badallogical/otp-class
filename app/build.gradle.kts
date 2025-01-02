@@ -12,8 +12,8 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 24
         targetSdk = 34
-        versionCode = 4 // version 1.1.2 - Add about section
-        versionName = "1.1.2"
+        versionCode = 5 // version 1.1.3 - Added Select Sync and delete registrations
+        versionName = "1.1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -58,6 +58,13 @@ dependencies {
     implementation(libs.accompanist.pager.indicators)
 
     implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.6") // Or latest version
+
+
+//    implementation("androidx.camera:camera-core:1.5.2")
+//    implementation("androidx.camera:camera-camera2:1.5.2")
+//    implementation("androidx.camera:camera-lifecycle:1.5.2")
+//    implementation("androidx.camera:camera-view:1.5.2")
 
     // Room
     ksp(libs.androidx.room.compiler)

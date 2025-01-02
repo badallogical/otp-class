@@ -220,13 +220,34 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
     if( uiState.showAttendanceNotAllowed ){
         AlertDialog(
             onDismissRequest = { viewModel.onDismissShowNoAttendance() },
-            title = { Text("Hare Krishna Prabhu Ji 🙏\nNo classes for today") },
+            title = {
+                Text(
+                    text = "⚠️ Hari Bol Prabhu Ji",
+                    style = MaterialTheme.typography.headlineSmall // Adjust style for consistency
+                )
+            },
+            text = {
+                Text(
+                    text = "Today is no weekend. If you mark this attendance, it will be marked for the previous sunday program. Are you sure?",
+                    style = MaterialTheme.typography.bodySmall // Standardized text style
+                )
+            },
             confirmButton = {
-                Button(onClick = { viewModel.onDismissShowNoAttendance() } ) {
-                    Text("Hari Bol")
+                Button(
+                    onClick = { uiState.selectedStudent?.let { viewModel.postAttendance(it) } } // Use a dedicated confirm function
+                ) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { viewModel.onDismissShowNoAttendance() } // Dismiss logic
+                ) {
+                    Text("Cancel")
                 }
             }
         )
+
     }
 }
 

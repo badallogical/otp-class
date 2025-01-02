@@ -4,8 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -24,10 +26,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 data class StudentFormUiState(
+    val photoUri: Uri? = null,
     var name: String = "",
     var phone: String = "",
     var facilitator: String = "NA",
@@ -57,6 +61,8 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
     lateinit var userPhone: String
     lateinit var welcomeMsg: String
 
+    var tempPhotoUri: Uri? = null
+
     init {
         viewModelScope.launch {
             val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
@@ -78,6 +84,22 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
                 StudentFormViewModel(repository)  // Pass the repository to the ViewModel constructor
             }
         }
+    }
+
+    fun onPhotoSelected(uri: Uri) {
+        _uiState.update { it.copy(photoUri = uri) }
+    }
+
+    fun createImageUri(context: Context): Uri? {
+        val imageFile = File(
+            context.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+            "profile_${System.currentTimeMillis()}.jpg"
+        )
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            imageFile
+        )
     }
 
 

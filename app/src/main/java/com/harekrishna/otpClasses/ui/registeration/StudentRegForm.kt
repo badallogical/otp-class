@@ -1,23 +1,34 @@
 package com.harekrishna.otpClasses.screens
 
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Phone
@@ -29,6 +40,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,7 +52,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -54,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.harekrishna.otpClasses.R
 import com.harekrishna.otpClasses.ui.registeration.StudentFormViewModel
 
@@ -84,11 +99,40 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
         Icons.Filled.KeyboardArrowDown
 
     val backgroundColor = if (isSystemInDarkTheme()) {
-        MaterialTheme.colorScheme.surfaceVariant // Dark theme background color
+        MaterialTheme.colorScheme.background // Dark theme background color
     } else {
         MaterialTheme.colorScheme.background // Light theme background color
     }
 
+//    // Image picker launcher
+//    val imagePickerLauncher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.GetContent()
+//    ) { uri: Uri? ->
+//        uri?.let { viewModel.onPhotoSelected(it) }
+//    }
+//
+//    // Camera launcher
+//    val cameraLauncher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.TakePicture()
+//    ) { success ->
+//        if (success) {
+//            viewModel.tempPhotoUri?.let { viewModel.onPhotoSelected(it) }
+//        }
+//    }
+//
+//    // Permission launcher
+//    val permissionLauncher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.RequestPermission()
+//    ) { isGranted ->
+//        if (isGranted) {
+//            viewModel.createImageUri(context)?.let { uri ->
+//                viewModel.tempPhotoUri = uri
+//                cameraLauncher.launch(uri)
+//            }
+//        }
+//    }
+
+Scaffold () { padding ->
     Column(modifier = Modifier.padding(16.dp)) {
         // Custom header
         Row(
@@ -116,6 +160,79 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
             )
         }
 
+        // Photo selection section
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (uiState.photoUri != null) {
+                        AsyncImage(
+                            model = uiState.photoUri,
+                            contentDescription = "Profile Photo",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Add Photo",
+                            modifier = Modifier.size(40.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = {  },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = "Gallery",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Gallery")
+                    }
+
+                    TextButton(
+                        onClick = {
+//                            permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PhotoCamera,
+                            contentDescription = "Camera",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Camera")
+                    }
+                }
+            }
+        }
+
         // Name input
         OutlinedTextField(
             value = uiState.name,
@@ -124,7 +241,13 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Next
             ),
-            leadingIcon = { Icon( Icons.Rounded.Person , null, tint = MaterialTheme.colorScheme.primary) },
+            leadingIcon = {
+                Icon(
+                    Icons.Rounded.Person,
+                    null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
@@ -148,11 +271,17 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
                     keyboardType = KeyboardType.Phone,
                     imeAction = ImeAction.Next
                 ),
-                leadingIcon = { Icon( Icons.Rounded.Phone , null, tint = MaterialTheme.colorScheme.primary) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Rounded.Phone,
+                        null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(backgroundColor, shape = MaterialTheme.shapes.small)
-             )
+            )
 
             // Clickable text
             Text(
@@ -171,13 +300,16 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
                                 uiState.name
                             )
                         } else {
-                            Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                context,
+                                "Please enter a valid phone number",
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                         }
                     }
             )
         }
-
 
 
         // Facilitator dropdown
@@ -213,7 +345,7 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
                     DropdownMenuItem(
                         text = { Text(text = option) },
                         onClick = {
-                         viewModel.onFacilitatorChange(option)
+                            viewModel.onFacilitatorChange(option)
                         }
                     )
                 }
@@ -241,7 +373,7 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
                 ),
                 trailingIcon = {
                     Icon(icon2, "contentDescription",
-                        Modifier.clickable { viewModel.onDropDownBatch() } )
+                        Modifier.clickable { viewModel.onDropDownBatch() })
                 }
             )
             DropdownMenu(
@@ -253,7 +385,7 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
                     DropdownMenuItem(
                         text = { Text(text = option) },
                         onClick = {
-                           viewModel.onBatchChange(option)
+                            viewModel.onBatchChange(option)
                         }
                     )
                 }
@@ -268,7 +400,7 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Next
             ),
-           modifier = Modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
                 .background(backgroundColor, shape = MaterialTheme.shapes.small)
@@ -282,7 +414,13 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
             ),
-            leadingIcon = { Icon( Icons.Rounded.LocationOn , null, tint = MaterialTheme.colorScheme.primary) },
+            leadingIcon = {
+                Icon(
+                    Icons.Rounded.LocationOn,
+                    null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
@@ -292,7 +430,7 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
         // Submit button
         Button(
             onClick = {
-               // viewModel.sendWhatsAppMessage(context,uiState.phone,uiState.name)
+                // viewModel.sendWhatsAppMessage(context,uiState.phone,uiState.name)
                 val phone = uiState.phone
                 if (!uiState.isSubmitting) {
                     if (!(phone.length == 10 && phone.all { it.isDigit() })) {
@@ -325,8 +463,8 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
         if (uiState.showSuccessDialog) {
             AlertDialog(
                 onDismissRequest = { viewModel.onDismissSuccessDialog() },
-                title = { Text( if(uiState.isSuccessfull) "Success" else "Failed")  },
-                text = { Text(if( uiState.isSuccessfull ) "Gaurange ${uiState.name} Prabhu Ji, Hari Bol 🙏" else "Hari Bol, Try Again") },
+                title = { Text(if (uiState.isSuccessfull) "Success" else "Failed") },
+                text = { Text(if (uiState.isSuccessfull) "Gaurange ${uiState.name} Prabhu Ji, Hari Bol 🙏" else "Hari Bol, Try Again") },
                 confirmButton = {
                     TextButton(onClick = { viewModel.onDismissSuccessDialog() }) {
                         Text("Hari Bol")
@@ -382,7 +520,7 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
         }
 
         // Data Fetched Toast
-        if ( uiState.showDataFetchedToast) {
+        if (uiState.showDataFetchedToast) {
             // Use a Toast or Snackbar for data fetched message
             Snackbar(
                 modifier = Modifier.padding(16.dp),
@@ -396,6 +534,7 @@ fun StudentFormScreen( viewModel: StudentFormViewModel = viewModel(factory = Stu
             }
         }
     }
+}
 }
 
 fun isValidPhoneNumber(phone: String): Boolean {

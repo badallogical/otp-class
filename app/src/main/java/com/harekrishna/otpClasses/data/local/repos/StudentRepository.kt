@@ -34,6 +34,7 @@ class StudentRepository(
     private val attendanceDao: AttendanceDao,
 ) {
 
+    private val TAG = "StudentRepository"
 
     // Insert a student into the database and update the callings
     suspend fun insertStudent(student: StudentDTO, isInvited: Boolean = false) {
@@ -121,16 +122,16 @@ class StudentRepository(
             student.copy(date = formatteddate)
         }
 
-        Log.d("StudentRepo", "Data Fetched From the remote ${remoteStudents.size}")
+        Log.d(TAG, "Data Fetched From the remote ${remoteStudents.size}")
 
         // Store the data in the local database for future requests
         withContext(Dispatchers.IO) {
             Log.d("student Repo", "writing to db")
             remoteStudents.forEach { student ->
-                Log.d("StudentRepo", "Inserting student: $student")
+                Log.d(TAG, "Inserting student: $student")
                 studentDao.insert(student.copy(sync = true))
 
-                Log.d("StudentRepo", "Student inserted: ${student.name}")
+                Log.d(TAG, "Student inserted: ${student.name}")
             }
         }
     }
@@ -139,7 +140,7 @@ class StudentRepository(
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun syncMyStudentData() {
         val userData = withContext(Dispatchers.IO) { AttendanceDataStore.getUserData().first() }
-        Log.d("registration", "USER DATA ${userData.second}")
+        Log.d(TAG, "USER DATA ${userData.second}")
 
         val remoteStudents = withContext(Dispatchers.IO) {
             userData.second?.let {
@@ -150,18 +151,18 @@ class StudentRepository(
             }
         }
 
-        Log.d("registration", "Data Fetched From the remote ${remoteStudents?.size}")
+        Log.d(TAG, "Data Fetched From the remote ${remoteStudents?.size}")
 
         // Store the data in the local database for future requests
         withContext(Dispatchers.IO) {
-            Log.d("student Repo", "writing to db")
+            Log.d(TAG, "writing to db")
             remoteStudents?.forEach { student ->
-                Log.d("StudentRepo", "Inserting student: $student")
+                Log.d(TAG, "Inserting student: $student")
 
                 // not only insert student but also update calling report
                 insertStudent(student.copy(sync = true))
 
-                Log.d("StudentRepo", "Student inserted: ${student.name}")
+                Log.d(TAG, "Student inserted: ${student.name}")
             }
         }
     }
@@ -222,7 +223,7 @@ class StudentRepository(
         val localRegistrationCounts = userData.second?.let {
             studentDao.getRegistrationList(it).first()
         } // Collect the first value
-        Log.d("registration local", localRegistrationCounts.toString())
+        Log.d(TAG, localRegistrationCounts.toString())
 
 
         // Emit local data if available
@@ -242,7 +243,7 @@ class StudentRepository(
                     // Get the updated data from the local database
                     val remoteRegistrationCounts =
                         userData.second?.let { studentDao.getRegistrationList(it).first() }
-                    Log.d("registration after sync", remoteRegistrationCounts.toString())
+                    Log.d(TAG, remoteRegistrationCounts.toString())
                     emit(
                         remoteRegistrationCounts ?: emptyList()
                     ) // Emit remote data or an empty list
@@ -295,6 +296,48 @@ class StudentRepository(
         }
     }
 
+    // All synced and unsynced
+    suspend fun syncFullLocalRegistrations(date: String) {
+        withContext(Dispatchers.IO) {
+            // Get user data from DataStore
+            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
+
+            // Check userData and fetch registrations using Flow
+            userData.second?.let { userId ->
+                // Collect registrations from the database using Flow but only take the first emission
+                studentDao.getFullRegistrationsByDate(date, userId)
+                    .take(1) // Take only the first emission
+                    .collect { registrations ->
+                        // Safely iterate over the fetched registrations and sync with the server
+                        registrations.forEach { registration ->
+                            try {
+                                // Perform the network operation (API call) within the IO context
+                                Log.d(TAG, "syncing : ${registration.toString()}")
+                                val response = ApiService.registerStudent(registration)
+                                if (response.isSuccessful) {
+                                    // Update the local database to mark as synced
+                                    studentDao.updateToSync(registration.phone)
+                                    Log.d(TAG, "Response : ${response.isSuccessful}")
+                                } else {
+                                    Log.e(
+                                        "registration",
+                                        "Failed to sync registration for ${registration.phone}"
+                                    )
+                                }
+                            } catch (e: Exception) {
+                                // Handle any network-related errors here
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+            } ?: run {
+                Log.e(TAG, "User data is null or empty")
+            }
+
+            Log.d("registration", "sync over")
+        }
+    }
+
 
     suspend fun syncLocalRegistrations(date: String) {
         withContext(Dispatchers.IO) {
@@ -311,12 +354,12 @@ class StudentRepository(
                         registrations.forEach { registration ->
                             try {
                                 // Perform the network operation (API call) within the IO context
-                                Log.d("registration", "syncing : ${registration.toString()}")
+                                Log.d(TAG, "syncing : ${registration.toString()}")
                                 val response = ApiService.registerStudent(registration)
                                 if (response.isSuccessful) {
                                     // Update the local database to mark as synced
                                     studentDao.updateToSync(registration.phone)
-                                    Log.d("registration", "Response : ${response.isSuccessful}")
+                                    Log.d(TAG, "Response : ${response.isSuccessful}")
                                 } else {
                                     Log.e(
                                         "registration",
@@ -330,10 +373,41 @@ class StudentRepository(
                         }
                     }
             } ?: run {
-                Log.e("registration", "User data is null or empty")
+                Log.e(TAG, "User data is null or empty")
             }
 
             Log.d("registration", "sync over")
+        }
+    }
+
+    suspend fun deleteRegistrationByDate( date: String ){
+        withContext(Dispatchers.IO) {
+            // Get user data from DataStore
+            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
+
+            // Check userData and fetch registrations using Flow
+            userData.second?.let { userId ->
+                // Collect registrations from the database using Flow but only take the first emission
+                studentDao.getFullRegistrationsByDate(date, userId)
+                    .take(1) // Take only the first emission
+                    .collect { registrations ->
+                        // Safely iterate over the fetched registrations and sync with the server
+                        registrations.forEach { registration ->
+                            try {
+                                // Delete the registrations
+                                studentDao.deleteByPhone(registration.phone)
+                                Log.d(TAG, "deleting : ${registration.toString()}")
+                            } catch (e: Exception) {
+                                // Handle any network-related errors here
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+            } ?: run {
+                Log.e(TAG, "User data is null or empty")
+            }
+
+            Log.d("registration", "Deletion over")
         }
     }
 

@@ -135,6 +135,7 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
         }else{
             _uiState.update { currentState ->
                 currentState.copy(
+                    selectedStudent = student,
                    showAttendanceNotAllowed = true
                 )
             }
@@ -232,6 +233,27 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
+    fun getPreviousSunday(): String {
+        // Get the current date
+        val currentDate = LocalDate.now()
+
+        // Calculate days to subtract to get to the previous Sunday
+        val daysToSubtract = if (currentDate.dayOfWeek == DayOfWeek.SUNDAY) {
+            0 // Today is Sunday
+        } else {
+            currentDate.dayOfWeek.value // Get numerical value of the current day (1 = Monday, ..., 7 = Sunday)
+        }
+
+        // Find the previous Sunday
+        val previousSunday = currentDate.minusDays(daysToSubtract.toLong())
+
+        // Format the date as "yyyy-MM-dd"
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        return previousSunday.format(formatter)
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
     fun isTodayWeekend(): Boolean {
         // Get today's date
         val today = LocalDate.now()
@@ -250,10 +272,8 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
             // Update UI state to show that submission is in progress
             _uiState.value = _uiState.value.copy(isPostingAttendance = true)
 
-            //val currentDate = FollowUpViewModel.getLastFourSundays()[Random.nextInt(0, 4)]  // Testing
-
-            val currentDate = getCurrentOrNextSunday()
-           val attendance = AttendancePOJO(student.phone, currentDate, student.name)
+            val currentDate = if (isTodayWeekend()) getCurrentOrNextSunday() else getPreviousSunday()
+            val attendance = AttendancePOJO(student.phone, currentDate, student.name)
 
             try {
                 // Save attendance locally using the data store

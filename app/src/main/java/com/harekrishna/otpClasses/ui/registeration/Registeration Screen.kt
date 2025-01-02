@@ -3,8 +3,11 @@ package com.harekrishna.otpClasses.ui.registeration
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,9 +65,7 @@ fun RegistrationScreen(
     viewModel: RegistrationViewModel = viewModel(factory = RegistrationViewModel.Factory)
 ) {
     // Collect state from ViewModel
-    val registrations by viewModel.registrations.collectAsState()
-    val syncing by viewModel.syncing.collectAsState()
-    val isLoading by viewModel.loading.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.getRegistration()
@@ -86,16 +89,51 @@ fun RegistrationScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            HeaderSection(viewModel, syncing)
+            HeaderSection(viewModel, uiState.isSyncing, uiState.isInSelectionMode)
             Spacer(modifier = Modifier.height(8.dp))
-            if (isLoading) {
+
+            if (uiState.isInSelectionMode) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${uiState.selectedRegistrations.size} Selected",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Row {
+                        TextButton(
+                            onClick = { viewModel.clearSelections() }
+                        ) {
+                            Text("Cancel")
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        TextButton(
+                            onClick = { viewModel.onClickDelete() }
+                        ) {
+                            Text("Delete", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+
+            if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             }
             else{
-                RegistrationListView(registrations, navController)
+                RegistrationListView(uiState.registrations, navController, uiState, viewModel)
             }
+
+            DeleteConfirmationDialog(uiState,viewModel)
 
         }
     }
@@ -103,7 +141,7 @@ fun RegistrationScreen(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean) {
+fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean, isInSelectionMode: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -123,7 +161,7 @@ fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean) {
 
         // Sync Icon Button with Tooltip
         IconButton(
-            onClick = { if (!syncing) viewModel.syncRegistrations() },
+            onClick = { if( !syncing ) { if (isInSelectionMode) viewModel.syncRegistrations() else viewModel.syncUnsyncedRegistrations() }},
             modifier = Modifier
                 .size(40.dp)
         ) {
@@ -146,7 +184,60 @@ fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegistrationListView(registrations: List<RegistrationStatus>, navController: NavController) {
+fun DeleteConfirmationDialog(
+    uiState: RegistrationListUiState,
+    viewModel: RegistrationViewModel
+) {
+    if (uiState.showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissDelete() },
+            title = { Text("Delete Selected") },
+            text = {
+                if (uiState.isDeleting) {
+                    // Show CircularProgressIndicator while deleting
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text("Deleting...")
+                    }
+                } else {
+                    // Confirmation message when not deleting
+                    Text("Are you sure you want to delete the selected date registration ?")
+                }
+            },
+            confirmButton = {
+                if (uiState.isDeleting) {
+                    // Disable the confirm button while deleting
+                    TextButton(onClick = { /* No action during deletion */ }) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                } else {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteSelectedRegistrations() // Start deletion
+                        }
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onDismissDelete() }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun RegistrationListView(registrations: List<RegistrationStatus>, navController: NavController, uiState: RegistrationListUiState, viewModel: RegistrationViewModel) {
 
 
     if (registrations.isEmpty()) {
@@ -168,16 +259,33 @@ fun RegistrationListView(registrations: List<RegistrationStatus>, navController:
             modifier = Modifier.fillMaxSize()
         ) {
             items(registrations) { registration ->
-                RegistrationItem(data = registration, navController = navController)
+                RegistrationItem(data = registration, navController = navController,
+                    isSelected = uiState.selectedRegistrations.contains(registration.date),
+                    onLongClick = {
+                        if (!uiState.isInSelectionMode) {
+                            viewModel.toggleSelectionMode()
+                            viewModel.toggleRegistrationSelection(registration.date)
+                        }
+                    },
+                    onClick = {
+                        if (uiState.isInSelectionMode) {
+                            viewModel.toggleRegistrationSelection(registration.date)
+                        }else{
+                            navController.navigate("calling_screen/${registration.date}")
+                        }
+                    })
                 Spacer(modifier = Modifier.height(8.dp)) // Add spacing between items
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun RegistrationItem(data: RegistrationStatus, navController: NavController) {
+fun RegistrationItem(data: RegistrationStatus, navController: NavController,isSelected: Boolean = false,
+                     onLongClick: () -> Unit = {},
+                     onClick: () -> Unit = {},) {
     val formattedDate = LocalDate.parse(data.date)
         .format(DateTimeFormatter.ofPattern("EEE, MMM dd, yyyy"))
 
@@ -185,7 +293,18 @@ fun RegistrationItem(data: RegistrationStatus, navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
-            .clickable { navController.navigate("calling_screen/${data.date}") },
+            .border(
+                width = if (isSelected) 2.dp else 0.5.dp,
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .combinedClickable(
+                onClick = { onClick() },
+                onLongClick = { onLongClick() }
+            ),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
