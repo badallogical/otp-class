@@ -1,5 +1,6 @@
 package com.harekrishna.otpClasses.data.models
 
+import android.net.Uri
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
@@ -21,7 +22,8 @@ data class StudentDTO(
     @SerializedName("Date") val date: String,
     @SerializedName("By") private val _by : String? = null,
 
-    var sync: Boolean = false // Now persisted in the database
+    var sync: Boolean = false, // Now persisted in the database
+    val photoUri: String? = null
 ) {
 
     val name: String

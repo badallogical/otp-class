@@ -12,14 +12,13 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5 // version 1.1.3 - Added Select Sync and delete registrations
-        versionName = "1.1.3"
+        versionCode = 6 // version 1.1.4 - Added camera and fix default message.
+        versionName = "1.1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
-
 
     }
 
@@ -57,14 +56,11 @@ dependencies {
     implementation(libs.accompanist.pager)
     implementation(libs.accompanist.pager.indicators)
 
-    implementation("io.coil-kt:coil-compose:2.4.0")
-    implementation("androidx.compose.material:material-icons-extended:1.7.6") // Or latest version
+    // Coil - Image Loading Library
+    implementation(libs.coil.compose)
 
-
-//    implementation("androidx.camera:camera-core:1.5.2")
-//    implementation("androidx.camera:camera-camera2:1.5.2")
-//    implementation("androidx.camera:camera-lifecycle:1.5.2")
-//    implementation("androidx.camera:camera-view:1.5.2")
+    // Material Icon Extended
+    implementation(libs.androidx.material.icons.extended) // Or latest version
 
     // Room
     ksp(libs.androidx.room.compiler)

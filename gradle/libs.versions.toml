@@ -1,6 +1,7 @@
 [versions]
 accompanistPager = "0.32.0"
 agp = "8.5.0"
+coilCompose = "2.7.0"
 gson = "2.8.9"
 kotlin = "1.9.23"
 coreKtx = "1.10.1"
@@ -12,6 +13,7 @@ lifecycleRuntimeKtx = "2.6.1"
 activityCompose = "1.8.0"
 composeBom = "2024.04.01"
 loggingInterceptor = "4.12.0"
+materialIconsExtended = "1.7.6"
 mockitoCore = "4.0.0"
 mockwebserver = "4.9.3"
 navigationCompose = "2.7.0"
@@ -26,9 +28,11 @@ room_version = "2.6.1"
 accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanistPager" }
 accompanist-pager-indicators = { module = "com.google.accompanist:accompanist-pager-indicators", version.ref = "accompanistPager" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room_version" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room_version" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room_version" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

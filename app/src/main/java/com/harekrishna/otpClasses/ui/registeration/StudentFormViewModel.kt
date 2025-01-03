@@ -2,11 +2,17 @@ package com.harekrishna.otpClasses.ui.registeration
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -282,7 +288,8 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
             uiState.value.profession,
             uiState.value.address,
             currentDate,
-            userPhone
+            userPhone,
+            photoUri = uiState.value.photoUri.toString()
         )
         viewModelScope.launch {
             withContext(Dispatchers.IO){
@@ -353,6 +360,23 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
             .joinToString(" ") { word ->
                 word.replaceFirstChar { it.uppercase() }
             }
+    }
+
+
+
+    // Function to create a file in app-specific external storage
+    fun createImageFile(context: Context): Uri {
+        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val file = File.createTempFile(
+            "IMG_${System.currentTimeMillis()}", // File name
+            ".jpg",                              // File extension
+            storageDir                           // Directory
+        )
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider", // Replace with your app's provider authority
+            file
+        )
     }
 
 

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -77,9 +78,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
+import coil.compose.AsyncImage
 
 data class Student(val name: String, val phone: String, var status: String)
 
@@ -466,6 +473,41 @@ fun StudentListItem(
                                 .fillMaxWidth()
                                 .padding(4.dp) // Add padding to avoid clipping the outline
                         ) {
+
+                                // Profile Picture
+                                Log.d("Student", "Photo uri ${student.name} is ${student.photoUri}")
+                                if( student.photoUri != null ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(150.dp)
+                                                    .clip(CircleShape)
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                    .border(
+                                                        2.dp,
+                                                        MaterialTheme.colorScheme.primary,
+                                                        CircleShape
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                    AsyncImage(
+                                                        model = Uri.parse(student.photoUri),
+                                                        contentDescription = "Profile Photo",
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                            }
+
+                                        }
+                                    }
+                                }
+
 
                             // Message TextField
                             OutlinedTextField(

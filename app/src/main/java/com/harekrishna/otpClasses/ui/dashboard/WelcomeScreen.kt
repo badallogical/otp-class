@@ -118,7 +118,7 @@ fun WelcomeScreen(navController: NavController) {
                         // Call the method to save to DataStore
                         CoroutineScope(Dispatchers.IO).launch {
                             AttendanceDataStore.saveUserData(name.toCamelCase(), phone)
-
+                            saveDefaultMessage()
                             // Navigate to the dashboard on the main thread
                             withContext(Dispatchers.Main) {
                                 navController.navigate("dashboard") // Navigate to the dashboard
@@ -133,6 +133,47 @@ fun WelcomeScreen(navController: NavController) {
             Text("Proceed")
         }
     }
+}
+
+suspend fun saveDefaultMessage(){
+
+        // Define individual string components for the Welcome Message
+        val welcomePart1 =
+            "Thanks for your registration for ISKCON Youth Forum (IYF) classes, "
+        val welcomePart2 =
+            "it's a life-changing step to discover yourself and unleash your true potential. 💯\n\n"
+        val welcomePart3 = "📢 *We invite you to the Sunday Program*:\n"
+        val welcomePart4 = "🕒 *Timing*: 4:30 PM, this Sunday\n"
+        val welcomePart5 =
+            "🎉 *Event*: Seminar 🧑‍💻🗣️, Kirtan 🎤, Music 🎸, and Delicious Prasadam 🍛🍰\n\n"
+        val welcomePart6 = "🏛️ *Venue*: ISKCON Temple, Lucknow"
+
+        // Concatenate the parts
+        val welcomeMsg =
+            welcomePart1 + welcomePart2 + welcomePart3 + welcomePart4 + welcomePart5 + welcomePart6
+
+        // Define individual string components for the Thanks Message
+        val thanksPart1 =
+            "Thank you for attending our ISKCON Youth Forum (IYF) session! 🌟\n"
+        val thanksPart2 =
+            "We're glad you joined, and we hope it was a fruitful experience for your spiritual journey. 🌱\n\n"
+        val thanksPart3 = "📢 *We warmly invite you to our next Sunday Program*:\n"
+        val thanksPart4 = "🕒 *Timing*: 4:30 PM, this Sunday\n"
+        val thanksPart5 =
+            "🎉 *Highlights*: Engaging Seminar 🧑‍💻🗣️, Soul-stirring Kirtan 🎤, Live Music 🎸, and Delicious Prasadam 🍛🍰.\n\n"
+        val thanksPart6 = "🏛️ *Venue*: ISKCON Temple, Lucknow"
+
+        // Concatenate the parts
+        val thanksMsg =
+            thanksPart1 + thanksPart2 + thanksPart3 + thanksPart4 + thanksPart5 + thanksPart6
+
+
+        // Save the Welcome Message
+        AttendanceDataStore.saveWelcomeMessage(welcomeMsg)
+
+        // Encode the Thanks Message and save it
+        AttendanceDataStore.saveThanksMessage(thanksMsg)
+
 }
 
 @Preview

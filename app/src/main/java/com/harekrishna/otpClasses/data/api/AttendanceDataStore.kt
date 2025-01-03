@@ -12,6 +12,8 @@ import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.data.models.AttendancePOJO
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -35,6 +37,7 @@ object AttendanceDataStore {
     private val THANKS_MESSAGE_KEY = stringPreferencesKey("thanks_message")
     private val WELCOME_IMAGE_URI_KEY = stringPreferencesKey("welcome_image_uri")
     private val THANKS_IMAGE_URI_KEY = stringPreferencesKey("thanks_image_uri")
+
 
     // Function to save attendance data to DataStore
     suspend fun saveNewAttendance(attendance: AttendancePOJO) {
@@ -214,6 +217,8 @@ object AttendanceDataStore {
         val preferences = context.dataStore.data.first() // This suspends until data is available
         return preferences[THANKS_IMAGE_URI_KEY]
     }
+
+
 
 
 }

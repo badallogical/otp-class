@@ -54,7 +54,8 @@ class StudentRepository(
                 true,
                 "",
                 "",
-                ""
+                "",
+                photoUri = student.photoUri
             )
         } else {
             callingReport = CallingReportPOJO(
@@ -67,7 +68,8 @@ class StudentRepository(
                 callingReport.isActive,
                 callingReport.feedback,
                 callingReport.tag,
-                callingReport.remark
+                callingReport.remark,
+                photoUri = callingReport.photoUri
             )
         }
 
@@ -396,6 +398,7 @@ class StudentRepository(
                             try {
                                 // Delete the registrations
                                 studentDao.deleteByPhone(registration.phone)
+                                callingDao.delete(registration.phone)
                                 Log.d(TAG, "deleting : ${registration.toString()}")
                             } catch (e: Exception) {
                                 // Handle any network-related errors here
