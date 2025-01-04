@@ -280,6 +280,9 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         val currentDate =
             LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
+//        val currentDate = "2024-12-31"
+
+
         val student = StudentDTO(
             uiState.value.name,
             uiState.value.phone,

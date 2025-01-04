@@ -125,6 +125,7 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
     @RequiresApi(Build.VERSION_CODES.O)
     fun onStudentItemClicked(student: StudentPOJO){
 
+
         if( isTodayWeekend() ){
             _uiState.update { currentState ->
                 currentState.copy(
@@ -272,8 +273,9 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
             // Update UI state to show that submission is in progress
             _uiState.value = _uiState.value.copy(isPostingAttendance = true)
 
+
             val currentDate = if (isTodayWeekend()) getCurrentOrNextSunday() else getPreviousSunday()
-            val attendance = AttendancePOJO(student.phone, currentDate, student.name)
+            val attendance = AttendancePOJO(student.phone, currentDate, student.name, regDate = student.date)
 
             try {
                 // Save attendance locally using the data store
@@ -286,12 +288,11 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
 
                 }
 
-                delay(500)
-
                 // Update UI state after submission completes
                 _uiState.value = _uiState.value.copy(
                     isPostingAttendance = false,
-                    showCongratsAfterPosting = true // If successful, show congratulations
+                    showCongratsAfterPosting = true,
+                    showAttendanceNotAllowed = false,// If successful, show congratulations
                 )
             } catch (e: Exception) {
                 // Handle submission failure

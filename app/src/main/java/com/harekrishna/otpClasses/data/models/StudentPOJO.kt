@@ -6,5 +6,6 @@ data class StudentPOJO (
     @SerializedName("Name") val name: String,
     @SerializedName("Phone") val phone: String,
     @SerializedName("Facilitator") val facilitator: String,
-    @SerializedName("Batch") val batch: String
+    @SerializedName("Batch") val batch: String,
+    @SerializedName("Date") val date: String
 )

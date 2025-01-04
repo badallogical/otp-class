@@ -22,7 +22,7 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbywhd4EJ-JcIxTZSGUD5yvojZYzGMOPiAIaL0N0qNgZhArkJGftf0hc5zXL_tIFIGs/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbwGLYmFO_DcKfUFOvCcq0lfgCzPiDBhWrbBk22-MqjP2sZ0PVaQ12ME6cIxi-NtKagp/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -308,6 +308,7 @@ object ApiService {
                     put("attendance", JSONObject().apply {
                         put("studentID", attendance.studentId)
                         put("date", attendance.date)
+                        put("regDate", attendance.regDate)
                     })
                 }
 

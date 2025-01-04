@@ -5,14 +5,16 @@ package com.harekrishna.otpClasses.data.models
 data class AttendancePOJO(
     val studentId: String,
     val date: String,
-    val name: String
+    val name: String,
+    val regDate: String,
 )
 
 // To Sync online we use DTO
 fun AttendancePOJO.toDTO(): AttendanceDTO {
     return AttendanceDTO(
         studentId = this.studentId,
-        date = this.date
+        date = this.date,
+        regDate = this.regDate
     )
 }
 

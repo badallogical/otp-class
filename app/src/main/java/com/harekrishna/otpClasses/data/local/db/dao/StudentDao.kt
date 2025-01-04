@@ -21,7 +21,8 @@ interface StudentDao {
             _name AS name, 
             _phone AS phone, 
             _facilitator AS facilitator, 
-            _batch AS batch 
+            _batch AS batch,
+            date
         FROM students 
         WHERE phone = :phone
     """)
@@ -39,7 +40,8 @@ interface StudentDao {
             _name AS name, 
             _phone AS phone, 
             _facilitator AS facilitator, 
-            _batch AS batch 
+            _batch AS batch ,
+            date
         FROM students
     """)
     fun getAllStudents(): Flow<List<StudentPOJO>>
