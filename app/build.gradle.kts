@@ -12,7 +12,7 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 24
         targetSdk = 34
-        versionCode = 7 // version 1.1.4 - Added camera and fix default message.
+        versionCode = 7 // version 1.1.5 - Added camera and fix default message.
         versionName = "1.1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
