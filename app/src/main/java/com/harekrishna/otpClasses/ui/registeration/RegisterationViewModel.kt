@@ -78,10 +78,10 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
                 // Fetch the registrations from the local <registration status>
                 withContext(Dispatchers.IO){
                     studentRepository.getRegistrationList().collect { registrationList ->
-                    _uiState.update { current ->
-                        current.copy(registrations = registrationList)
+                        _uiState.update { current ->
+                            current.copy(registrations = registrationList)
+                        }
                     }
-                }
 
                     //_registrations.value = registrationList  // Update state
                     Log.d(TAG, "Registrations loaded ${uiState.value.registrations.size}")
@@ -96,51 +96,10 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
     }
 
 
-        // Sync the local registrations to Remote.
-        fun syncUnsyncedRegistrations() {
-            // Set syncing to true at the start
-            _uiState.update { current ->
-                current.copy( isSyncing = true)
-            }
-
-            viewModelScope.launch {
-                try {
-                    // Fetch dates in IO dispatcher
-                    val dates = withContext(Dispatchers.IO) {
-                        Log.d(TAG, "datas " + AttendanceDataStore.getDates.first())
-                        AttendanceDataStore.getDates.first() // Use first() safely
-                    }
-
-                    Log.d(TAG, "to sync dates: $dates")
-
-                    // Sync local registrations
-                    withContext(Dispatchers.IO) {
-                        dates.forEach { date ->
-                            studentRepository.syncLocalRegistrations(date) // Sync registrations for each date
-                            Log.d(TAG, "Sync Completed for date: $date")
-                            AttendanceDataStore.removeDate(date) // Remove synced date
-                        }
-
-                        // update registrations
-                        getRegistration()
-                    }
-                } catch (e: Exception) {
-                    // Handle any errors that occur during the sync process
-                    e.printStackTrace()
-                } finally {
-                    // Ensure syncing is set to false even if an error occurs
-                    _uiState.update { current ->
-                        current.copy( isSyncing = false)
-                    }
-                }
-            }
-        }
-
-    // Sync the all local registrations to Remote.
-    fun syncRegistrations() {
+    fun syncUnsyncedRegistrations() {
         // Set syncing to true at the start
         _uiState.update { current ->
-            current.copy( isSyncing = true)
+            current.copy(isSyncing = true)
         }
 
         viewModelScope.launch {
@@ -153,28 +112,99 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
 
                 Log.d(TAG, "to sync dates: $dates")
 
-                // Sync local registrations
-                withContext(Dispatchers.IO) {
-                    dates.forEach { date ->
-                        studentRepository.syncFullLocalRegistrations(date) // Sync registrations for each date
-                        Log.d(TAG, "Sync Completed for date: $date")
-                        AttendanceDataStore.removeDate(date) // Remove synced date
-                    }
-
-                    // update registrations
-                    getRegistration()
+                // Sync local registrations in parallel
+                val results = withContext(Dispatchers.IO) {
+                    dates.map { date ->
+                        async {
+                            try {
+                                studentRepository.syncLocalRegistrations(date) // Sync registrations for the date
+                                Log.d(TAG, "Sync Completed for date: $date")
+                                AttendanceDataStore.removeDate(date) // Remove synced date
+                                true // Return success
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error syncing for date: $date", e)
+                                false // Return failure
+                            }
+                        }
+                    }.awaitAll() // Await all async tasks
                 }
+
+                // Check overall sync result
+                if (results.all { it }) {
+                    Log.d(TAG, "All dates synced successfully")
+                } else {
+                    Log.e(TAG, "Some dates failed to sync")
+                }
+
+                // Update registrations after syncing
+                getRegistration()
             } catch (e: Exception) {
                 // Handle any errors that occur during the sync process
-                e.printStackTrace()
+                Log.e(TAG, "Error during sync process", e)
             } finally {
                 // Ensure syncing is set to false even if an error occurs
                 _uiState.update { current ->
-                    current.copy( isSyncing = false)
+                    current.copy(isSyncing = false)
                 }
             }
         }
     }
+
+
+    fun syncRegistrations() {
+        // Set syncing to true at the start
+        _uiState.update { current ->
+            current.copy(isSyncing = true)
+        }
+
+        viewModelScope.launch {
+            try {
+                // Fetch dates in IO dispatcher
+                val dates = withContext(Dispatchers.IO) {
+                    Log.d(TAG, "datas " + AttendanceDataStore.getDates.first())
+                    AttendanceDataStore.getDates.first() // Use first() safely
+                }
+
+                Log.d(TAG, "to sync dates: $dates")
+
+                // Use parallel processing for syncing local registrations
+                val results = withContext(Dispatchers.IO) {
+                    dates.map { date ->
+                        async {
+                            try {
+                                studentRepository.syncFullLocalRegistrations(date) // Sync registrations for the date
+                                Log.d(TAG, "Sync Completed for date: $date")
+                                AttendanceDataStore.removeDate(date) // Remove synced date
+                                true // Return success
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error syncing for date: $date", e)
+                                false // Return failure
+                            }
+                        }
+                    }
+                }.awaitAll() // Wait for all async tasks to complete
+
+                // Check overall result
+                if (results.all { it }) {
+                    Log.d(TAG, "All dates synced successfully")
+                } else {
+                    Log.e(TAG, "Some dates failed to sync")
+                }
+
+                // Update registrations after all sync operations
+                getRegistration()
+            } catch (e: Exception) {
+                // Handle any errors that occur during the sync process
+                Log.e(TAG, "Error during sync process", e)
+            } finally {
+                // Ensure syncing is set to false even if an error occurs
+                _uiState.update { current ->
+                    current.copy(isSyncing = false)
+                }
+            }
+        }
+    }
+
 
     // TODO:
     fun deleteSelectedRegistrations() {
