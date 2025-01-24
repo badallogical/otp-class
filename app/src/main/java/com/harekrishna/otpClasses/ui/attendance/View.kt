@@ -2,6 +2,7 @@ package com.harekrishna.otpClasses.ui.attendance
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -43,6 +44,7 @@ fun AttendanceViewScreen(context: Context) {
     val fetchAttendances: () -> Unit = {
         CoroutineScope(Dispatchers.IO).launch {
             AttendanceDataStore.getAttendanceMap().collect { pojoMap ->
+                Log.d("Attendance", pojoMap.toString())
                 attendanceMapPOJO = pojoMap
 
                 val dtoMap = pojoMap.mapValues { (_, pojoList) ->

@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -59,14 +60,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.google.firebase.BuildConfig
 import com.google.gson.Gson
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore.getUserData
 import com.harekrishna.otpClasses.data.models.ReportDTO
 import com.harekrishna.otpClasses.screens.StudentFormScreen
 import com.harekrishna.otpClasses.ui.attendance.AttendanceViewScreen
+import com.harekrishna.otpClasses.ui.auth.UserData
+import com.harekrishna.otpClasses.ui.auth.admin.AdminPanelScreen
 import com.harekrishna.otpClasses.ui.dashboard.DashboardScreen
 import com.harekrishna.otpClasses.ui.dashboard.SettingsScreen
 import com.harekrishna.otpClasses.ui.dashboard.WelcomeScreen
@@ -141,6 +147,23 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
 
                     // Pass the date to your screen
                     CallingListScreen(date = date)
+                }
+                composable(
+                    route = "admin_panel/{user}",
+                    arguments = listOf(navArgument("user") { type = NavType.StringType })){ backStackEntry ->
+                    Log.d("AdminPanel", "openning")
+                    val gson = Gson()
+                    val userJson = backStackEntry.arguments?.getString("user")
+
+                    Log.d("AdminPanel", userJson.toString())
+
+                    val user = if (userJson != null) {
+                        gson.fromJson(userJson, UserData::class.java)
+                    } else {
+                        UserData("", "", "")
+                    }
+
+                    AdminPanelScreen(user)
                 }
             }
         } else {
@@ -255,7 +278,7 @@ fun AboutScreen() {
 
             // Version Info
             Text(
-                text = "Version 1.0.0",
+                text = "Version "+ R.string.version_name,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary
             )

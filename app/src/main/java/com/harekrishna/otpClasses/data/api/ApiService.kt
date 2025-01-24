@@ -4,12 +4,13 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.harekrishna.otpClasses.data.models.AttendanceDTO
-import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.ReportDTO
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
 import com.harekrishna.otpClasses.data.models.UserAttendance
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
@@ -373,44 +374,53 @@ object ApiService {
 
     suspend fun syncAttendance(
         attendanceMap: Map<String, List<AttendanceDTO>>,
-        onProgressUpdate: (Int,Int,Int,Int) -> Unit
+        onProgressUpdate: (Int, Int, Int, Int) -> Unit
     ): Boolean = withContext(Dispatchers.IO) {
         var success = true
         val totalAttendanceCount = attendanceMap.values.sumOf { it.size }
-        if( totalAttendanceCount == 0 )
-            return@withContext true
+        if (totalAttendanceCount == 0) return@withContext true
 
         var postedCount = 0
-        var day = 0
-        var totalForDay = 0
-        var savedForDay = 0
 
-        for ((date, attendanceList) in attendanceMap) {
-            totalForDay = attendanceList.size
-            day++
-            savedForDay = 0
-            for (attendance in attendanceList) {
-                // Post each attendance entry
-                val result = postAttendance(attendance)
-                if (!result) {
-                    success = false
-                    Log.e(
-                        "SyncService",
-                        "Failed to post attendance for studentID: ${attendance.studentId} on date: $date"
-                    )
-                    return@withContext false
+        // Use a thread-safe mechanism to update progress
+        val progressLock = Any()
+
+        // Iterate over the dates in the map
+        attendanceMap.forEach { (date, attendanceList) ->
+            val totalForDay = attendanceList.size
+            var savedForDay = 0
+            val day = attendanceMap.keys.indexOf(date) + 1
+
+            // Post attendance entries in parallel
+            val results = attendanceList.map { attendance ->
+                async {
+                    val result = postAttendance(attendance)
+                    synchronized(progressLock) {
+                        if (result) {
+                            savedForDay++
+                            postedCount++
+                            val progress = (postedCount * 100) / totalAttendanceCount
+                            onProgressUpdate(progress, day, totalForDay, savedForDay)
+                        } else {
+                            success = false
+                            Log.e(
+                                "SyncService",
+                                "Failed to post attendance for studentID: ${attendance.studentId} on date: $date"
+                            )
+                        }
+                    }
+                    result
                 }
-
-                savedForDay++
-
-                // Update the posted count and progress
-                postedCount++
-                val progress = (postedCount * 100) / totalAttendanceCount
-                onProgressUpdate(progress, day, totalForDay,savedForDay) // Notify the UI of the progress
             }
+
+            // Await all results for the current day
+            results.awaitAll()
+
+            if (!success) return@withContext false
         }
 
         return@withContext success
     }
+
 
 }

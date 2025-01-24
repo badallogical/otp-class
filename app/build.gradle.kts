@@ -2,16 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.harekrishna.otpClasses"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 7 // version 1.1.5 - Added camera and fix default message.
         versionName = "1.1.5"
 
@@ -49,9 +50,60 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            val versionName = defaultConfig.versionName // Ensure this is correctly defined
+            val stringsFile = file("src/main/res/values/strings.xml") // Ensure this points to the correct file
+
+            // Check if the file exists
+            if (stringsFile.exists() ) {
+                val content = stringsFile.readText() // Read the file's content
+                val updatedContent = content.replace(
+                    Regex("<string name=\"version_name\">.*?</string>"),
+                    "<string name=\"version_name\">$versionName</string>"
+                )
+                stringsFile.writeText(updatedContent) // Write the updated content back
+                true
+            } else {
+                println("strings.xml not found at ${stringsFile.path}")
+                false
+            }
+
+        }
+    }
+
+
+
 }
 
 dependencies {
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+
+    // Add the dependency for the Firebase Authentication library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-database")
+
+    // JWT
+    implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+    implementation("io.jsonwebtoken:jjwt-impl:0.11.5")
+    implementation("io.jsonwebtoken:jjwt-jackson:0.11.5")  // Jackson for JSON parsing
+
+
+    // Credential Manager
+    implementation("androidx.credentials:credentials:1.5.0-rc01")
+
+    // optional - needed for credentials support from play services, for devices running
+    // Android 13 and below.
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0-rc01")
+
+    // Play Service
+    implementation(libs.gms.play.services.auth.v2070)
+    implementation(libs.play.services.auth.api.phone)
+    implementation(libs.play.services.identity)
 
     implementation(libs.accompanist.pager)
     implementation(libs.accompanist.pager.indicators)
@@ -60,7 +112,9 @@ dependencies {
     implementation(libs.coil.compose)
 
     // Material Icon Extended
-    implementation(libs.androidx.material.icons.extended) // Or latest version
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.play.services.auth)
+    implementation(libs.googleid) // Or latest version
 
     // Room
     ksp(libs.androidx.room.compiler)

@@ -6,7 +6,7 @@ data class AttendancePOJO(
     val studentId: String,
     val date: String,
     val name: String,
-    val regDate: String,
+    val regDate: String?
 )
 
 // To Sync online we use DTO
@@ -14,7 +14,7 @@ fun AttendancePOJO.toDTO(): AttendanceDTO {
     return AttendanceDTO(
         studentId = this.studentId,
         date = this.date,
-        regDate = this.regDate
+        regDate = this.regDate?: ""
     )
 }
 

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "183307633186",
+    "project_id": "otp-classes",
+    "storage_bucket": "otp-classes.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:183307633186:android:20aaa614acc6071ae1407b",
+        "android_client_info": {
+          "package_name": "com.harekrishna.otpClasses"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "183307633186-972tgm86mqh742vgqk64pm277q9l7qvp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.harekrishna.otpClasses",
+            "certificate_hash": "0f0ae5ab86288b1d924e6949f082cbdc73c604d9"
+          }
+        },
+        {
+          "client_id": "183307633186-e50du3e2dnqirsfs1p5rpq38go7uq3nl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwz2rLyXDNjXuXAyGZsltUTx9CPLJ37Xo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "183307633186-e50du3e2dnqirsfs1p5rpq38go7uq3nl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

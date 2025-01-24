@@ -1,6 +1,11 @@
 package com.harekrishna.otpClasses.ui.dashboard
 
+import android.net.Uri
 import android.os.Build
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,10 +19,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Divider
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,15 +46,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.google.gson.Gson
 import com.harekrishna.otpClasses.R
+import com.harekrishna.otpClasses.ui.auth.GoogleSignInUtils
+import com.harekrishna.otpClasses.ui.auth.UserData
 import com.harekrishna.otpClasses.ui.theme.Otp_class_appTheme
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -225,6 +237,111 @@ fun SideNavigationBar(
             icon = R.drawable.baseline_info_24,
             onClick = { navController.navigate("about") }
         )
+
+        GoogleSignInButton( navController,false )
+    }
+}
+
+
+@Composable
+fun GoogleSignInButton(
+    navController: NavController,
+    isLoading: Boolean
+) {
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
+        GoogleSignInUtils.doGoogleSignIn(
+            context = context,
+            scope = scope,
+            launcher = null,
+            onSignInSuccess = { email, name, photoUrl ->
+
+                val userLogin = UserData(email, name, photoUrl)
+
+                // Handle success, pass user details (email, name, photo URL)
+                Toast.makeText(context, "Welcome, $name!", Toast.LENGTH_SHORT).show()
+                Log.d("GoogleSignIn", "User Email: $email, Name: $name, Photo URL: $photoUrl")
+
+                val gson = Gson()
+                val userJson = gson.toJson(userLogin)
+                val encodedUserJson = Uri.encode(userJson) // Encode the JSON string
+                navController.navigate("admin_panel/$encodedUserJson")
+
+
+            },
+            onSignInError = { error ->
+                // Handle error
+                Toast.makeText(context, "Sign-in failed: $error", Toast.LENGTH_LONG).show()
+                Log.e("GoogleSignIn", "Error: $error")
+            },
+            onInvalidUser = { name ->
+                Toast.makeText(context, "Invalid email, ${name} Prabhu is not admin", Toast.LENGTH_LONG).show()
+                Log.e("GoogleSignIn", "Invalid Email, ${name} not a admin")
+            }
+        )
+
+    }
+
+    Button(
+        onClick = {
+            GoogleSignInUtils.doGoogleSignIn(
+                context = context,
+                scope = scope,
+                launcher = launcher,
+                onSignInSuccess = { email, name, photoUrl ->
+
+                    val userLogin = UserData(email, name, photoUrl)
+
+                    // Handle success, pass user details (email, name, photo URL)
+                    Toast.makeText(context, "Welcome, $name!", Toast.LENGTH_SHORT).show()
+                    Log.d("GoogleSignIn", "User Email: $email, Name: $name, Photo URL: $photoUrl")
+
+                    val gson = Gson()
+                    val userJson = gson.toJson(userLogin)
+                    val encodedUserJson = Uri.encode(userJson) // Encode the JSON string
+                    navController.navigate("admin_panel/$encodedUserJson")
+                },
+                onSignInError = { error ->
+                    // Handle error
+                    Toast.makeText(context, "Sign-in failed: $error", Toast.LENGTH_LONG).show()
+                    Log.e("GoogleSignIn", "Error: $error")
+                },
+                onInvalidUser = { name ->
+                    Toast.makeText(context, "Invalid email, ${name} Prabhu is not admin", Toast.LENGTH_LONG).show()
+                    Log.e("GoogleSignIn", "Invalid Email, ${name} not a admin")
+                }
+            )
+        },
+        enabled = !isLoading,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(40.dp),
+        elevation = ButtonDefaults.elevatedButtonElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = Color.Gray,
+                modifier = Modifier.size(24.dp)
+            )
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(R.drawable.google_logo),
+                    contentDescription = "Google Sign-In",
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Sign in with Google")
+            }
+        }
     }
 }
 
@@ -273,6 +390,7 @@ fun DashboardOption(
             modifier = Modifier.size(35.dp), // Adjust icon size as needed
             tint = MaterialTheme.colorScheme.primary // Set the icon color
         )
+
         Spacer(modifier = Modifier.width(16.dp))
 
         Column {
@@ -296,7 +414,8 @@ fun DashboardOption(
 @Preview(showBackground = true)
 fun DashboardPreview() {
     Otp_class_appTheme {
-        DashboardScreen(navController = rememberNavController())
+        //DashboardScreen(navController = rememberNavController())
+        GoogleSignInButton(rememberNavController(), false )
     }
 }
 
