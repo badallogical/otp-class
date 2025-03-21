@@ -32,6 +32,7 @@ import com.harekrishna.otpClasses.data.models.toDTO
 import com.harekrishna.otpClasses.ui.theme.Otp_class_appTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -41,7 +42,7 @@ import java.util.Date
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AttendanceViewScreen(context: Context, ) {
+fun AttendanceViewScreen(context: Context) {
     var attendanceMap by remember { mutableStateOf(emptyMap<String, List<AttendanceDTO>>()) }
     var attendanceMapPOJO by remember { mutableStateOf(emptyMap<String, List<AttendancePOJO>>()) }
     var showSyncingDialog by remember { mutableStateOf(false) }
@@ -50,14 +51,18 @@ fun AttendanceViewScreen(context: Context, ) {
 
     val fetchAttendances: () -> Unit = {
         CoroutineScope(Dispatchers.IO).launch {
-            AttendanceDataStore.getAttendanceMap().collect { pojoMap ->
+            AttendanceDataStore.getAttendanceMap().collect { pojoMap -> // ✅ Collect continuously
                 Log.d("Attendance", pojoMap.toString())
+
                 attendanceMapPOJO = pojoMap
 
-                val dtoMap = pojoMap.mapValues { (_, pojoList) ->
-                    pojoList.map { pojo -> pojo.toDTO() }
+                attendanceMap = if (pojoMap.isNullOrEmpty()) {
+                    emptyMap()  // ✅ Set empty if there's no data
+                } else {
+                    pojoMap.mapValues { (_, pojoList) ->
+                        pojoList.mapNotNull { pojo -> pojo.toDTO() }  // ✅ Convert safely
+                    }
                 }
-                attendanceMap = dtoMap
             }
         }
     }
@@ -84,7 +89,7 @@ fun AttendanceViewScreen(context: Context, ) {
         LaunchedEffect(Unit) {
             coroutineScope.launch {
                 val syncResult = syncAttendance(attendanceMap) { count ->
-                    if( count == -1 ){
+                    if (count == -1) {
                         isSyncComplete = true
                         isFailed = true
                     }
@@ -96,12 +101,13 @@ fun AttendanceViewScreen(context: Context, ) {
         }
 
         // Change color to green when sync is complete
-        val progressColor = if (isSyncComplete) Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary
+        val progressColor =
+            if (isSyncComplete) Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary
 
         Box(
             modifier = Modifier
                 .size(350.dp)
-                .background( MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp))
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -137,7 +143,7 @@ fun AttendanceViewScreen(context: Context, ) {
                 // Display the current attendance progress
                 Text(
                     text = if (!isSyncComplete) "Attendances saved: $savedAttendances / $totalAttendances"
-                    else if( isFailed ) "Sync Failed " else "All Attendance Synced!",
+                    else if (isFailed) "Sync Failed " else "All Attendance Synced!",
                     style = MaterialTheme.typography.labelMedium,
                     color = progressColor
                 )
@@ -148,7 +154,7 @@ fun AttendanceViewScreen(context: Context, ) {
                 Button(
                     onClick = { onDismiss() },  // Call onDismiss() when clicked
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if(isSyncComplete) progressColor else MaterialTheme.colorScheme.primary,  // Set background color
+                        containerColor = if (isSyncComplete) progressColor else MaterialTheme.colorScheme.primary,  // Set background color
                         contentColor = Color.White  // Set text color for better visibility
                     ),
                     enabled = isSyncComplete  // Enable button only when sync is complete
@@ -167,7 +173,10 @@ fun AttendanceViewScreen(context: Context, ) {
                     IconButton(onClick = {
                         showSyncingDialog = true // Show the dialog when clicked
                     }) {
-                        Icon(painterResource(id = R.drawable.baseline_sync_24), contentDescription = "Sync")
+                        Icon(
+                            painterResource(id = R.drawable.baseline_sync_24),
+                            contentDescription = "Sync"
+                        )
                     }
                 }
             )
@@ -237,6 +246,7 @@ fun AttendanceCard(date: String, list: List<AttendancePOJO>) {
     }
 
     if (showDialog) {
+        val coroutineScope = rememberCoroutineScope()
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text(text = "Attendance List") },
@@ -267,7 +277,8 @@ fun AttendanceCard(date: String, list: List<AttendancePOJO>) {
                                 }
 
                                 IconButton(onClick = {
-                                    updatedList = updatedList.toMutableList().also { it.removeAt(index) }
+                                    updatedList =
+                                        updatedList.toMutableList().also { it.removeAt(index) }
                                 }) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
@@ -282,9 +293,11 @@ fun AttendanceCard(date: String, list: List<AttendancePOJO>) {
             },
             confirmButton = {
                 Button(onClick = {
-                    CoroutineScope(Dispatchers.Main).launch {
-                        AttendanceDataStore.updateAttendance(updatedList)
-                        showDialog = false
+                    coroutineScope.launch {
+                        withContext(Dispatchers.IO) {
+                            AttendanceDataStore.updateAttendance(date, updatedList)
+                        }
+                        showDialog = false // ✅ Ensures UI update runs on Main thread
                     }
                 }) {
                     Text("Save")
@@ -301,15 +314,11 @@ fun AttendanceCard(date: String, list: List<AttendancePOJO>) {
 }
 
 
-
-
-
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 @Preview(showBackground = true)
 fun ViewPreview() {
     Otp_class_appTheme {
-        AttendanceViewScreen(LocalContext.current )
+        AttendanceViewScreen(LocalContext.current)
     }
 }

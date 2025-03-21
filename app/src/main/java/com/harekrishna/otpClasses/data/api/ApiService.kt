@@ -24,7 +24,7 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbxcLISgKYmgXoMyPcWlNWOCJegKrIPKgj2JMMZurWlJ5JIwKln43ddIxtUlKRXn6Djf/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbzXlOBji6f7MOBK2FcIXjMbRsNigD5C-oO5LpLtztvruYPqAWC-knlarPP9wuEEpQ4E/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {

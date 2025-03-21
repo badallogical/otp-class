@@ -13,8 +13,8 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 24
         targetSdk = 35
-        versionCode = 7 // version 1.1.5 - Added camera and fix default message.
-        versionName = "1.1.5"
+        versionCode = 8 // version 1.1.6 - Add Reset Message and Attendance Fixes.
+        versionName = "1.1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
