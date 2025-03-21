@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
@@ -63,7 +64,27 @@ fun SettingsScreen( navController: NavController,
                 title = { Text("Settings", color = MaterialTheme.colorScheme.primary) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
-                )
+                ),
+                actions = {
+                    var expanded by remember { mutableStateOf(false) }
+
+                    IconButton(onClick = { expanded = true }) {
+                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "Menu")
+                    }
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Reset") },
+                            onClick = {
+                                expanded = false
+                                viewModel.resetSettings() // Call reset function
+                            }
+                        )
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -290,54 +311,80 @@ class SettingsViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
+    private val defaultWelcomeMessage: String
+    private val defaultThanksMessage: String
+
 
     init {
+
+        defaultWelcomeMessage = defaultWelcomeMessage()
+        defaultThanksMessage = defaultThanksMessage()
+
         viewModelScope.launch {
             val existingWelcomeMessage = AttendanceDataStore.getWelcomeMessage()
             val existingThanksMessage = AttendanceDataStore.getThanksMessage()
 
             // If the messages are not already set, save the default ones
             if (existingWelcomeMessage.isNullOrEmpty()) {
-                // Define individual string components for the Welcome Message
-                val welcomePart1 =
-                    "Thank you for registering in ISKCON Youth Forum (IYF) program. \uD83C\uDF89✌\n"
-                val welcomePart2 =
-                    "\n" + "It is  a *life-changing* step to *discover yourself* and *unleash your true potential*. \uD83D\uDCAF\uD83C\uDF1F\n\n"
-                val welcomePart3 = "📢 *We invite you to the Sunday Program*:\n\n"
-                val welcomePart4 = "🕒 *Timing*: *4:30 PM*, this *Sunday*\n"
-                val welcomePart5 =
-                    "\uD83C\uDF89 *Event*: Seminar \uD83E\uDDD1\u200D\uD83D\uDCBB\uD83D\uDDE3, Kirtan \uD83C\uDFA4, Music \uD83C\uDFB8, Q&A session , Mentorship and Delicious Snacks \uD83C\uDF5B\uD83C\uDF70\n"+"\n*Entry is Free*"
-
-                // Concatenate the parts
-                val welcomeMsg = welcomePart1 + welcomePart2 + welcomePart3 + welcomePart4 + welcomePart5
-
                 // Save the Welcome Message
-                AttendanceDataStore.saveWelcomeMessage(welcomeMsg)
-
-
+                AttendanceDataStore.saveWelcomeMessage(defaultWelcomeMessage)
             }
 
             if (existingThanksMessage.isNullOrEmpty()) {
-                // Define individual string components for the Thanks Message
-                val thanksPart1 =
-                    "Thank you for attending our ISKCON Youth Forum (IYF) Program! 🌟\n"
-                val thanksPart2 =
-                    "We're glad you joined, and we hope it was a fruitful experience for your spiritual journey. 🌱\n\n"
-                val thanksPart3 = "📢 *We warmly invite you to our next Sunday Program*:\n"
-                val thanksPart4 = "🕒 *Timing*: 4:30 PM, this Sunday\n"
-                val thanksPart5 =
-                    "🎉 *Highlights*: Engaging Seminar 🧑‍💻🗣️, Soul-stirring Kirtan 🎤, Live Music 🎸, and Delicious Snacks 🍛🍰.\n\n"
-                val thanksPart6 = "🏛️ *Venue*: ISKCON Temple, Lucknow"
-
-                // Concatenate the parts
-                val thanksMsg =
-                    thanksPart1 + thanksPart2 + thanksPart3 + thanksPart4 + thanksPart5 + thanksPart6
-
                 // Encode the Thanks Message and save it
-                AttendanceDataStore.saveThanksMessage(thanksMsg)
+                AttendanceDataStore.saveThanksMessage(defaultThanksMessage)
             }
 
             loadSettings()
+        }
+    }
+
+    private fun defaultWelcomeMessage() : String {
+        // Define individual string components for the Welcome Message
+        val welcomePart1 =
+            "Thank you for registering in ISKCON Youth Forum (IYF) program. \uD83C\uDF89✌\n"
+        val welcomePart2 =
+            "\n" + "It is  a *life-changing* step to *discover yourself* and *unleash your true potential*. \uD83D\uDCAF\uD83C\uDF1F\n\n"
+        val welcomePart3 = "📢 *We invite you to the Sunday Program*:\n\n"
+        val welcomePart4 = "🕒 *Timing*: *4:30 PM*, this *Sunday*\n"
+        val welcomePart5 =
+            "\uD83C\uDF89 *Event*: Seminar \uD83E\uDDD1\u200D\uD83D\uDCBB\uD83D\uDDE3, Kirtan \uD83C\uDFA4, Music \uD83C\uDFB8, Q&A session , Mentorship and Delicious Snacks \uD83C\uDF5B\uD83C\uDF70\n"+"\n*Entry is Free*"
+
+        // Concatenate the parts
+        val welcomeMessage = welcomePart1 + welcomePart2 + welcomePart3 + welcomePart4 + welcomePart5
+
+        return welcomeMessage;
+    }
+
+    private fun defaultThanksMessage() : String {
+        // Define individual string components for the Thanks Message
+        val thanksPart1 =
+            "Thank you for attending our ISKCON Youth Forum (IYF) Program! 🌟\n"
+        val thanksPart2 =
+            "We're glad you joined, and we hope it was a fruitful experience for your spiritual journey. 🌱\n\n"
+        val thanksPart3 = "📢 *We warmly invite you to our next Sunday Program*:\n"
+        val thanksPart4 = "🕒 *Timing*: 4:30 PM, this Sunday\n"
+        val thanksPart5 =
+            "🎉 *Highlights*: Engaging Seminar 🧑‍💻🗣️, Soul-stirring Kirtan 🎤, Live Music 🎸, and Delicious Snacks 🍛🍰.\n\n"
+        val thanksPart6 = "🏛️ *Venue*: ISKCON Temple, Lucknow"
+
+        // Concatenate the parts
+        val thanksMessage = thanksPart1 + thanksPart2 + thanksPart3 + thanksPart4 + thanksPart5 + thanksPart6
+
+        return thanksMessage
+    }
+
+    fun resetSettings(){
+        viewModelScope.launch(Dispatchers.IO) {
+            AttendanceDataStore.saveWelcomeMessage(defaultWelcomeMessage)
+            AttendanceDataStore.saveThanksMessage(defaultThanksMessage)
+
+            withContext(Dispatchers.Main){
+                _uiState.value = _uiState.value.copy(
+                    welcomeMessage = defaultWelcomeMessage,
+                    thanksMessage = defaultThanksMessage
+                )
+            }
         }
     }
 
