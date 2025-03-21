@@ -8,7 +8,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
@@ -31,10 +34,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Date
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AttendanceViewScreen(context: Context) {
+fun AttendanceViewScreen(context: Context, ) {
     var attendanceMap by remember { mutableStateOf(emptyMap<String, List<AttendanceDTO>>()) }
     var attendanceMapPOJO by remember { mutableStateOf(emptyMap<String, List<AttendancePOJO>>()) }
     var showSyncingDialog by remember { mutableStateOf(false) }
@@ -68,6 +75,7 @@ fun AttendanceViewScreen(context: Context) {
         var totalAttendances by remember { mutableStateOf(0) }
         var savedAttendances by remember { mutableStateOf(0) }
         var isSyncComplete by remember { mutableStateOf(false) }
+        var isFailed by remember { mutableStateOf(false) }
 
         val totalDays = attendanceMap.size // Total number of days (dates) to sync
         totalAttendances = attendanceMap.values.sumOf { it.size } // Total attendance count
@@ -75,17 +83,15 @@ fun AttendanceViewScreen(context: Context) {
         // LaunchedEffect to start syncing when dialog is shown
         LaunchedEffect(Unit) {
             coroutineScope.launch {
-                val syncResult = syncAttendance(attendanceMap, onProgressUpdate = { newProgress, day, totalForDay, savedForDay ->
-                    progress = newProgress
-                    currentDay = day
-                    savedAttendances = savedForDay
-                    totalAttendances = totalForDay
-                })
+                val syncResult = syncAttendance(attendanceMap) { count ->
+                    if( count == -1 ){
+                        isSyncComplete = true
+                        isFailed = true
+                    }
+                    savedAttendances += count
+                }
 
                 isSyncComplete = syncResult
-
-                // Dismiss the dialog when sync completes
-
             }
         }
 
@@ -109,13 +115,13 @@ fun AttendanceViewScreen(context: Context) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Circular Progress Indicator with percentage
-                CircularProgressIndicator(
-                    progress = progress / 100f,
-                    modifier = Modifier.size(100.dp),
-                    color = progressColor,
-                    strokeWidth = 8.dp
-                )
+                if (!isSyncComplete) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(50.dp), // Adjust size as needed
+                        color = Color.Blue, // Customize color
+                        strokeWidth = 4.dp
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -131,7 +137,7 @@ fun AttendanceViewScreen(context: Context) {
                 // Display the current attendance progress
                 Text(
                     text = if (!isSyncComplete) "Attendances saved: $savedAttendances / $totalAttendances"
-                    else "All Attendance Synced!",
+                    else if( isFailed ) "Sync Failed " else "All Attendance Synced!",
                     style = MaterialTheme.typography.labelMedium,
                     color = progressColor
                 )
@@ -197,11 +203,6 @@ fun AttendanceViewScreen(context: Context) {
                     ) {
                         SyncAttendanceDialog(onDismiss = {
                             showSyncingDialog = false
-                            coroutineScope.launch {
-                                withContext(Dispatchers.IO) {
-                                    AttendanceDataStore.clearAttendanceData()
-                                }
-                            }
                         })
                     }
                 }
@@ -213,6 +214,7 @@ fun AttendanceViewScreen(context: Context) {
 
 data class Result(val success: Boolean, val message: String?)
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AttendanceCard(date: String, list: List<AttendancePOJO>) {
     var showDialog by remember { mutableStateOf(false) }
@@ -239,30 +241,47 @@ fun AttendanceCard(date: String, list: List<AttendancePOJO>) {
             onDismissRequest = { showDialog = false },
             title = { Text(text = "Attendance List") },
             text = {
-                Column {
-                    updatedList.forEachIndexed { index, attendance ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(text = attendance.name)
-                            IconButton(onClick = {
-                                updatedList = updatedList.toMutableList().also { it.removeAt(index) }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete"
-                                )
+                Box(
+                    modifier = Modifier
+                        .height(350.dp) // Fixed height for the list
+                        .fillMaxWidth()
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        itemsIndexed(updatedList) { index, attendance ->
+                            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                            val date = LocalDate.parse(attendance.regDate, formatter)
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = attendance.name)
+                                    Text(text = attendance.studentId)
+                                    Text(text = "Register on $date")
+                                }
+
+                                IconButton(onClick = {
+                                    updatedList = updatedList.toMutableList().also { it.removeAt(index) }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete"
+                                    )
+                                }
                             }
+                            Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp)
                         }
                     }
                 }
             },
             confirmButton = {
                 Button(onClick = {
-                    // Save the updated list to DataStore
                     CoroutineScope(Dispatchers.Main).launch {
                         AttendanceDataStore.updateAttendance(updatedList)
                         showDialog = false
@@ -277,6 +296,7 @@ fun AttendanceCard(date: String, list: List<AttendancePOJO>) {
                 }
             }
         )
+
     }
 }
 

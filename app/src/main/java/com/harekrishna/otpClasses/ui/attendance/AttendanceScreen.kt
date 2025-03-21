@@ -293,6 +293,9 @@ fun AttendanceDialog(uiState: AttendanceUiState, onSubmit: (StudentPOJO) -> Unit
                     if (student != null) {
                         Text("Facilitator: ${student.facilitator}")
                     }
+                    if (student != null) {
+                        Text("Register On: ${student.date}")
+                    }
                 }
             },
             confirmButton = {
@@ -493,7 +496,7 @@ fun StudentItem(
 
             // Student's name and phone details
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
@@ -502,12 +505,21 @@ fun StudentItem(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Phone: ${student.phone}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween){
+                    Text(
+                        text = "Phone: ${student.phone}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = student.date,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
+
+
 
 //            // Attendance status or indicator icon
 //            Icon(

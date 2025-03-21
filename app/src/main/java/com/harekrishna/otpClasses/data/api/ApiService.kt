@@ -18,12 +18,13 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbw1F5_ycUNzwRyWwmYOQpswJ3B8RcQMxzryC8DSfrCoVEBUgFwAt-XCiQp-kwhL9HII/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbwCRJu5P8-KUupxdIQroxWEcmfYCV_98NLQghcCbZ86FK9CKQjxsNbpl_iWXRmPn4FP/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -299,6 +300,50 @@ object ApiService {
         }
     }
 
+    suspend fun postBulkAttendance(attendanceList: List<AttendanceDTO>): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val jsonArray = JSONArray()
+                attendanceList.forEach { attendance ->
+
+                    jsonArray.put(JSONObject().apply {
+                        put("studentID", attendance.studentId)
+                        put("date", "2025-01-19")
+                        put("regDate", attendance.regDate)
+                    })
+                }
+
+                val jsonObject = JSONObject().apply {
+                    put("type", "BulkMarkAttendance")
+                    put("attendanceList", jsonArray)
+                }
+
+                val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+                val body = jsonObject.toString().toRequestBody(mediaType)
+
+                val request = Request.Builder()
+                    .url(BASE_URL)
+                    .post(body)
+                    .build()
+
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string() // Read response body safely
+
+                if (response.isSuccessful) {
+                    Log.d("ApiService", "Response: $responseBody") // Log actual response
+                    return@withContext true
+                } else {
+                    Log.d("ApiService", "POST request failed with code: ${response.code}, response: $responseBody")
+                    return@withContext false
+                }
+            } catch (e: Exception) {
+                Log.e("ApiService", "POST request failed: ${e.message}")
+                return@withContext false
+            }
+        }
+    }
+
+
 
 
     suspend fun postAttendance(attendance : AttendanceDTO): Boolean {
@@ -372,55 +417,63 @@ object ApiService {
     }
 
 
+    private const val BATCH_SIZE = 10  // Adjust as needed
+
     suspend fun syncAttendance(
         attendanceMap: Map<String, List<AttendanceDTO>>,
-        onProgressUpdate: (Int, Int, Int, Int) -> Unit
+        onSave: (Int) -> Unit
     ): Boolean = withContext(Dispatchers.IO) {
         var success = true
-        val totalAttendanceCount = attendanceMap.values.sumOf { it.size }
-        if (totalAttendanceCount == 0) return@withContext true
 
-        var postedCount = 0
-
-        // Use a thread-safe mechanism to update progress
-        val progressLock = Any()
-
-        // Iterate over the dates in the map
         attendanceMap.forEach { (date, attendanceList) ->
             val totalForDay = attendanceList.size
-            var savedForDay = 0
             val day = attendanceMap.keys.indexOf(date) + 1
 
-            // Post attendance entries in parallel
-            val results = attendanceList.map { attendance ->
-                async {
-                    val result = postAttendance(attendance)
-                    synchronized(progressLock) {
-                        if (result) {
-                            savedForDay++
-                            postedCount++
-                            val progress = (postedCount * 100) / totalAttendanceCount
-                            onProgressUpdate(progress, day, totalForDay, savedForDay)
-                        } else {
-                            success = false
-                            Log.e(
-                                "SyncService",
-                                "Failed to post attendance for studentID: ${attendance.studentId} on date: $date"
-                            )
-                        }
-                    }
-                    result
+            // Split into smaller batches
+            attendanceList.chunked(BATCH_SIZE).forEach { batch ->
+                Log.d("attendance", batch.toString())
+
+                val result = postBulkAttendance(batch)
+                if (result) {
+                    Log.d("ApiService", "Attendance Posted batch count  ${batch.size}")
+                    onSave(batch.size)
+                } else {
+                    Log.d("ApiService", "Attendance Posting Failed ")
+                    success = false
+                    onSave(-1)
                 }
+
             }
-
-            // Await all results for the current day
-            results.awaitAll()
-
-            if (!success) return@withContext false
         }
-
         return@withContext success
     }
+
+
+    //            val results = attendanceList.map { attendance ->
+//                async {
+//                    val result = postAttendance(attendance)
+//                    synchronized(progressLock) {
+//                        if (result) {
+//                            savedForDay++
+//                            postedCount++
+//                            val progress = (postedCount * 100) / totalAttendanceCount
+//                            onProgressUpdate(progress, day, totalForDay, savedForDay)
+//                        } else {
+//                            success = false
+//                            Log.e(
+//                                "SyncService",
+//                                "Failed to post attendance for studentID: ${attendance.studentId} on date: $date"
+//                            )
+//                        }
+//                    }
+//                    result
+//                }
+// }
+// Await all results for the current day
+//            results.awaitAll()
+
+//            if (!success) return@withContext false
+//        }
 
 
 }

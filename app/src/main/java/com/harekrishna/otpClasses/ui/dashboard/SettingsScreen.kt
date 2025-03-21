@@ -300,33 +300,33 @@ class SettingsViewModel : ViewModel() {
             if (existingWelcomeMessage.isNullOrEmpty()) {
                 // Define individual string components for the Welcome Message
                 val welcomePart1 =
-                    "Thanks for your registration for ISKCON Youth Forum (IYF) classes, "
+                    "Thank you for registering in ISKCON Youth Forum (IYF) program. \uD83C\uDF89✌\n"
                 val welcomePart2 =
-                    "it's a life-changing step to discover yourself and unleash your true potential. 💯\n\n"
-                val welcomePart3 = "📢 *We invite you to the Sunday Program*:\n"
-                val welcomePart4 = "🕒 *Timing*: 4:30 PM, this Sunday\n"
+                    "\n" + "It is  a *life-changing* step to *discover yourself* and *unleash your true potential*. \uD83D\uDCAF\uD83C\uDF1F\n\n"
+                val welcomePart3 = "📢 *We invite you to the Sunday Program*:\n\n"
+                val welcomePart4 = "🕒 *Timing*: *4:30 PM*, this *Sunday*\n"
                 val welcomePart5 =
-                    "🎉 *Event*: Seminar 🧑‍💻🗣️, Kirtan 🎤, Music 🎸, and Delicious Prasadam 🍛🍰\n\n"
-                val welcomePart6 = "🏛️ *Venue*: ISKCON Temple, Lucknow"
+                    "\uD83C\uDF89 *Event*: Seminar \uD83E\uDDD1\u200D\uD83D\uDCBB\uD83D\uDDE3, Kirtan \uD83C\uDFA4, Music \uD83C\uDFB8, Q&A session , Mentorship and Delicious Snacks \uD83C\uDF5B\uD83C\uDF70\n"+"\n*Entry is Free*"
 
                 // Concatenate the parts
-                val welcomeMsg =
-                    welcomePart1 + welcomePart2 + welcomePart3 + welcomePart4 + welcomePart5 + welcomePart6
+                val welcomeMsg = welcomePart1 + welcomePart2 + welcomePart3 + welcomePart4 + welcomePart5
 
                 // Save the Welcome Message
                 AttendanceDataStore.saveWelcomeMessage(welcomeMsg)
+
+
             }
 
             if (existingThanksMessage.isNullOrEmpty()) {
                 // Define individual string components for the Thanks Message
                 val thanksPart1 =
-                    "Thank you for attending our ISKCON Youth Forum (IYF) session! 🌟\n"
+                    "Thank you for attending our ISKCON Youth Forum (IYF) Program! 🌟\n"
                 val thanksPart2 =
                     "We're glad you joined, and we hope it was a fruitful experience for your spiritual journey. 🌱\n\n"
                 val thanksPart3 = "📢 *We warmly invite you to our next Sunday Program*:\n"
                 val thanksPart4 = "🕒 *Timing*: 4:30 PM, this Sunday\n"
                 val thanksPart5 =
-                    "🎉 *Highlights*: Engaging Seminar 🧑‍💻🗣️, Soul-stirring Kirtan 🎤, Live Music 🎸, and Delicious Prasadam 🍛🍰.\n\n"
+                    "🎉 *Highlights*: Engaging Seminar 🧑‍💻🗣️, Soul-stirring Kirtan 🎤, Live Music 🎸, and Delicious Snacks 🍛🍰.\n\n"
                 val thanksPart6 = "🏛️ *Venue*: ISKCON Temple, Lucknow"
 
                 // Concatenate the parts
