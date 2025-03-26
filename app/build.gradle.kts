@@ -13,8 +13,8 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 24
         targetSdk = 35
-        versionCode = 8 // version 1.1.6 - Add Reset Message and Attendance Fixes.
-        versionName = "1.1.6"
+        versionCode = 9 // version 1.1.7 - Bug fixes
+        versionName = "1.1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

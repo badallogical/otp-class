@@ -107,7 +107,7 @@ fun AttendanceViewScreen(context: Context) {
         Box(
             modifier = Modifier
                 .size(350.dp)
-                .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp))
+                .background( MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp ))
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {

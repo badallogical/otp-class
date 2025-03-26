@@ -1,5 +1,6 @@
 package com.harekrishna.otpClasses.ui.registeration
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -333,19 +334,28 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
 
         val phone = formatPhoneNumber(phoneNumber)
 
-        val greeting = "Hare Krishna *${name.toCamelCase().trim()} Prabhu Ji* \uD83D\uDE4F";
-        val footer = "Your Servent\n${userName}\n\uD83D\uDCDE *Contact*: ${userPhone}\n(Please save this number)"
+        val greeting = "Hello \uD83D\uDC90\uD83D\uDC90\uD83D\uDC90";
+        val footer = "\uD83C\uDFDB *Venue*: ISKCON Youth Forum Seminar Hall, ISKCON Temple, Sushant Golf City, Lko\n\n*Contact*: 9807726801,6307444507 \n(Please save this number)\n\nRegards,\n" + "ISKCON Youth Forum"
         val message = greeting + "\n\n" + welcomeMsg + "\n\n" + footer;
 
 
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse("https://wa.me/${phone}?text=${message.trimIndent()}")
-        context.startActivity(intent)
+        // TODO: if whatsapp business is their then open whatsapp only.
+//        val intent = Intent(Intent.ACTION_VIEW)
+//        intent.data = Uri.parse("https://wa.me/${phone}?text=${message.trimIndent()}")
+//        context.startActivity(intent)
 
-        _uiState.update{ current ->
-            current.copy(isInvited = true)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("https://wa.me/$phone?text=${Uri.encode(message.trimIndent())}")
+            setPackage("com.whatsapp") // Ensures only WhatsApp (not Business) opens
+        }
+
+        try {
+            context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
         }
     }
+
 
     fun formatPhoneNumber(phone: String): String {
         // Check if the phone number starts with the country code +91
