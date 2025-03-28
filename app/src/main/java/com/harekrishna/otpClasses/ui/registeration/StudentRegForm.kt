@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.harekrishna.otpClasses.ui.registeration.CallingListViewModel
 import com.harekrishna.otpClasses.ui.registeration.StudentFormUiState
@@ -52,6 +53,7 @@ import com.harekrishna.otpClasses.ui.registeration.StudentFormViewModel
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StudentFormScreen(
+    editId: String? = null,
     viewModel: StudentFormViewModel = viewModel(factory = StudentFormViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -101,6 +103,15 @@ fun StudentFormScreen(
             }
         }
     }
+
+
+    // Fetch existing data if editId is not null
+    LaunchedEffect(editId) {
+        if (editId != null) {
+            viewModel.onFetchStudentByPhone(editId) // ✅ Fetch and update UI state
+        }
+    }
+
 
     Scaffold(topBar = { TopSection { viewModel.onEditRegistration() } }) { padding ->
         Column(
@@ -326,7 +337,11 @@ fun StudentFormScreen(
                             ).show()
                             return@Button
                         }
-                        viewModel.onSubmit()
+
+                        if(editId == null )
+                            viewModel.onSubmit()
+                        else
+                            viewModel.onUpdate()
                     }
                 },
                 modifier = Modifier
@@ -340,7 +355,10 @@ fun StudentFormScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Submit")
+                    if( editId == null )
+                        Text("Submit")
+                    else
+                        Text("Update")
                 }
             }
 
@@ -377,23 +395,6 @@ private fun TopSection(
             modifier = Modifier.weight(3f),
             textAlign = TextAlign.Start
         )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // Sync Icon Button with Tooltip
-        IconButton(
-            onClick = { onEditRegistration() },
-            modifier = Modifier
-                .size(40.dp)
-        ) {
-
-            Icon(
-                imageVector = Icons.Filled.ModeEdit,
-                contentDescription = "Edit",
-                tint = MaterialTheme.colorScheme.primary
-            )
-
-        }
     }
 }
 

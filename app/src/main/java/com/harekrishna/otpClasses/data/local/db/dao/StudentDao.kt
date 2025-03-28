@@ -28,6 +28,14 @@ interface StudentDao {
     """)
     fun getStudentByPhone(phone: String): StudentPOJO?
 
+    @Query("""
+        SELECT 
+           *
+        FROM students 
+        WHERE _phone = :phone
+    """)
+    fun getStudentDTOByPhone(phone: String): StudentDTO?
+
 
     @Update
     suspend fun update(student: StudentDTO)

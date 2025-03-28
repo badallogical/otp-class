@@ -86,6 +86,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 
 data class Student(val name: String, val phone: String, var status: String)
@@ -94,6 +95,7 @@ data class Student(val name: String, val phone: String, var status: String)
 @Composable
 fun CallingListScreen(
     date: String,
+    navController: NavController,
     viewModel: CallingListViewModel = viewModel(factory = CallingListViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -181,6 +183,8 @@ fun CallingListScreen(
                     onClick = {
                         if (uiState.isInSelectionMode) {
                             viewModel.toggleAttendeeSelection(registrationReport.phone)
+                        }else{
+                            navController.navigate("form_edit/${registrationReport.phone}")
                         }
                     }
                 )
@@ -438,8 +442,29 @@ fun StudentListItem(
 
             }
 
-            // Feedback Section
-            if (student.feedback.isNotBlank()) {
+            val reason =  extractReason(student.status, "No,").ifEmpty {  extractReason(student.status, "❗,") }
+
+            if( reason.isNotEmpty() ){
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        text = "❌ ${reason}",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontStyle = FontStyle.Normal,
+                            lineHeight = 20.sp,
+                            fontWeight = FontWeight.Bold // Add bold weight here
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(12.dp),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            else if (student.feedback.isNotBlank()) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -476,7 +501,8 @@ fun StudentListItem(
 
                                 // Profile Picture
                                 Log.d("Student", "Photo uri ${student.name} is ${student.photoUri}")
-                                if( student.photoUri != null ) {
+                                if( !student.photoUri.isNullOrEmpty() && student.photoUri != "null" ) {
+                                    Log.d("Student", student.photoUri.isNullOrEmpty().toString())
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -561,6 +587,17 @@ fun StudentListItem(
         )
     }
 }
+
+fun extractReason(status: String, prefix: String): String {
+    return if (status.startsWith(prefix)) {
+        status.split(",", limit = 2).getOrNull(1)?.trim() ?: ""
+    } else {
+        ""
+    }
+}
+
+
+
 
 
 @Composable

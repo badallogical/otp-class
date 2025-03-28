@@ -141,13 +141,20 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
                         })
                     }
                 }
-                composable("form") { StudentFormScreen() }
+                composable("form") { StudentFormScreen(editId = null) }
+                composable("form_edit/{id}",
+                    arguments = listOf(navArgument("id") { type = NavType.StringType; nullable = true })
+                ){ backStackEntry ->
+                    val editId = backStackEntry.arguments?.getString("id")
+                    StudentFormScreen(editId)
+                }
+
                 composable("calling_screen/{date}") { backStackEntry ->
                     // Retrieve the date from the backStackEntry arguments
                     val date = backStackEntry.arguments?.getString("date") ?: ""
 
                     // Pass the date to your screen
-                    CallingListScreen(date = date)
+                    CallingListScreen(date = date,navController)
                 }
                 composable(
                     route = "admin_panel/{user}",

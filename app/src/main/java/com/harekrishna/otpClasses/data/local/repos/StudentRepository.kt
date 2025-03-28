@@ -85,23 +85,47 @@ class StudentRepository(
         return studentDao.getStudentByPhone(phone)
     }
 
-    // Update a student record
-    suspend fun updateStudent(student: StudentDTO) {
-        studentDao.update(student)
+    fun getStudentDTOByPhone(phone : String): StudentDTO?{
+        return studentDao.getStudentDTOByPhone(phone)
+    }
 
-        // Sync the update to the remote server in the background if internet is available
-        CoroutineScope(Dispatchers.IO).launch {
+    // Update a student record
+    suspend fun updateStudent(student: StudentDTO) = withContext(Dispatchers.IO) {
+        try {
+            studentDao.update(student)
+
+            val updatedReport = callingDao.getCallingReportByPhone(student.phone)?.let { report ->
+                CallingReportPOJO(
+                    phone = student.phone,
+                    name = student.name,
+                    status = report.status,
+                    attendanceCount = report.attendanceCount,
+                    date = student.date,
+                    isInvited = report.isInvited,
+                    isActive = report.isActive,
+                    feedback = report.feedback,
+                    tag = report.tag,
+                    remark = report.remark,
+                    photoUri = report.photoUri
+                )
+            }
+
+            updatedReport?.let { callingDao.update(it) }
+
+            // Sync the update to the remote server if the internet is available
             if (MyApplication.checkInternetConnection()) {
                 try {
-                    // Sync with the server
                     ApiService.registerStudent(student, true)
+                    updateStudentToSynced(student.phone)
                 } catch (exception: Exception) {
-                    // Handle network or API errors here
-                    exception.printStackTrace()
+                    exception.printStackTrace() // Log error, consider retry mechanism
                 }
             }
+        } catch (e: Exception) {
+            e.printStackTrace() // Log database update error
         }
     }
+
 
     // Delete a student by phone number
     suspend fun deleteStudentByPhone(phone: String) {

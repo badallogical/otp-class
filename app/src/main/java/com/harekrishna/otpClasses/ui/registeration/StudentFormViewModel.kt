@@ -15,6 +15,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -56,6 +57,8 @@ data class StudentFormUiState(
     var response: okhttp3.Response? = null,
     var isSuccessfull : Boolean = false,
     var isInvited : Boolean = false,
+    var regData: String = "",
+    var regBy: String = ""
 )
 
 
@@ -170,14 +173,14 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         }
     }
 
-    fun onFetchStudentByPhone(phoneInput : String ){
+    fun onFetchStudentByPhone(phoneInput : String){
         _uiState.update { current ->
             current.copy( showPhoneDialog = false)
         }
 
         viewModelScope.launch {
             val student = withContext(Dispatchers.IO) {
-                ApiService.findStudentByPhone(phoneInput)
+                studentRepository.getStudentDTOByPhone(phoneInput)
             }
             if (student != null) {
                 Log.d("Student form", student.toString())
@@ -189,7 +192,10 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
                         batch = student.batch,
                         profession = student.profession,
                         address = student.address,
-                        showDataFetchedToast = true
+                        photoUri = student.photoUri?.toUri(),
+                        showDataFetchedToast = true,
+                        regData = student.date,
+                        regBy = student.by
                     )
                 }
             } else {
@@ -201,9 +207,9 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
     }
 
     fun onEditRegistration() {
-        _uiState.update { current ->
-            current.copy(showPhoneDialog = true, updated = true)
-        }
+       _uiState.update { current ->
+           current.copy( updated = true )
+       }
     }
 
     fun onNameChange(newName: String) {
@@ -272,6 +278,37 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         _uiState.update {
             StudentFormUiState()  // Resets all fields to their default values
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun onUpdate(){
+        _uiState.update { current -> current.copy(isSubmitting = true, updated = true) }
+
+
+//        val currentDate = "2024-12-31"
+
+        val student = StudentDTO(
+            uiState.value.name,
+            uiState.value.phone,
+            uiState.value.facilitator,
+            uiState.value.batch,
+            uiState.value.profession,
+            uiState.value.address,
+            uiState.value.regData,
+            uiState.value.regBy,
+            photoUri = uiState.value.photoUri.toString()
+        )
+        viewModelScope.launch {
+            withContext(Dispatchers.IO){
+                studentRepository.updateStudent(student)
+                Log.d("registration","Updated")
+            }
+
+            _uiState.update { current ->
+                current.copy(isSubmitting = false, showSuccessDialog = true, isSuccessfull = true)
+            }
+        }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

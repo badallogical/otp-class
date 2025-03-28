@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
+import com.harekrishna.otpClasses.data.models.StudentDTO
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -15,6 +16,9 @@ interface CallingReportDao  {
 
     @Query("DELETE FROM calling_report WHERE phone = :phone")
     suspend fun delete(phone: String)
+
+    @Update
+    suspend fun update(reportPOJO: CallingReportPOJO)
 
     @Query("select * from calling_report where date =:date")
     fun getCallingReportByDate(date : String ) : Flow<List<CallingReportPOJO>?>
