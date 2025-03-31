@@ -69,12 +69,10 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
     val uiState by viewModel.uiState.collectAsState()
 
     // Fetch students from API and set the initial list
-    LaunchedEffect(Unit) {
-        if (uiState.students.isEmpty()) {
-            viewModel.fetchStudents()
-            Log.d("Attendance", "Launched Called")
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        viewModel.onRefresh()
+//        Log.d("Attendance", "Refreshing")
+//    }
 
     Box(
         modifier = Modifier
@@ -101,18 +99,27 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
                     modifier = Modifier.weight(4f) // Take up as much space as possible
                 )
 
-                // Refresh Icon
-                Icon(
-                    painter = painterResource(id = R.drawable.baseline_refresh_24),
-                    contentDescription = "Refresh Icon",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .weight(0.5f)
-                        .clickable {
-                            viewModel.onRefresh() // Fetch students again when refresh icon is clicked
-                        }
-                )
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .weight(0.5f),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_refresh_24),
+                        contentDescription = "Refresh Icon",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .weight(0.5f)
+                            .clickable {
+                                viewModel.onRefresh() // Fetch students again when refresh icon is clicked
+                            }
+                    )
+                }
 
                 // Save & Sync Icon
                 Icon(
@@ -157,11 +164,7 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
             )
 
             // Loading State
-            if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else if (uiState.filteredStudents.isEmpty()) {
+           if (uiState.filteredStudents.isEmpty()) {
                 // No Students Found
                 Column(
                     modifier = Modifier.fillMaxSize(),
@@ -486,7 +489,7 @@ fun StudentItem(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = student.name.first().uppercase(),
+                    text = if(student.name.isEmpty()) "X" else student.name.first().uppercase(),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimary
                 )

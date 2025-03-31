@@ -60,9 +60,13 @@ fun StudentFormScreen(
     val context = LocalContext.current
 
     val facilitators = listOf(
-        "NA", "H.G Sadhu Chaitanya Prabhu", "H.G Seva Actyute Prabhu",
-        "H.G Rajiv Lochan Prabhu", "H.G Madhu Smita Prabhu",
-        "Prakhar Bhatnagar Prabhu", "Saurabh Agarwal Prabhu"
+        "NA",
+        "H.G Sadhu Chaitanya Prabhu",
+        "H.G Seva Actyute Prabhu",
+        "H.G Rajiv Lochan Prabhu",
+        "H.G Madhu Smita Prabhu",
+        "Prakhar Bhatnagar Prabhu",
+        "Saurabh Agarwal Prabhu"
     )
     val batches = listOf("OTP", "DYS", "TSSV", "VL2")
 
@@ -333,6 +337,14 @@ fun StudentFormScreen(
                             Toast.makeText(
                                 context,
                                 "Please enter a valid phone number",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+                        if( uiState.name.isEmpty() || uiState.name.isBlank()){
+                            Toast.makeText(
+                                context,
+                                "Please enter the name",
                                 Toast.LENGTH_SHORT
                             ).show()
                             return@Button

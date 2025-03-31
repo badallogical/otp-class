@@ -9,6 +9,8 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -121,7 +123,7 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
     if (isUserRegistered) {
         if (isConnected) {
             // Show the main content if connected
-            NavHost(navController = navController, startDestination = startDestination) {
+            NavHost(navController = navController, startDestination = startDestination,enterTransition = { EnterTransition.None },  exitTransition = { ExitTransition.None}) {
                 composable("dashboard") { DashboardScreen(navController) }
                 composable("settings") { SettingsScreen(navController) }
                 composable("about") { AboutScreen() }

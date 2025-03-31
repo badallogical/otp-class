@@ -21,6 +21,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -29,6 +32,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
+@RequiresApi(Build.VERSION_CODES.O)
 class AttendanceViewModel(private val studentRepository: StudentRepository) : ViewModel(){
     private var _uiState = MutableStateFlow(AttendanceUiState())
     val uiState : StateFlow<AttendanceUiState> = _uiState.asStateFlow()
@@ -46,11 +50,17 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
     lateinit var userPhone:String
     init {
         viewModelScope.launch {
-            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
+            val userData = withContext(Dispatchers.IO) {
+                AttendanceDataStore.getUserData().first() // Fetch user data
+            }
             userPhone = userData.second ?: "+919807726801"
-        }
 
+
+            fetchStudents(false) // Load from Room database first
+            onRefresh()
+        }
     }
+
 
 
 
@@ -76,19 +86,37 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
-            // Collect the flow from the repository
-            studentRepository.getAllStudents().collect { fetchedStudents ->
-                _uiState.value = _uiState.value.copy(
-                    students = fetchedStudents,
-                    filteredStudents = if (!filter) {
-                        fetchedStudents
-                    } else {
-                        fetchedStudents.filter {
-                            it.phone.contains(_uiState.value.searchQuery, ignoreCase = true)
+            try {
+                studentRepository.getAllStudents()
+                    .flowOn(Dispatchers.IO) // Ensure DB operations are in IO thread
+                    .map { fetchedStudents ->
+                        val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+                        val sortedStudents = fetchedStudents.sortedByDescending {
+                            runCatching { LocalDate.parse(it.date, dateFormatter) }
+                                .getOrDefault(LocalDate.MIN) // Fallback to MIN date if parsing fails
                         }
-                    },
-                    isLoading = false
-                )
+
+                        // Apply filter before updating UI state
+                        if (filter) {
+                            sortedStudents.filter { it.phone.contains(_uiState.value.searchQuery, ignoreCase = true) }
+                        } else {
+                            sortedStudents
+                        }
+                    }
+                    .stateIn(viewModelScope) // Keeps the latest state, avoiding multiple launches
+                    .collect { finalStudents ->
+                        withContext(Dispatchers.Main) {
+                            _uiState.value = _uiState.value.copy(
+                                students = finalStudents,
+                                filteredStudents = finalStudents,
+                                isLoading = false
+                            )
+                        }
+                    }
+            } catch (e: Exception) {
+                Log.e("fetchStudents", "Error fetching students", e)
+                _uiState.value = _uiState.value.copy(isLoading = false) // Ensure UI state is updated
             }
         }
     }
@@ -100,11 +128,20 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
     fun onRefresh() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            studentRepository.syncStudentData()
-            _uiState.value = _uiState.value.copy(isLoading = false)
-            fetchStudents(true)
+
+            try {
+                withContext(Dispatchers.IO) {
+                    studentRepository.syncStudentData() // Fetch new data
+                }
+                fetchStudents(filter = true) // Refresh UI with new data
+            } catch (e: Exception) {
+                Log.e("onRefresh", "Error syncing students", e)
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
         }
     }
+
 
     // Function to update the search query and trigger filtering
     fun onSearchQueryChanged(newQuery: String) {
