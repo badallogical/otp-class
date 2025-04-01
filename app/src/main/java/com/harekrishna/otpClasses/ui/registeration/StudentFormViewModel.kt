@@ -274,6 +274,12 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         resetFormState()
     }
 
+    fun onInvited(){
+        _uiState.update { current ->
+            current.copy(isInvited = true)
+        }
+    }
+
     private fun resetFormState() {
         _uiState.update {
             StudentFormUiState()  // Resets all fields to their default values

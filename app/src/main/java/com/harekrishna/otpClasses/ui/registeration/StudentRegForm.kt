@@ -199,6 +199,7 @@ fun StudentFormScreen(
                                     uiState.phone,
                                     uiState.name
                                 )
+                                viewModel.onInvited()
                             } else {
                                 Toast.makeText(
                                     context,

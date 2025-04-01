@@ -420,14 +420,15 @@ object ApiService {
     private const val BATCH_SIZE = 10  // Adjust as needed
 
     suspend fun syncAttendance(
-        attendanceMap: Map<String, List<AttendanceDTO>>,
+        date : String,
+        attendanceList : List<AttendanceDTO>,
         onSave: (Int) -> Unit
     ): Boolean = withContext(Dispatchers.IO) {
         var success = true
 
-        attendanceMap.forEach { (date, attendanceList) ->
+
             val totalForDay = attendanceList.size
-            val day = attendanceMap.keys.indexOf(date) + 1
+            val day = 1
 
             // Split into smaller batches
             attendanceList.chunked(BATCH_SIZE).forEach { batch ->
@@ -442,9 +443,8 @@ object ApiService {
                     success = false
                     onSave(-1)
                 }
-
             }
-        }
+
         return@withContext success
     }
 
