@@ -143,9 +143,11 @@ class StudentRepository(
         val userData = AttendanceDataStore.getUserData().first();
         val phone = userData.second;
 
-        val remoteStudents = ApiService.getStudents().map { student ->
-            val formatteddate = formatDateString(student.date)
-            student.copy(date = formatteddate)
+        val remoteStudents = withContext(Dispatchers.IO) {
+            ApiService.getStudents().map { student ->
+                val formatteddate = formatDateString(student.date)
+                student.copy(date = formatteddate)
+            }
         }
 
         Log.d(TAG, "Data Fetched From the remote ${remoteStudents.size}")
@@ -423,6 +425,7 @@ class StudentRepository(
                                 // Delete the registrations
                                 studentDao.deleteByPhone(registration.phone)
                                 callingDao.delete(registration.phone)
+
                                 Log.d(TAG, "deleting : ${registration.toString()}")
                             } catch (e: Exception) {
                                 // Handle any network-related errors here

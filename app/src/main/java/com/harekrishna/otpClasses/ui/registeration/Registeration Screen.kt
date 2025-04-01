@@ -1,6 +1,7 @@
 package com.harekrishna.otpClasses.ui.registeration
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -64,9 +65,12 @@ fun RegistrationScreen(
     // Collect state from ViewModel
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.getRegistration()
+    LaunchedEffect(navController.currentBackStackEntry) {
+
+            viewModel.getRegistration()
     }
+
+
 
     Scaffold(
         floatingActionButton = {

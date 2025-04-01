@@ -371,7 +371,8 @@ fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, o
     var phone by remember { mutableStateOf("") }
     var taken by remember { mutableStateOf(false) }
 
-    var isClicked by remember { mutableStateOf(false) }
+    var isPhoneValid by remember { mutableStateOf(true) }
+    var isNameValid by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -412,23 +413,32 @@ fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, o
                     )
                 }
 
-                if (isClicked) {
+                if (!isPhoneValid) {
                     Text(
                         text = "Phone number should be 10 digits",
                         color = Color.Red,
                         style = MaterialTheme.typography.bodySmall
                     )
+                }else if(!isNameValid){
+                    Text(
+                        text = "Name can't be empty or blank",
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
+
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (phone.length == 10) {
+                    if (phone.length == 10 && name.isNotEmpty() && name.isNotBlank()) {
                         onRegister(name, phone, taken)
                         onDismiss()
-                    } else {
-                        isClicked = true
+                    } else if( phone.length != 10 ){
+                        isPhoneValid = false
+                    }else if( name.isEmpty() || name.isBlank() ){
+                        isNameValid = false
                     }
                 }
             ) {

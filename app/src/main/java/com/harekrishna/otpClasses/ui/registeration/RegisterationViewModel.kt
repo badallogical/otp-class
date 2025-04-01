@@ -218,6 +218,7 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
                             try {
                                 // Delete from the database
                                 studentRepository.deleteRegistrationByDate(date)
+
                                 date // Return phone if successful
                             } catch (e: Exception) {
                                 Log.e("DeleteError", "Error deleting $date: ${e.message}")

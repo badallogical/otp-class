@@ -47,7 +47,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Date
+
+data class Result(val success: Boolean, val message: String?)
 
 data class Result(val success: Boolean, val message: String?)
 
