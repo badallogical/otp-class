@@ -50,8 +50,6 @@ import java.time.format.DateTimeFormatter
 
 data class Result(val success: Boolean, val message: String?)
 
-data class Result(val success: Boolean, val message: String?)
-
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -433,12 +433,15 @@ fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, o
             Button(
                 onClick = {
                     if (phone.length == 10 && name.isNotEmpty() && name.isNotBlank()) {
+                        isPhoneValid = true
+                        isNameValid = true
                         onRegister(name, phone, taken)
                         onDismiss()
                     } else if( phone.length != 10 ){
                         isPhoneValid = false
                     }else if( name.isEmpty() || name.isBlank() ){
                         isNameValid = false
+                        isPhoneValid = true
                     }
                 }
             ) {
