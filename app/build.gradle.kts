@@ -145,7 +145,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
 
     // Material-3
-    implementation(libs.androidx.material3)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation("androidx.compose.material3:material3")
 
     // Testing
     testImplementation(libs.mockito.core)

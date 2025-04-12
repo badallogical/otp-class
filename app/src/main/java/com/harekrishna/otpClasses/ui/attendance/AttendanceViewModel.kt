@@ -1,16 +1,24 @@
 package com.harekrishna.otpClasses.ui.attendance
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
 import com.harekrishna.otpClasses.data.local.repos.StudentRepository
+import com.harekrishna.otpClasses.data.models.AttendanceHistory
 import com.harekrishna.otpClasses.data.models.AttendancePOJO
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
@@ -34,8 +42,26 @@ import kotlin.random.Random
 
 @RequiresApi(Build.VERSION_CODES.O)
 class AttendanceViewModel(private val studentRepository: StudentRepository) : ViewModel(){
+
+    // Attendance mark Ui State
     private var _uiState = MutableStateFlow(AttendanceUiState())
     val uiState : StateFlow<AttendanceUiState> = _uiState.asStateFlow()
+
+    private val _attendanceList = MutableStateFlow<Map<String, List<AttendancePOJO>>>(emptyMap())
+    val attendanceList: StateFlow<Map<String, List<AttendancePOJO>>> = _attendanceList.asStateFlow()
+
+
+    private val _isDeleting = MutableStateFlow(false)
+    val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
+
+    // Attendance History Screen Ui State
+    private val _attendanceHistoryList = MutableStateFlow<List<AttendanceHistory>>(emptyList())
+    val attendanceHistoryList: StateFlow<List<AttendanceHistory>> = _attendanceHistoryList.asStateFlow()
+
+    // Attendance Details Ui State
+    private val _attendanceDetailUiState = MutableStateFlow( AttendanceDetailsUiState())
+    val attendanceDetailsUiState : StateFlow<AttendanceDetailsUiState> = _attendanceDetailUiState.asStateFlow()
+
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
@@ -58,10 +84,73 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
 
             fetchStudents(false) // Load from Room database first
             onRefresh()
+
+            fetchAttendanceWithDates() // ✅ Trigger the flow only once
+        }
+    }
+
+    fun deleteAttendance(date: String, deletedPhones: List<String>) {
+
+        viewModelScope.launch {
+            _isDeleting.value = true // 🔄 Start processing
+
+//            _attendanceList.update { currentMap ->
+//                val updatedMap = currentMap.toMutableMap()
+//
+//                val existingList = updatedMap[date].orEmpty()
+//
+//                // Filter out the entries with matching phone numbers
+//                val filteredList = existingList.filterNot { it.studentId in deletedPhones }
+//
+//                if (filteredList.isEmpty()) {
+//                    // If nothing left, remove the date
+//                    updatedMap.remove(date)
+//                } else {
+//                    // Otherwise update the date with filtered list
+//                    updatedMap[date] = filteredList
+//                }
+//
+//                updatedMap
+//            }
+
+            // Delete from ROOM DB
+            withContext(Dispatchers.IO) {
+                deletedPhones.forEach { phone ->
+                    Log.d("deleting", "$date , $phone,")
+                    studentRepository.deleteAttendance(date, phone)
+                }
+            }
+
+            _isDeleting.value = false
+        }
+    }
+
+    fun getAttendanceHistoryList(){
+
+    }
+
+
+    fun updateAttendanceList(newData: Map<String, List<AttendancePOJO>>) {
+        _attendanceList.value = newData
+    }
+
+    fun updateAttendanceList(date: String, updatedList: List<AttendancePOJO>) {
+        _attendanceList.update { currentMap ->
+            val updatedMap = currentMap.toMutableMap()
+            updatedMap[date] = updatedList
+            if( updatedList.isEmpty() ){
+                updatedMap.remove(date)
+            }
+            updatedMap
         }
     }
 
 
+    fun fetchAttendanceWithDates() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _attendanceList.value =  studentRepository.getAttendanceWithDates()
+        }
+    }
 
 
     // Function to filter students based on search query
@@ -320,9 +409,6 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
                     // save to local room database.
                     studentRepository.markAttendance(student.phone, currentDate)
 
-                    // save to data store for syncing.
-                    AttendanceDataStore.saveNewAttendance(attendance)
-
                 }
 
                 // Update UI state after submission completes
@@ -335,6 +421,31 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
                 // Handle submission failure
                 _uiState.value = _uiState.value.copy(isPostingAttendance = false)
                 Log.e("AttendanceViewModel", "Error posting attendance: ${e.message}")
+            }
+        }
+    }
+
+    // Share the attendance form the Database
+    fun shareAttendance(context : Context, date : String ){
+        viewModelScope.launch {
+
+            val msg = withContext(Dispatchers.IO){ Uri.encode(studentRepository.getStringAttendanceByDate(date)) }
+
+            if (msg.isNullOrBlank()) {
+                Toast.makeText(context, "No attendance data to share", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            // Send the message via WhatsApp
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("https://api.whatsapp.com/send?text=$msg")
+                setPackage("com.whatsapp")
+            }
+
+            try {
+                context.startActivity(intent)
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
             }
         }
     }

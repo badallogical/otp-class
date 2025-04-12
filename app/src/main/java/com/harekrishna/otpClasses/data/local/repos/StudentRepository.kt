@@ -11,18 +11,17 @@ import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
 import com.harekrishna.otpClasses.data.local.db.dao.Registration
 import com.harekrishna.otpClasses.data.local.db.dao.StudentDao
 import com.harekrishna.otpClasses.data.models.AttendanceDate
+import com.harekrishna.otpClasses.data.models.AttendancePOJO
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import com.harekrishna.otpClasses.data.models.RegistrationStatus
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
@@ -137,6 +136,40 @@ class StudentRepository(
         attendanceDao.insertAttendanceResponse(AttendanceResponse(phoneNo))
         attendanceDao.insertAttendanceDate(AttendanceDate(date = _date, attendancePhone = phoneNo))
     }
+
+    suspend fun deleteAttendance(phoneNo: String, date: String ){
+        attendanceDao.deleteAttendanceDateByDateAndPhone(date,phoneNo)
+        attendanceDao.deleteAttendanceResponse(AttendanceResponse(phoneNo))
+    }
+
+    suspend fun getAttendanceWithDates(): Map<String, List<AttendancePOJO>> {
+        var attendanceDates = attendanceDao.getAttendanceDates().first()
+        val attendanceWithDates = mutableMapOf<String, MutableList<AttendancePOJO>>()
+
+        attendanceDates = attendanceDates.reversed()
+
+        for (date in attendanceDates) {
+            val attendanceList = attendanceDao.getAttendanceByDate(date).first()
+            val pojoList = attendanceList.mapNotNull { attendance ->
+                val studentData = studentDao.getStudentByPhone(attendance.attendancePhone)
+                studentData?.let {
+                    AttendancePOJO(
+                        studentId = it.phone,
+                        date = date,
+                        name = it.name,
+                        regDate = it.date
+                    )
+                }
+            }
+            attendanceWithDates[date] = pojoList.toMutableList()
+        }
+
+        return attendanceWithDates
+    }
+
+
+
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun syncStudentData() {
@@ -460,5 +493,20 @@ class StudentRepository(
             // Handle any errors during the update
             exception.printStackTrace()
         }
+    }
+
+    suspend fun getStringAttendanceByDate(date: String) : String {
+        val attendanceList = attendanceDao.getAttendanceByDate(date).first()
+
+        val builder = StringBuilder()
+        builder.append("📅 *Attendance on $date*\n\n")
+        builder.append("✅ Present: ${attendanceList.size}\n\n")
+
+        attendanceList.forEachIndexed { index, attendance ->
+            val name = studentDao.getStudentByPhone(attendance.attendancePhone)?.name ?: "Unknown"
+            builder.append("${index + 1}. *${name.trim()}* - ${attendance.attendancePhone}\n")
+        }
+
+        return builder.toString()
     }
 }

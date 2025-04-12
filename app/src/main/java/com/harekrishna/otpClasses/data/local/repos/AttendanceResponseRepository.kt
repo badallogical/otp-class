@@ -3,7 +3,6 @@ package com.harekrishna.otpClasses.data.local.repos
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.viewModelScope
 import com.harekrishna.otpClasses.data.api.ApiService
 import com.harekrishna.otpClasses.data.local.db.dao.AttendanceDao
 import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
@@ -11,15 +10,11 @@ import com.harekrishna.otpClasses.data.models.AttendanceDate
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.AttendanceWithDates
 import com.harekrishna.otpClasses.data.models.AttendeeItem
-import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import com.harekrishna.otpClasses.ui.followup.FollowUpViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AttendanceResponseRepository(
@@ -150,10 +145,6 @@ class AttendanceResponseRepository(
         for(date in attendances){
             attendanceDao.insertAttendanceDate(AttendanceDate(date = date, attendancePhone = _phone))
         }
-    }
-
-    suspend fun deleteAttendance(attendanceDate: AttendanceDate) {
-        attendanceDao.deleteAttendanceDate(attendanceDate)
     }
 
     suspend fun deleteAttendanceRecord(attendanceResponse: AttendanceResponse) {

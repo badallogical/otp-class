@@ -10,6 +10,7 @@ import com.harekrishna.otpClasses.data.models.AttendanceDate
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.AttendanceWithDates
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AttendanceDao {
@@ -27,12 +28,25 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance_response WHERE phone = :phone")
     suspend fun getAttendanceWithDates(phone: String): AttendanceWithDates?
 
+
+    @Query("SELECT * FROM attendance_dates WHERE date = :date")
+     fun getAttendanceByDate(date: String): Flow<List<AttendanceDate>>
+
+    @Query("SELECT DISTINCT(date) FROM attendance_dates")
+     fun getAttendanceDates() : Flow<List<String>>
+
+
     // Delete attendance response and cascade delete attendance dates
     @Delete
     suspend fun deleteAttendanceResponse(attendanceResponse: AttendanceResponse)
 
-    @Delete
-    suspend fun deleteAttendanceDate(attendanceDate: AttendanceDate)
+
+    @Query("DELETE FROM attendance_dates WHERE date = :date AND attendancePhone = :phone")
+    suspend fun deleteAttendanceDateByDateAndPhone(date: String, phone: String)
+
+    // Optional for debugging
+    @Query("SELECT * FROM attendance_dates WHERE date = :date AND attendancePhone = :phone")
+    suspend fun findAttendanceDate(date: String, phone: String): List<AttendanceDate>
 
     // Get all attendances with their dates
     @Transaction

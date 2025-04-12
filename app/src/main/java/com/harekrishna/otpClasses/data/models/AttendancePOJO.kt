@@ -9,6 +9,20 @@ data class AttendancePOJO(
     val regDate: String?
 )
 
+data class StudentAttendee(
+    val name: String = "Unknown",
+    val phone: String = "",
+    val facilitator : String?,
+    val date : String,              // date of attendance
+    val repeatedTimes : Int = 0,    // repetition in the whole year
+    val regDate: String             // date of registration
+)
+
+data class AttendanceHistory(
+    val date: String,  // date of attendance
+    val count: Int     // count of total attendance
+)
+
 // To Sync online we use DTO
 fun AttendancePOJO.toDTO(): AttendanceDTO {
     return AttendanceDTO(

@@ -39,7 +39,6 @@ data class AttendanceWithDates(
     val attendanceDates: List<AttendanceDate>
 )
 
-
 data class AttendeeItem(
     val name: String,
     val phone: String,
