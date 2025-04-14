@@ -148,6 +148,16 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation("androidx.compose.material3:material3")
 
+    // Room testing
+    testImplementation("androidx.room:room-testing:2.6.1")
+
+// Coroutines testing
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+// AndroidX Test (needed for ApplicationProvider)
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.test.ext:junit:1.1.5")
+
     // Testing
     testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)

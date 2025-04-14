@@ -175,7 +175,33 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
                             facilitator = null,
                             repeatedTimes = 4,
                             isNew = false,
+                            regDate = "2024-03-25",
+                            hasLeft = true,
+                            leftTime = "14:30:45"
+                        ),
+                        StudentAttendee(
+                            name = "Ram Kumar Mauraya Singh Thakur",
+                            phone = "8880088888",
+                            facilitator = null,
+                            repeatedTimes = 4,
+                            isNew = false,
                             regDate = "2024-03-25"
+                        ),
+                        StudentAttendee(
+                            name = "Manoj Kumar",
+                            phone = "9988888888",
+                            facilitator = null,
+                            repeatedTimes = 4,
+                            isNew = false,
+                            regDate = "2024-03-25"
+                        ),
+                        StudentAttendee(
+                            name = "Krishna Das",
+                            phone = "7777777777",
+                            facilitator = "Gopal Singh",
+                            repeatedTimes = 1,
+                            isNew = false,
+                            regDate = "2024-04-05"
                         )
                     )
 
