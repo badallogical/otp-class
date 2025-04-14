@@ -1,5 +1,6 @@
 package com.harekrishna.otpClasses.ui.attendance
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -61,6 +62,7 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
@@ -82,6 +84,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -102,22 +106,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import androidx.navigation.NavController
+import com.harekrishna.otpClasses.data.models.StudentAttendee
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-// Enhanced Data Class with left status and time
-data class StudentAttendee(
-    val name: String,
-    val phone: String,
-    val facilitator: String?,
-    val repeatedTimes: Int,
-    val isNew: Boolean,
-    val regDate: String,
-    val hasLeft: Boolean = false,
-    val leftTime: String? = null,
-    val id: String = phone // Using phone as unique identifier for simplicity
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,7 +122,7 @@ fun AttendanceTopAppBar(
     leftCount: Int,
     totalNew: Int,
     attendeesList: List<StudentAttendee>, // Replace with your actual StudentAttendee data class
-    context: android.content.Context,
+    context: Context,
     onSyncClick: () -> Unit
 ) {
     var showShareMenu by remember { mutableStateOf(false) }
@@ -270,15 +264,19 @@ fun AttendanceTopAppBar(
 @Composable
 fun AttendanceDetailsScreen(
     date: String,
-    attendees: List<StudentAttendee>,
-    onDeleteAttendee: (String) -> Unit = {},
-    onMarkAsLeft: (String) -> Unit = {}
+    viewModel: AttendanceViewModel
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     // Convert to mutable state list to handle operations
-    var attendeesList by remember { mutableStateOf(attendees) }
+    val uiState by viewModel.attendanceDetailsUiState.collectAsState()
+
+    var attendeesList = uiState.filteredAttendees
+
+    LaunchedEffect(Unit){
+        viewModel.loadAttendanceDetailData(date)
+    }
 
     // Calculate statistics
     val totalAttendees = attendeesList.size
@@ -299,6 +297,11 @@ fun AttendanceDetailsScreen(
 
     var selectedFilter by remember { mutableStateOf("All") }
     val scrollState = rememberScrollState()
+
+    if( uiState.isLoading ){
+        CircularProgressIndicator()
+    }
+
 
     val filteredAttendees = if (isSearchMode) {
         attendeesList.filter { attendee ->
@@ -328,7 +331,7 @@ fun AttendanceDetailsScreen(
                 TextButton(
                     onClick = {
                         selectedAttendee?.id?.let { id ->
-                            onDeleteAttendee(id)
+                            //onDeleteAttendee(id)
                             attendeesList = attendeesList.filter { it.id != id }
                         }
                         showDeleteDialog = false
@@ -358,7 +361,7 @@ fun AttendanceDetailsScreen(
                             val currentTime = LocalDateTime.now().format(
                                 DateTimeFormatter.ofPattern("hh:mm a")
                             )
-                            onMarkAsLeft(id)
+                            //onMarkAsLeft(id)
                             attendeesList = attendeesList.map { attendee ->
                                 if (attendee.id == id) {
                                     attendee.copy(hasLeft = true, leftTime = currentTime)
@@ -1087,64 +1090,8 @@ fun InfoBadge(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+
         }
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun AttendanceDetailsScreenPreview() {
-    val dummyList = listOf(
-        StudentAttendee(
-            name = "Radha Devi",
-            phone = "9999999999",
-            facilitator = "Shyam Lal",
-            repeatedTimes = 2,
-            isNew = true,
-            regDate = "2024-04-01"
-        ),
-        StudentAttendee(
-            name = "Mohan Kumar",
-            phone = "8888888888",
-            facilitator = null,
-            repeatedTimes = 4,
-            isNew = false,
-            regDate = "2024-03-25",
-            hasLeft = true,
-            leftTime = "14:30:45"
-        ),
-        StudentAttendee(
-            name = "Ram Kumar",
-            phone = "8880088888",
-            facilitator = null,
-            repeatedTimes = 4,
-            isNew = false,
-            regDate = "2024-03-25",
-            hasLeft = true,
-            leftTime = "14:30:45"
-        ),
-        StudentAttendee(
-            name = "Manoj Kumar",
-            phone = "9988888888",
-            facilitator = null,
-            repeatedTimes = 4,
-            isNew = false,
-            regDate = "2024-03-25",
-            hasLeft = true,
-            leftTime = "14:30:45"
-        ),
-        StudentAttendee(
-            name = "Krishna Das",
-            phone = "7777777777",
-            facilitator = "Gopal Singh",
-            repeatedTimes = 1,
-            isNew = false,
-            regDate = "2024-04-05"
-        )
-    )
-
-    MaterialTheme(colorScheme = lightColorScheme()) {
-        AttendanceDetailsScreen(date = "2024-04-07", attendees = dummyList)
-    }
-}

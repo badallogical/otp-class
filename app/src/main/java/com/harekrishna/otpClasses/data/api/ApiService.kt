@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.harekrishna.otpClasses.data.models.AttendanceDTO
+import com.harekrishna.otpClasses.data.models.AttendanceData
 import com.harekrishna.otpClasses.data.models.ReportDTO
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
@@ -24,7 +25,7 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 object ApiService {
-    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbzXlOBji6f7MOBK2FcIXjMbRsNigD5C-oO5LpLtztvruYPqAWC-knlarPP9wuEEpQ4E/exec"
+    private const val BASE_URL = "https://script.google.com/macros/s/AKfycbwEwyGKmJa4QJwsqinSC9614YJsDwXtyzjeNzw4zvg22ZjBg-8jKIi8YjOxvkcK-Ub0/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -240,6 +241,39 @@ object ApiService {
             } catch (e: Exception) {
                 Log.e("ApiService", "GET request failed: ${e.message}")
                 return@withContext emptyList<StudentDTO>() // Return an empty list in case of an exception
+            }
+        }
+    }
+
+    suspend fun fetchAllAttendance(): List<AttendanceData> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = "$BASE_URL?attendance=true"
+                val request = Request.Builder()
+                    .url(url)
+                    .get()
+                    .build()
+
+                val response = client.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    response.body?.use { responseBody ->
+                        val jsonString = responseBody.string()
+                        Log.d("ApiService", "Response JSON: $jsonString")
+
+                        val type = object : TypeToken<List<AttendanceData>>() {}.type
+                        return@withContext Gson().fromJson<List<AttendanceData>>(jsonString, type)
+                    } ?: run {
+                        Log.e("ApiService", "Response body is null")
+                        return@withContext emptyList()
+                    }
+                } else {
+                    Log.e("ApiService", "Request failed with code: ${response.code}")
+                    return@withContext emptyList()
+                }
+            } catch (e: Exception) {
+                Log.e("ApiService", "Exception: ${e.message}")
+                return@withContext emptyList()
             }
         }
     }

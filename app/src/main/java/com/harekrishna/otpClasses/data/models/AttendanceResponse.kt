@@ -8,6 +8,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 
+// store the count of attendance.
 @Entity(tableName = "attendance_response")
 data class AttendanceResponse(
     @PrimaryKey val phone: String,
@@ -39,6 +40,7 @@ data class AttendanceResponse(
         )
     ]
 )
+
 data class AttendanceDate(
     val date: String,                // Attendance date
     val attendancePhone: String,     // Foreign key to AttendanceResponse
@@ -56,6 +58,11 @@ data class AttendanceWithDates(
         entityColumn = "attendancePhone"
     )
     val attendanceDates: List<AttendanceDate>
+)
+
+data class AttendanceData(
+    val phone: String,
+    val attendanceDates: List<String>
 )
 
 data class AttendeeItem(

@@ -46,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -55,10 +56,11 @@ import androidx.navigation.navArgument
 import com.google.gson.Gson
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore.getUserData
 import com.harekrishna.otpClasses.data.models.ReportDTO
+import com.harekrishna.otpClasses.data.models.StudentAttendee
 import com.harekrishna.otpClasses.screens.StudentFormScreen
 import com.harekrishna.otpClasses.ui.attendance.AttendanceDetailsScreen
 import com.harekrishna.otpClasses.ui.attendance.AttendanceHistoryScreen
-import com.harekrishna.otpClasses.ui.attendance.StudentAttendee
+import com.harekrishna.otpClasses.ui.attendance.AttendanceViewModel
 import com.harekrishna.otpClasses.ui.auth.UserData
 import com.harekrishna.otpClasses.ui.auth.admin.AdminPanelScreen
 import com.harekrishna.otpClasses.ui.dashboard.DashboardScreen
@@ -108,6 +110,8 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
         if (isConnected) {
             // Show the main content if connected
             NavHost(navController = navController, startDestination = startDestination,enterTransition = { EnterTransition.None },  exitTransition = { ExitTransition.None}) {
+
+
                 composable("dashboard") { DashboardScreen(navController) }
                 composable("settings") { SettingsScreen(navController) }
                 composable("about") { AboutScreen() }
@@ -115,7 +119,12 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
                 composable("registration") { RegistrationScreen(navController) }
                 composable("attendance") { AttendanceScreen(navController) }
                 composable("followup") { FollowUpScreen() }
-                composable("attendance_view") { AttendanceHistoryScreen(context) }
+
+                composable("attendance_view") {
+                    // TODO: scope viewmodel
+                    val viewModel: AttendanceViewModel = viewModel(factory = AttendanceViewModel.Factory)
+
+                    AttendanceHistoryScreen(context, navController,viewModel) }
                 composable("edit_report/{report}") { backStackEntry ->
                     val reportJson = backStackEntry.arguments?.getString("report")
                     val report = reportJson?.let {
@@ -159,55 +168,15 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
 
                     AdminPanelScreen(user)
                 }
-                composable("attendance_details"){
-                    val dummyList = listOf(
-                        StudentAttendee(
-                            name = "Radha Devi",
-                            phone = "9999999999",
-                            facilitator = "Shyam Lal",
-                            repeatedTimes = 2,
-                            isNew = true,
-                            regDate = "2024-04-01"
-                        ),
-                        StudentAttendee(
-                            name = "Mohan Kumar",
-                            phone = "8888888888",
-                            facilitator = null,
-                            repeatedTimes = 4,
-                            isNew = false,
-                            regDate = "2024-03-25",
-                            hasLeft = true,
-                            leftTime = "14:30:45"
-                        ),
-                        StudentAttendee(
-                            name = "Ram Kumar Mauraya Singh Thakur",
-                            phone = "8880088888",
-                            facilitator = null,
-                            repeatedTimes = 4,
-                            isNew = false,
-                            regDate = "2024-03-25"
-                        ),
-                        StudentAttendee(
-                            name = "Manoj Kumar",
-                            phone = "9988888888",
-                            facilitator = null,
-                            repeatedTimes = 4,
-                            isNew = false,
-                            regDate = "2024-03-25"
-                        ),
-                        StudentAttendee(
-                            name = "Krishna Das",
-                            phone = "7777777777",
-                            facilitator = "Gopal Singh",
-                            repeatedTimes = 1,
-                            isNew = false,
-                            regDate = "2024-04-05"
-                        )
-                    )
+                composable("attendance_details/{date}"){ backStackEntry ->
+                    // Retrieve the date from the backStackEntry arguments
+                    val date = backStackEntry.arguments?.getString("date") ?: ""
 
-                    MaterialTheme(colorScheme = lightColorScheme()) {
-                        AttendanceDetailsScreen(date = "2024-04-07", attendees = dummyList)
-                    }
+                    // TODO: scope viewmodel
+                    val viewModel: AttendanceViewModel = viewModel(factory = AttendanceViewModel.Factory)
+
+                    // Pass the date to your screen
+                    AttendanceDetailsScreen(date = date, viewModel)
                 }
             }
         } else {

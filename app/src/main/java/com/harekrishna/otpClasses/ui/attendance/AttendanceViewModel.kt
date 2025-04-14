@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
+import com.harekrishna.otpClasses.data.local.repos.AttendanceResponseRepository
 import com.harekrishna.otpClasses.data.local.repos.StudentRepository
 import com.harekrishna.otpClasses.data.models.AttendanceHistory
 import com.harekrishna.otpClasses.data.models.AttendancePOJO
@@ -41,12 +42,23 @@ import java.time.format.DateTimeFormatter
 import kotlin.random.Random
 
 @RequiresApi(Build.VERSION_CODES.O)
-class AttendanceViewModel(private val studentRepository: StudentRepository) : ViewModel(){
+class AttendanceViewModel(private val studentRepository: StudentRepository, private val attendanceResponseRepository: AttendanceResponseRepository) : ViewModel(){
 
     // Attendance mark Ui State
     private var _uiState = MutableStateFlow(AttendanceUiState())
     val uiState : StateFlow<AttendanceUiState> = _uiState.asStateFlow()
 
+
+    // Attendance History Screen Ui State
+    private val _attendanceHistoryUiState = MutableStateFlow(AttendanceHistoryUiState())
+    val attendanceHistoryUiState: StateFlow<AttendanceHistoryUiState> = _attendanceHistoryUiState.asStateFlow()
+
+    // Attendance Details Ui State
+    private val _attendanceDetailUiState = MutableStateFlow( AttendanceDetailsUiState())
+    val attendanceDetailsUiState : StateFlow<AttendanceDetailsUiState> = _attendanceDetailUiState.asStateFlow()
+
+
+    //TODO: to delete
     private val _attendanceList = MutableStateFlow<Map<String, List<AttendancePOJO>>>(emptyMap())
     val attendanceList: StateFlow<Map<String, List<AttendancePOJO>>> = _attendanceList.asStateFlow()
 
@@ -54,21 +66,13 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
     private val _isDeleting = MutableStateFlow(false)
     val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
 
-    // Attendance History Screen Ui State
-    private val _attendanceHistoryList = MutableStateFlow<List<AttendanceHistory>>(emptyList())
-    val attendanceHistoryList: StateFlow<List<AttendanceHistory>> = _attendanceHistoryList.asStateFlow()
-
-    // Attendance Details Ui State
-    private val _attendanceDetailUiState = MutableStateFlow( AttendanceDetailsUiState())
-    val attendanceDetailsUiState : StateFlow<AttendanceDetailsUiState> = _attendanceDetailUiState.asStateFlow()
-
-
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-                val repository = application.container.studentRepository // Assuming container contains the repository
-                AttendanceViewModel(repository)  // Pass the repository to the ViewModel constructor
+                val repository1 = application.container.studentRepository // Assuming container contains the repository
+                val repository2 = application.container.attendanceResponseRepository
+                AttendanceViewModel(repository1, repository2)  // Pass the repository to the ViewModel constructor
             }
         }
     }
@@ -125,9 +129,6 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
         }
     }
 
-    fun getAttendanceHistoryList(){
-
-    }
 
 
     fun updateAttendanceList(newData: Map<String, List<AttendancePOJO>>) {
@@ -168,6 +169,8 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
             filteredStudents = filtered
         )
     }
+
+
 
     // Function to fetch students and update UI state
     @RequiresApi(Build.VERSION_CODES.O)
@@ -227,6 +230,65 @@ class AttendanceViewModel(private val studentRepository: StudentRepository) : Vi
                 Log.e("onRefresh", "Error syncing students", e)
             } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+    }
+
+
+   fun getAttendanceHistoryList(){
+       viewModelScope.launch {
+
+       }
+   }
+
+
+    fun onRefreshAttendanceHistory(lastMonth: Int = 0) {
+        viewModelScope.launch {
+            // Update UI state: loading started
+            _attendanceHistoryUiState.value = _attendanceHistoryUiState.value.copy(
+                isLoadingRemoteAttendance = true
+            )
+
+            val historyList: List<AttendanceHistory> = withContext(Dispatchers.IO) {
+                if (lastMonth == 0) {
+                    // Load all attendances
+                    attendanceResponseRepository.getAllAttendanceHistoryData()
+                } else {
+                    // TODO: Load only from lastMonth to current month
+                    emptyList() // Replace this with actual filtered fetch
+                }
+            }
+
+            // Update UI state with fetched data
+            _attendanceHistoryUiState.value = _attendanceHistoryUiState.value.copy(
+                historyList = historyList,
+                isLoadingRemoteAttendance = false
+            )
+        }
+    }
+
+    // Load the detail attendance in UI state
+    fun loadAttendanceDetailData(date: String) {
+        viewModelScope.launch {
+            // Set loading true on main thread
+            _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(isLoading = true)
+
+            try {
+                val list = withContext(Dispatchers.IO) {
+                    attendanceResponseRepository.getDetailAttendanceDataByDate(date)
+                }
+
+                // Update UI state with the fetched data
+                _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
+                    filteredAttendees = list,
+                    isLoading = false
+                )
+            } catch (e: Exception) {
+                // Handle errors gracefully and stop loading
+                _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
+                    isLoading = false
+                )
+                Log.e("ViewModel", "Failed to load attendance detail: ${e.message}")
             }
         }
     }

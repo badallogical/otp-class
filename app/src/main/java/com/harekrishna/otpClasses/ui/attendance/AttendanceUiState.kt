@@ -1,7 +1,9 @@
 package com.harekrishna.otpClasses.ui.attendance
 
+import com.harekrishna.otpClasses.data.models.AttendanceHistory
 import com.harekrishna.otpClasses.data.models.AttendancePOJO
 import com.harekrishna.otpClasses.data.models.AttendanceWithDates
+import com.harekrishna.otpClasses.data.models.StudentAttendee
 import com.harekrishna.otpClasses.data.models.StudentPOJO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,11 +23,20 @@ data class AttendanceUiState (
     val showAttendanceNotAllowed : Boolean  = false
 )
 
+data class AttendanceHistoryUiState(
+    val isLoadingRemoteAttendance: Boolean = false,
+    val historyList : List<AttendanceHistory> = emptyList()
+)
+
 data class AttendanceDetailsUiState(
     val selectedFilter: String = "All",
     val filteredAttendees: List<StudentAttendee> = emptyList(),
     val totalAttendees: Int = 0,
     val totalNew: Int = 0,
     val totalRepeated: Int = 0,
-    val assignedCount: Int = 0
+    val assignedCount: Int = 0,
+    val totalLeft : Int = 0,
+    val totalPresent: Int = totalAttendees - totalLeft,
+    val isSyncing: Boolean = false,
+    val isLoading: Boolean = false
 )

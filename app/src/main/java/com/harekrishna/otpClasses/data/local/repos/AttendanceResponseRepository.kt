@@ -7,9 +7,11 @@ import com.harekrishna.otpClasses.data.api.ApiService
 import com.harekrishna.otpClasses.data.local.db.dao.AttendanceDao
 import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
 import com.harekrishna.otpClasses.data.models.AttendanceDate
+import com.harekrishna.otpClasses.data.models.AttendanceHistory
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.AttendanceWithDates
 import com.harekrishna.otpClasses.data.models.AttendeeItem
+import com.harekrishna.otpClasses.data.models.StudentAttendee
 import com.harekrishna.otpClasses.ui.followup.FollowUpViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -21,6 +23,49 @@ class AttendanceResponseRepository(
     private val callingReportDao: CallingReportDao,
     private val attendanceDao: AttendanceDao
 ) {
+
+    suspend fun getAllAttendanceHistoryData(): List<AttendanceHistory> {
+        return withContext(Dispatchers.IO) {
+            // Load everything from remote to local
+            loadAttendanceData()
+
+            // Return the data from local Room DB
+            attendanceDao.getAllAttendanceHistoryData()
+        }
+    }
+
+
+    // Loading the all attendance data from remote to local.
+    suspend fun loadAttendanceData() {
+        withContext(Dispatchers.IO) {
+            try {
+                // Fetch from the google sheet.
+                val fetchedData = ApiService.fetchAllAttendance()
+
+                Log.d("Fetched Data Size : ", fetchedData.size.toString())
+                Log.d("Fetched Data : ", fetchedData.toString())
+
+                // load each student attendance record
+                fetchedData.forEach { entry ->
+                    val phone = entry.phone
+                    val dates = entry.attendanceDates
+
+                    // Load that student attendance
+                    attendanceDao.loadAttendance(phone, dates);
+                }
+
+            } catch (e: Exception) {
+                Log.e("LoadAttendanceData", "Error loading attendance: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun getDetailAttendanceDataByDate(date : String ) : List<StudentAttendee>{
+        return withContext(Dispatchers.IO){
+            attendanceDao.getStudentsDetailsAttendanceByDate(date)
+        }
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getData(userPhone: String): List<AttendeeItem> {

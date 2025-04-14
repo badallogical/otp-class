@@ -9,13 +9,18 @@ data class AttendancePOJO(
     val regDate: String?
 )
 
+// Enhanced Data Class with left status and time
 data class StudentAttendee(
-    val name: String = "Unknown",
-    val phone: String = "",
-    val facilitator : String?,
-    val date : String,              // date of attendance
-    val repeatedTimes : Int = 0,    // repetition in the whole year
-    val regDate: String             // date of registration
+    val name: String,
+    val phone: String,
+    val facilitator: String?,
+    val date: String,
+    val repeatedTimes: Int,
+    val isNew: Boolean,
+    val regDate: String,
+    val hasLeft: Boolean = false,
+    val leftTime: String? = null,
+    val id: String = phone // Using phone as unique identifier for simplicity
 )
 
 data class AttendanceHistory(

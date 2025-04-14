@@ -8,10 +8,12 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.harekrishna.otpClasses.data.models.AttendanceDate
+import com.harekrishna.otpClasses.data.models.AttendanceHistory
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.AttendanceWithDates
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import com.harekrishna.otpClasses.data.models.MonthCount
+import com.harekrishna.otpClasses.data.models.StudentAttendee
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -40,13 +42,17 @@ interface AttendanceDao {
 
     @Transaction
     suspend fun markAttendance(phone: String, date: String) {
-        val attendanceDate = AttendanceDate(date = date, attendancePhone = phone)
-        insertAttendanceDate(attendanceDate)
 
+        // check existing entry
         val existing = getAttendanceResponse(phone)
         if (existing == null) {
             insertAttendanceResponse(AttendanceResponse(phone))
         }
+
+        // mark attendance
+        val attendanceDate = AttendanceDate(date = date, attendancePhone = phone)
+        insertAttendanceDate(attendanceDate)
+
 
         val monthlyCounts = getMonthlyAttendanceCounts(phone)
 
@@ -85,6 +91,65 @@ interface AttendanceDao {
         updateAttendanceResponse(response)
     }
 
+    // load single student attendance
+    @Transaction
+    suspend fun loadAttendance(phone: String, dates : List<String>) {
+
+        // check existing entry
+        val existing = getAttendanceResponse(phone)
+        if (existing == null) {
+            insertAttendanceResponse(AttendanceResponse(phone))
+        }
+
+        // Save all attendance of one student
+        for (date in dates) {
+            insertAttendanceDate(
+                AttendanceDate(
+                    date = date,
+                    attendancePhone = phone
+                )
+            )
+        }
+
+        // get the month count of attendance
+        val monthlyCounts = getMonthlyAttendanceCounts(phone)
+        val jan = monthlyCounts.firstOrNull { it.month == 1 }?.count ?: 0
+        val feb = monthlyCounts.firstOrNull { it.month == 2 }?.count ?: 0
+        val mar = monthlyCounts.firstOrNull { it.month == 3 }?.count ?: 0
+        val apr = monthlyCounts.firstOrNull { it.month == 4 }?.count ?: 0
+        val may = monthlyCounts.firstOrNull { it.month == 5 }?.count ?: 0
+        val jun = monthlyCounts.firstOrNull { it.month == 6 }?.count ?: 0
+        val jul = monthlyCounts.firstOrNull { it.month == 7 }?.count ?: 0
+        val aug = monthlyCounts.firstOrNull { it.month == 8 }?.count ?: 0
+        val sep = monthlyCounts.firstOrNull { it.month == 9 }?.count ?: 0
+        val oct = monthlyCounts.firstOrNull { it.month == 10 }?.count ?: 0
+        val nov = monthlyCounts.firstOrNull { it.month == 11 }?.count ?: 0
+        val dec = monthlyCounts.firstOrNull { it.month == 12 }?.count ?: 0
+
+        val total = jan + feb + mar + apr + may + jun + jul + aug + sep + oct + nov + dec
+
+        // prepare and update the student response
+        val response = AttendanceResponse(
+            phone = phone,
+            janCount = jan,
+            febCount = feb,
+            marCount = mar,
+            aprCount = apr,
+            mayCount = may,
+            junCount = jun,
+            julCount = jul,
+            augCount = aug,
+            sepCount = sep,
+            octCount = oct,
+            novCount = nov,
+            decCount = dec,
+            totalCount = total
+        )
+
+        updateAttendanceResponse(response)
+    }
+
+
     @Transaction
     @Query("SELECT * FROM attendance_response WHERE phone = :phone")
     suspend fun getAttendanceWithDates(phone: String): AttendanceWithDates?
@@ -103,6 +168,37 @@ interface AttendanceDao {
 
     @Query("SELECT * FROM attendance_dates WHERE date = :date AND attendancePhone = :phone AND deleted = 0")
     suspend fun findAttendanceDate(date: String, phone: String): List<AttendanceDate>
+
+    // Fetch the Data for Attendance History
+    @Query("""
+        SELECT date, COUNT(*) as count 
+        FROM attendance_dates 
+        WHERE deleted = 0 
+        GROUP BY date 
+        ORDER BY date DESC
+    """)
+    suspend fun getAllAttendanceHistoryData(): List<AttendanceHistory>
+
+    @Query("""
+    SELECT
+        r.phone AS phone,
+        r.totalCount AS repeatedTimes,
+        d.date AS date,
+        d.leftEarly AS hasLeft,
+        d.leftEarlyTime AS leftTime,
+        s._name AS name,
+        s._facilitator AS facilitator,
+        s.date AS regDate,
+        CASE WHEN r.totalCount = 1 THEN 1 ELSE 0 END AS isNew,
+        r.phone as id
+    FROM attendance_dates d
+    INNER JOIN attendance_response r ON r.phone = d.attendancePhone
+    LEFT JOIN students s ON s._phone = d.attendancePhone
+    WHERE d.deleted = 0 AND d.date = :targetDate
+    ORDER BY d.date DESC
+""")
+    suspend fun getStudentsDetailsAttendanceByDate(targetDate: String): List<StudentAttendee>
+
 
     @Transaction
     @Query("SELECT * FROM attendance_response")

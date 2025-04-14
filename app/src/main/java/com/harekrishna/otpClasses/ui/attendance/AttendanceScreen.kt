@@ -131,7 +131,7 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
                         .weight(1f)
                         .clickable {
                             //navController.navigate("attendance_view")
-                            navController.navigate("attendance_details")
+                            navController.navigate("attendance_view")
                         }
                 )
             }
