@@ -68,11 +68,6 @@ import com.harekrishna.otpClasses.ui.attendance.AttendanceViewModel
 fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewModel = viewModel(factory = AttendanceViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Fetch students from API and set the initial list
-//    LaunchedEffect(Unit) {
-//        viewModel.onRefresh()
-//        Log.d("Attendance", "Refreshing")
-//    }
 
     Box(
         modifier = Modifier

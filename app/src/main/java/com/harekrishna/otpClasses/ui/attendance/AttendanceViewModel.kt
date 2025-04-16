@@ -8,24 +8,21 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.data.local.repos.AttendanceResponseRepository
+import com.harekrishna.otpClasses.data.local.repos.AttendanceRepository
 import com.harekrishna.otpClasses.data.local.repos.StudentRepository
 import com.harekrishna.otpClasses.data.models.AttendanceHistory
 import com.harekrishna.otpClasses.data.models.AttendancePOJO
+import com.harekrishna.otpClasses.data.models.StudentAttendee
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
-import com.harekrishna.otpClasses.ui.followup.FollowUpViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,46 +35,37 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.random.Random
 
 @RequiresApi(Build.VERSION_CODES.O)
-class AttendanceViewModel(private val studentRepository: StudentRepository, private val attendanceResponseRepository: AttendanceResponseRepository) : ViewModel(){
+class AttendanceViewModel(
+    private val studentRepository: StudentRepository,
+    private val attendanceRepository: AttendanceRepository
+) : ViewModel() {
 
-    // Attendance mark Ui State
     private var _uiState = MutableStateFlow(AttendanceUiState())
-    val uiState : StateFlow<AttendanceUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<AttendanceUiState> = _uiState.asStateFlow()
 
-
-    // Attendance History Screen Ui State
-    private val _attendanceHistoryUiState = MutableStateFlow(AttendanceHistoryUiState())
-    val attendanceHistoryUiState: StateFlow<AttendanceHistoryUiState> = _attendanceHistoryUiState.asStateFlow()
-
-    // Attendance Details Ui State
-    private val _attendanceDetailUiState = MutableStateFlow( AttendanceDetailsUiState())
-    val attendanceDetailsUiState : StateFlow<AttendanceDetailsUiState> = _attendanceDetailUiState.asStateFlow()
-
-
-    //TODO: to delete
-    private val _attendanceList = MutableStateFlow<Map<String, List<AttendancePOJO>>>(emptyMap())
-    val attendanceList: StateFlow<Map<String, List<AttendancePOJO>>> = _attendanceList.asStateFlow()
-
-
-    private val _isDeleting = MutableStateFlow(false)
-    val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-                val repository1 = application.container.studentRepository // Assuming container contains the repository
+                val application =
+                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
+                val repository1 =
+                    application.container.studentRepository // Assuming container contains the repository
                 val repository2 = application.container.attendanceResponseRepository
-                AttendanceViewModel(repository1, repository2)  // Pass the repository to the ViewModel constructor
+                AttendanceViewModel(
+                    repository1,
+                    repository2
+                )
             }
         }
     }
 
-    lateinit var userPhone:String
+    lateinit var userPhone: String
+
     init {
         viewModelScope.launch {
             val userData = withContext(Dispatchers.IO) {
@@ -88,68 +76,6 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
 
             fetchStudents(false) // Load from Room database first
             onRefresh()
-
-            fetchAttendanceWithDates() // ✅ Trigger the flow only once
-        }
-    }
-
-    fun deleteAttendance(date: String, deletedPhones: List<String>) {
-
-        viewModelScope.launch {
-            _isDeleting.value = true // 🔄 Start processing
-
-//            _attendanceList.update { currentMap ->
-//                val updatedMap = currentMap.toMutableMap()
-//
-//                val existingList = updatedMap[date].orEmpty()
-//
-//                // Filter out the entries with matching phone numbers
-//                val filteredList = existingList.filterNot { it.studentId in deletedPhones }
-//
-//                if (filteredList.isEmpty()) {
-//                    // If nothing left, remove the date
-//                    updatedMap.remove(date)
-//                } else {
-//                    // Otherwise update the date with filtered list
-//                    updatedMap[date] = filteredList
-//                }
-//
-//                updatedMap
-//            }
-
-            // Delete from ROOM DB
-            withContext(Dispatchers.IO) {
-                deletedPhones.forEach { phone ->
-                    Log.d("deleting", "$date , $phone,")
-                    studentRepository.deleteAttendance(date, phone)
-                }
-            }
-
-            _isDeleting.value = false
-        }
-    }
-
-
-
-    fun updateAttendanceList(newData: Map<String, List<AttendancePOJO>>) {
-        _attendanceList.value = newData
-    }
-
-    fun updateAttendanceList(date: String, updatedList: List<AttendancePOJO>) {
-        _attendanceList.update { currentMap ->
-            val updatedMap = currentMap.toMutableMap()
-            updatedMap[date] = updatedList
-            if( updatedList.isEmpty() ){
-                updatedMap.remove(date)
-            }
-            updatedMap
-        }
-    }
-
-
-    fun fetchAttendanceWithDates() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _attendanceList.value =  studentRepository.getAttendanceWithDates()
         }
     }
 
@@ -171,7 +97,6 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
     }
 
 
-
     // Function to fetch students and update UI state
     @RequiresApi(Build.VERSION_CODES.O)
     fun fetchStudents(filter: Boolean = false) {
@@ -191,7 +116,12 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
 
                         // Apply filter before updating UI state
                         if (filter) {
-                            sortedStudents.filter { it.phone.contains(_uiState.value.searchQuery, ignoreCase = true) }
+                            sortedStudents.filter {
+                                it.phone.contains(
+                                    _uiState.value.searchQuery,
+                                    ignoreCase = true
+                                )
+                            }
                         } else {
                             sortedStudents
                         }
@@ -208,11 +138,11 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
                     }
             } catch (e: Exception) {
                 Log.e("fetchStudents", "Error fetching students", e)
-                _uiState.value = _uiState.value.copy(isLoading = false) // Ensure UI state is updated
+                _uiState.value =
+                    _uiState.value.copy(isLoading = false) // Ensure UI state is updated
             }
         }
     }
-
 
 
     // Function to fetch students from API and filter them
@@ -235,64 +165,6 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
     }
 
 
-   fun getAttendanceHistoryList(){
-       viewModelScope.launch {
-
-       }
-   }
-
-
-    fun onRefreshAttendanceHistory(lastMonth: Int = 0) {
-        viewModelScope.launch {
-            // Update UI state: loading started
-            _attendanceHistoryUiState.value = _attendanceHistoryUiState.value.copy(
-                isLoadingRemoteAttendance = true
-            )
-
-            val historyList: List<AttendanceHistory> = withContext(Dispatchers.IO) {
-                if (lastMonth == 0) {
-                    // Load all attendances
-                    attendanceResponseRepository.getAllAttendanceHistoryData()
-                } else {
-                    // TODO: Load only from lastMonth to current month
-                    emptyList() // Replace this with actual filtered fetch
-                }
-            }
-
-            // Update UI state with fetched data
-            _attendanceHistoryUiState.value = _attendanceHistoryUiState.value.copy(
-                historyList = historyList,
-                isLoadingRemoteAttendance = false
-            )
-        }
-    }
-
-    // Load the detail attendance in UI state
-    fun loadAttendanceDetailData(date: String) {
-        viewModelScope.launch {
-            // Set loading true on main thread
-            _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(isLoading = true)
-
-            try {
-                val list = withContext(Dispatchers.IO) {
-                    attendanceResponseRepository.getDetailAttendanceDataByDate(date)
-                }
-
-                // Update UI state with the fetched data
-                _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
-                    filteredAttendees = list,
-                    isLoading = false
-                )
-            } catch (e: Exception) {
-                // Handle errors gracefully and stop loading
-                _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
-                    isLoading = false
-                )
-                Log.e("ViewModel", "Failed to load attendance detail: ${e.message}")
-            }
-        }
-    }
-
 
     // Function to update the search query and trigger filtering
     fun onSearchQueryChanged(newQuery: String) {
@@ -304,43 +176,40 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
         filterStudents()
     }
 
-    fun onClickQuickRegisteration(){
+    fun onClickQuickRegisteration() {
         _uiState.update { currentState ->
             currentState.copy(showRegistrationDialog = true)
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun onStudentItemClicked(student: StudentPOJO){
+    fun onStudentItemClicked(student: StudentPOJO) {
 
 
-        if( isTodayWeekend() ){
+        if (isTodayWeekend()) {
             _uiState.update { currentState ->
                 currentState.copy(
                     selectedStudent = student,
                     showDialog = true
                 )
             }
-        }else{
+        } else {
             _uiState.update { currentState ->
                 currentState.copy(
                     selectedStudent = student,
-                   showAttendanceNotAllowed = true
+                    showAttendanceNotAllowed = true
                 )
             }
         }
-
-
-
     }
 
-    fun onDismissShowNoAttendance(){
+    fun onDismissShowNoAttendance() {
         _uiState.update { state ->
-            state.copy( showAttendanceNotAllowed = false )
+            state.copy(showAttendanceNotAllowed = false)
         }
     }
 
-    fun onDismissAttendanceDialog(){
+    fun onDismissAttendanceDialog() {
         _uiState.update { state ->
             state.copy(
                 showDialog = false,
@@ -349,7 +218,7 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
         }
     }
 
-    fun onDismissRegisterationDialog(){
+    fun onDismissRegisterationDialog() {
         _uiState.update { state ->
             state.copy(
                 showRegistrationDialog = false
@@ -359,7 +228,7 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
 
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun onRegisterStudent(name: String, phone: String, takenStatus : Boolean) {
+    fun onRegisterStudent(name: String, phone: String, takenStatus: Boolean) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRegistering = true)
 
@@ -369,18 +238,18 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
 
             try {
 
-                    // Perform the network call on IO thread
-                    studentRepository.insertStudent(student)
+                // Perform the network call on IO thread
+                studentRepository.insertStudent(student)
 
-                    // Fetch the updated student list after insertion
-                    val updatedStudentList = studentRepository.getAllStudents().first()
+                // Fetch the updated student list after insertion
+                val updatedStudentList = studentRepository.getAllStudents().first()
 
-                    // Update the UI after successful registration
-                    _uiState.value = _uiState.value.copy(
-                        isRegistering = false,
-                        showRegistrationDialog = false, // Close registration dialog
-                        students = updatedStudentList
-                    )
+                // Update the UI after successful registration
+                _uiState.value = _uiState.value.copy(
+                    isRegistering = false,
+                    showRegistrationDialog = false, // Close registration dialog
+                    students = updatedStudentList
+                )
 
                 // Sync and update sync status in background
                 launch(Dispatchers.IO) {
@@ -412,7 +281,7 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
         if (currentDate.dayOfWeek == DayOfWeek.SATURDAY) {
             // Update to the next day (Sunday)
             currentDate = currentDate.plusDays(1)
-        }else if( currentDate.dayOfWeek != DayOfWeek.SUNDAY){
+        } else if (currentDate.dayOfWeek != DayOfWeek.SUNDAY) {
             return ""
         }
 
@@ -462,8 +331,10 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
             _uiState.value = _uiState.value.copy(isPostingAttendance = true)
 
 
-            val currentDate = if (isTodayWeekend()) getCurrentOrNextSunday() else getPreviousSunday()
-            val attendance = AttendancePOJO(student.phone, currentDate, student.name, regDate = student.date)
+            val currentDate =
+                if (isTodayWeekend()) getCurrentOrNextSunday() else getPreviousSunday()
+            val attendance =
+                AttendancePOJO(student.phone, currentDate, student.name, regDate = student.date)
 
             try {
                 // Save attendance locally using the data store
@@ -483,31 +354,6 @@ class AttendanceViewModel(private val studentRepository: StudentRepository, priv
                 // Handle submission failure
                 _uiState.value = _uiState.value.copy(isPostingAttendance = false)
                 Log.e("AttendanceViewModel", "Error posting attendance: ${e.message}")
-            }
-        }
-    }
-
-    // Share the attendance form the Database
-    fun shareAttendance(context : Context, date : String ){
-        viewModelScope.launch {
-
-            val msg = withContext(Dispatchers.IO){ Uri.encode(studentRepository.getStringAttendanceByDate(date)) }
-
-            if (msg.isNullOrBlank()) {
-                Toast.makeText(context, "No attendance data to share", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-
-            // Send the message via WhatsApp
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("https://api.whatsapp.com/send?text=$msg")
-                setPackage("com.whatsapp")
-            }
-
-            try {
-                context.startActivity(intent)
-            } catch (e: ActivityNotFoundException) {
-                Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
             }
         }
     }

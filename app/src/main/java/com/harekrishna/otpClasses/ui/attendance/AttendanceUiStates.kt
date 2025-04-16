@@ -1,13 +1,8 @@
 package com.harekrishna.otpClasses.ui.attendance
 
 import com.harekrishna.otpClasses.data.models.AttendanceHistory
-import com.harekrishna.otpClasses.data.models.AttendancePOJO
-import com.harekrishna.otpClasses.data.models.AttendanceWithDates
 import com.harekrishna.otpClasses.data.models.StudentAttendee
 import com.harekrishna.otpClasses.data.models.StudentPOJO
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 data class AttendanceUiState (
     val students: List<StudentPOJO> = emptyList(),
@@ -29,8 +24,8 @@ data class AttendanceHistoryUiState(
 )
 
 data class AttendanceDetailsUiState(
+    val attendanceList: List<StudentAttendee> = emptyList(),
     val selectedFilter: String = "All",
-    val filteredAttendees: List<StudentAttendee> = emptyList(),
     val totalAttendees: Int = 0,
     val totalNew: Int = 0,
     val totalRepeated: Int = 0,
@@ -38,5 +33,32 @@ data class AttendanceDetailsUiState(
     val totalLeft : Int = 0,
     val totalPresent: Int = totalAttendees - totalLeft,
     val isSyncing: Boolean = false,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val showDeleteDialog: Boolean = false,
+    val showLeftDialog: Boolean = false,
+    val showReturnDialog: Boolean = false,
+    val selectedAttendee : StudentAttendee? = null,
+    val isSearchMode : Boolean = false,
+    val searchText : String = ""
 )
+
+fun AttendanceDetailsUiState.recalculateStats(): AttendanceDetailsUiState {
+    val totalAttendees = attendanceList.size
+    val totalNew = attendanceList.count { it.repeatedTimes == 1 }
+    val totalRepeated = attendanceList.count { it.repeatedTimes > 1 }
+    val assignedCount = attendanceList.count {
+        !it.facilitator.isNullOrBlank() && it.facilitator != "NA"
+    }
+    val totalLeft = attendanceList.count { it.hasLeft }
+    val totalPresent = totalAttendees - totalLeft
+
+    return this.copy(
+        totalAttendees = totalAttendees,
+        totalNew = totalNew,
+        totalRepeated = totalRepeated,
+        assignedCount = assignedCount,
+        totalLeft = totalLeft,
+        totalPresent = totalPresent
+    )
+}
+

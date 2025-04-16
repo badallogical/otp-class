@@ -29,9 +29,13 @@ import kotlinx.coroutines.launch
 fun AttendanceHistoryScreen(
     context: Context,
     navController: NavController,
-    viewModel: AttendanceViewModel
+    viewModel: AttendanceHistoryViewModel = viewModel(factory = AttendanceHistoryViewModel.Factory)
 ) {
     val uiState by viewModel.attendanceHistoryUiState.collectAsState()
+
+    LaunchedEffect(Unit){
+        viewModel.getAttendanceHistory()
+    }
 
     Scaffold(
         topBar = {

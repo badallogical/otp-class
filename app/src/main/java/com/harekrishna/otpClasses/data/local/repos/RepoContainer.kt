@@ -19,8 +19,8 @@ class RepoContainer(private val context : Context) {
         CallingReportRepository(database.getCallingReportDao())
     }
 
-    val attendanceResponseRepository : AttendanceResponseRepository by lazy{
-        AttendanceResponseRepository(database.getCallingReportDao(),database.getAttendanceResponseDao())
+    val attendanceResponseRepository : AttendanceRepository by lazy{
+        AttendanceRepository(database.getCallingReportDao(),database.getAttendanceResponseDao())
     }
 
 }

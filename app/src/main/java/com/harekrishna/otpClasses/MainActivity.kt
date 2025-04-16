@@ -121,10 +121,7 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
                 composable("followup") { FollowUpScreen() }
 
                 composable("attendance_view") {
-                    // TODO: scope viewmodel
-                    val viewModel: AttendanceViewModel = viewModel(factory = AttendanceViewModel.Factory)
-
-                    AttendanceHistoryScreen(context, navController,viewModel) }
+                    AttendanceHistoryScreen(context, navController) }
                 composable("edit_report/{report}") { backStackEntry ->
                     val reportJson = backStackEntry.arguments?.getString("report")
                     val report = reportJson?.let {
@@ -172,11 +169,8 @@ fun MainNavHost(navController: NavHostController = rememberNavController()) {
                     // Retrieve the date from the backStackEntry arguments
                     val date = backStackEntry.arguments?.getString("date") ?: ""
 
-                    // TODO: scope viewmodel
-                    val viewModel: AttendanceViewModel = viewModel(factory = AttendanceViewModel.Factory)
-
                     // Pass the date to your screen
-                    AttendanceDetailsScreen(date = date, viewModel)
+                    AttendanceDetailsScreen(date = date)
                 }
             }
         } else {

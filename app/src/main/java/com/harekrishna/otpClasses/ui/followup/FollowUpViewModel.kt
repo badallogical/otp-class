@@ -13,7 +13,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.data.local.repos.AttendanceResponseRepository
+import com.harekrishna.otpClasses.data.local.repos.AttendanceRepository
 import com.harekrishna.otpClasses.data.models.AttendeeItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,7 +50,7 @@ data class FollowUpUiState(
 
 
 @RequiresApi(Build.VERSION_CODES.O)
-class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResponseRepository) :
+class FollowUpViewModel(private val attendanceRepository: AttendanceRepository) :
     ViewModel() {
 
     // UI state
@@ -77,7 +77,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
                     ThanksMsg = AttendanceDataStore.getThanksMessage()
 
                     // Fetch attendees data based on userPhone
-                    val attendees = attendanceResponseRepository.getData(userPhone)
+                    val attendees = attendanceRepository.getData(userPhone)
 
                     // Update _uiState with attendees data on the main thread
                     withContext(Dispatchers.Main) {
@@ -100,12 +100,12 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
             _uiState.value = _uiState.value.copy(isRefreshing = true)
 
             withContext(Dispatchers.IO){
-                attendanceResponseRepository.fetchAndUpdateAttendance(userPhone)
+                attendanceRepository.fetchAndUpdateAttendance(userPhone)
             }
 
             // Fetch attendees data based on userPhone
             val attendees = withContext(Dispatchers.IO) {
-                attendanceResponseRepository.getAllLastFourWeekAttendeeAndRegistration()
+                attendanceRepository.getAllLastFourWeekAttendeeAndRegistration()
             }
 
             // Update _uiState with attendees data on the main thread
@@ -123,7 +123,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
     @RequiresApi(Build.VERSION_CODES.O)
     private fun getAllLastFourWeekAttendeesAndRegistration() {
         viewModelScope.launch(Dispatchers.IO) {
-            val attendeeList = attendanceResponseRepository.getAllLastFourWeekAttendeeAndRegistration()
+            val attendeeList = attendanceRepository.getAllLastFourWeekAttendeeAndRegistration()
 
             // Switch back to Main dispatcher to update UI
             withContext(Dispatchers.Main) {
@@ -139,7 +139,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
 
     fun filterByLastFourWeekPresentAttendees(){
         viewModelScope.launch(Dispatchers.IO) {
-            val attendeeList = attendanceResponseRepository.getAllLastFourWeekAttendee()
+            val attendeeList = attendanceRepository.getAllLastFourWeekAttendee()
 
             // Switch back to Main dispatcher to update UI
             withContext(Dispatchers.Main) {
@@ -169,7 +169,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
     fun filterByLastPresent() {
         val date = getLastSundayDate()
         viewModelScope.launch(Dispatchers.IO) {
-            val presents = attendanceResponseRepository.getAttendeePresentOn(date)
+            val presents = attendanceRepository.getAttendeePresentOn(date)
             val result = _uiState.value.attendees.filter { presents.contains(it.phone) }
 
             withContext(Dispatchers.Main) {
@@ -181,7 +181,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
     fun filterByLastAbsent() {
         val date = getLastSundayDate()
         viewModelScope.launch(Dispatchers.IO) {
-            val presents = attendanceResponseRepository.getAttendeePresentOn(date)
+            val presents = attendanceRepository.getAttendeePresentOn(date)
             val result = _uiState.value.attendees.filterNot { presents.contains(it.phone) }
 
             withContext(Dispatchers.Main) {
@@ -219,7 +219,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
 
             // Fetch the last four attendance dates for the current report's phone number
             val lastFourDatesOfAttendee =
-                attendanceResponseRepository.getLastFourAttendanceDate(attendee.phone)
+                attendanceRepository.getLastFourAttendanceDate(attendee.phone)
 
             // Check if any of the last four attendance dates match the Sundays
             val attendedOnSunday = lastFourDatesOfAttendee.any { date -> sundays.contains(date) }
@@ -245,7 +245,7 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
 
             // Fetch the last four attendance dates for the current report's phone number
             val lastFourDatesOfAttendee =
-                attendanceResponseRepository.getLastFourAttendanceDate(attendee.phone)
+                attendanceRepository.getLastFourAttendanceDate(attendee.phone)
 
             // Check if none of the last four attendance dates match the Sundays
             val absentOnAllSundays = lastFourDatesOfAttendee.none { date -> sundays.contains(date) }
@@ -350,10 +350,10 @@ class FollowUpViewModel(private val attendanceResponseRepository: AttendanceResp
         )
 
         viewModelScope.launch(Dispatchers.IO) {
-            attendanceResponseRepository.updateCallingReportStatus(phone, status)
-            attendanceResponseRepository.updateCallingReportInvited(phone, invited)
-            attendanceResponseRepository.updateCallingReportFeedback(phone, feedback)
-            attendanceResponseRepository.updateCallingReportActivation(phone, isActive)
+            attendanceRepository.updateCallingReportStatus(phone, status)
+            attendanceRepository.updateCallingReportInvited(phone, invited)
+            attendanceRepository.updateCallingReportFeedback(phone, feedback)
+            attendanceRepository.updateCallingReportActivation(phone, isActive)
         }
     }
 

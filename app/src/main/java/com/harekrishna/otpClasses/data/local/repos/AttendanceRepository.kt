@@ -3,6 +3,7 @@ package com.harekrishna.otpClasses.data.local.repos
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.data.api.ApiService
 import com.harekrishna.otpClasses.data.local.db.dao.AttendanceDao
 import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
@@ -19,21 +20,29 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
-class AttendanceResponseRepository(
+class AttendanceRepository(
     private val callingReportDao: CallingReportDao,
     private val attendanceDao: AttendanceDao
 ) {
 
-    suspend fun getAllAttendanceHistoryData(): List<AttendanceHistory> {
+    suspend fun getAllAttendanceHistoryData(lastMonth: Int = 0): List<AttendanceHistory> {
         return withContext(Dispatchers.IO) {
             // Load everything from remote to local
-            loadAttendanceData()
+
+            if( MyApplication.checkInternetConnection())
+                loadAttendanceData()
 
             // Return the data from local Room DB
             attendanceDao.getAllAttendanceHistoryData()
         }
     }
 
+    suspend fun getLocalAllAttendanceHistoryData(): List<AttendanceHistory> {
+        return withContext(Dispatchers.IO) {
+            // Return the data from local Room DB
+            attendanceDao.getAllAttendanceHistoryData()
+        }
+    }
 
     // Loading the all attendance data from remote to local.
     suspend fun loadAttendanceData() {
@@ -192,6 +201,7 @@ class AttendanceResponseRepository(
         }
     }
 
+
     suspend fun deleteAttendanceRecord(attendanceResponse: AttendanceResponse) {
         attendanceDao.deleteAttendanceResponse(attendanceResponse)
     }
@@ -255,6 +265,18 @@ class AttendanceResponseRepository(
         return@coroutineScope result
     }
 
+
+    suspend fun updateAttendanceDateTable(attendanceDate: AttendanceDate){
+        attendanceDao.updateAttendanceDateTable(attendanceDate)
+    }
+
+    suspend fun updateAttendanceDateMarkLeft(phone : String, date: String, left : Boolean, leftTime : String ){
+        attendanceDao.updateAttendanceDateLeftField(phone, date, true,leftTime )
+    }
+
+    suspend fun updateAttendanceDateDeleted(phone : String, date: String, deleted : Boolean){
+        attendanceDao.updateAttendanceDateDeleteField(phone, date, deleted)
+    }
 
 
     // Update the status of a calling report by phone

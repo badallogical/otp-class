@@ -25,11 +25,43 @@ interface AttendanceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAttendanceDate(attendanceDate: AttendanceDate)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAttendanceDateFromRemote(attendanceDate: AttendanceDate)
+
     @Query("SELECT * FROM attendance_response WHERE phone = :phone")
     suspend fun getAttendanceResponse(phone: String): AttendanceResponse?
 
     @Update
     suspend fun updateAttendanceResponse(attendanceResponse: AttendanceResponse)
+
+    @Update
+    suspend fun updateAttendanceDateTable(attendanceDate: AttendanceDate)
+
+    @Query("""
+    UPDATE attendance_dates 
+    SET leftEarly = :left, 
+        leftEarlyTime = :leftTime 
+    WHERE attendancePhone = :phone 
+      AND date = :date """)
+    suspend fun updateAttendanceDateLeftField(
+        phone: String,
+        date: String,
+        left: Boolean,
+        leftTime: String
+    )
+
+    @Query("""
+    UPDATE attendance_dates 
+    SET deleted = :deleted
+    WHERE attendancePhone = :phone 
+      AND date = :date """)
+    suspend fun updateAttendanceDateDeleteField(
+        phone: String,
+        date: String,
+        deleted: Boolean,
+    )
+
+
 
     // ✅ Count only non-deleted dates
     @Query("""
@@ -103,7 +135,7 @@ interface AttendanceDao {
 
         // Save all attendance of one student
         for (date in dates) {
-            insertAttendanceDate(
+            insertAttendanceDateFromRemote(
                 AttendanceDate(
                     date = date,
                     attendancePhone = phone
@@ -159,6 +191,8 @@ interface AttendanceDao {
 
     @Query("SELECT DISTINCT(date) FROM attendance_dates WHERE deleted = 0")
     fun getAttendanceDates(): Flow<List<String>>
+
+
 
     @Delete
     suspend fun deleteAttendanceResponse(attendanceResponse: AttendanceResponse)
