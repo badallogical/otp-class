@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 class AttendanceRepository(
@@ -69,7 +70,7 @@ class AttendanceRepository(
         }
     }
 
-    suspend fun getDetailAttendanceDataByDate(date : String ) : List<StudentAttendee>{
+    suspend fun getDetailAttendanceDataByDate(date : String ) : Flow<List<StudentAttendee>> {
         return withContext(Dispatchers.IO){
             attendanceDao.getStudentsDetailsAttendanceByDate(date)
         }
@@ -271,11 +272,15 @@ class AttendanceRepository(
     }
 
     suspend fun updateAttendanceDateMarkLeft(phone : String, date: String, left : Boolean, leftTime : String ){
-        attendanceDao.updateAttendanceDateLeftField(phone, date, true,leftTime )
+        attendanceDao.updateAttendanceDateLeftField(phone, date, left,leftTime )
     }
 
     suspend fun updateAttendanceDateDeleted(phone : String, date: String, deleted : Boolean){
         attendanceDao.updateAttendanceDateDeleteField(phone, date, deleted)
+    }
+
+    suspend fun updateSyncStatus( phone : String, date: String, sync : Boolean ){
+        attendanceDao.updateSyncStatus(phone, date, sync)
     }
 
 

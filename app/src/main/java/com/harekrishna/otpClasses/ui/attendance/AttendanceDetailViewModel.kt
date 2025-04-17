@@ -14,13 +14,17 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
+import com.harekrishna.otpClasses.data.api.ApiService.postBulkAttendance
 import com.harekrishna.otpClasses.data.local.repos.AttendanceRepository
 import com.harekrishna.otpClasses.data.local.repos.StudentRepository
+import com.harekrishna.otpClasses.data.models.AttendanceDTO
 import com.harekrishna.otpClasses.data.models.StudentAttendee
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
@@ -52,31 +56,36 @@ class AttendanceDetailViewModel(
         }
     }
 
-    // Load the detail attendance in UI state
     fun loadAttendanceDetailData(date: String) {
         viewModelScope.launch {
-            // Set loading true on main thread
-            _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(isLoading = true)
+            // Set loading true on the main thread
+            _attendanceDetailUiState.update { it.copy(isLoading = true) }
 
             try {
-                val list = withContext(Dispatchers.IO) {
-                    attendanceRepository.getDetailAttendanceDataByDate(date)
+                // Switch to IO dispatcher for data loading
+                withContext(Dispatchers.IO) {
+                    attendanceRepository.getDetailAttendanceDataByDate(date).collect { list ->
+                        // Back to Main thread to update UI
+                        withContext(Dispatchers.Main) {
+                            _attendanceDetailUiState.update {
+                                it.copy(
+                                    attendanceList = list,
+                                    isLoading = false
+                                ).recalculateStats()
+                            }
+                        }
+                    }
                 }
-
-                // Update UI state with the fetched data
-                _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
-                    attendanceList = list,
-                    isLoading = false
-                ).recalculateStats()
             } catch (e: Exception) {
-                // Handle errors gracefully and stop loading
-                _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
-                    isLoading = false
-                )
+                // Handle exception on main thread
+                _attendanceDetailUiState.update {
+                    it.copy(isLoading = false)
+                }
                 Log.e("ViewModel", "Failed to load attendance detail: ${e.message}")
             }
         }
     }
+
 
 
 
@@ -144,13 +153,13 @@ class AttendanceDetailViewModel(
                 // Update state
                 _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
 
-                    attendanceList = _attendanceDetailUiState.value.attendanceList.map { _attendee ->
-                        if (_attendee.id == attendee.id) {
-                            _attendee.copy(hasLeft = true, leftTime = currentTime)
-                        } else {
-                            _attendee
-                        }
-                    },
+//                    attendanceList = _attendanceDetailUiState.value.attendanceList.map { _attendee ->
+//                        if (_attendee.id == attendee.id) {
+//                            _attendee.copy(hasLeft = true, leftTime = currentTime)
+//                        } else {
+//                            _attendee
+//                        }
+//                    },
                     showLeftDialog = false
                 ).recalculateStats()
             }
@@ -173,13 +182,26 @@ class AttendanceDetailViewModel(
                 attendanceRepository.updateAttendanceDateDeleted(
                     attendee.phone,
                     attendee.date,
-                    true
+                    !attendee.deleted
                 )
             }
 
+//            // Update state
+//            _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
+//                attendanceList = _attendanceDetailUiState.value.attendanceList.filter { it.id != attendee.id },
+//                showDeleteDialog = false
+//            ).recalculateStats()
+
             // Update state
             _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
-                attendanceList = _attendanceDetailUiState.value.attendanceList.filter { it.id != attendee.id },
+//
+//                attendanceList = _attendanceDetailUiState.value.attendanceList.map { _attendee ->
+//                    if (_attendee.id == attendee.id) {
+//                        _attendee.copy(deleted = !_attendee.deleted)
+//                    }else{
+//                        _attendee
+//                    }
+//                },
                 showDeleteDialog = false
             ).recalculateStats()
         }
@@ -209,13 +231,13 @@ class AttendanceDetailViewModel(
                 // Update state
                 _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
 
-                    attendanceList = _attendanceDetailUiState.value.attendanceList.map { _attendee ->
-                        if (_attendee.id == attendee.id) {
-                            _attendee.copy(hasLeft = false, leftTime = "")
-                        } else {
-                            _attendee
-                        }
-                    },
+//                    attendanceList = _attendanceDetailUiState.value.attendanceList.map { _attendee ->
+//                        if (_attendee.id == attendee.id) {
+//                            _attendee.copy(hasLeft = false, leftTime = "")
+//                        } else {
+//                            _attendee
+//                        }
+//                    },
                     showReturnDialog = false
                 ).recalculateStats()
             }
@@ -245,6 +267,74 @@ class AttendanceDetailViewModel(
         _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
             searchText = searchText
         )
+    }
+
+    // Filter the present and convert to AttendanceDTO list.
+    private fun List<StudentAttendee>.toAttendanceDTOs(): List<AttendanceDTO> {
+        return this
+            .map {
+                AttendanceDTO(
+                    studentId = it.id,
+                    date = it.date,
+                    regDate = it.regDate
+                )
+            }
+    }
+
+    private val BATCH_SIZE = 10  // Adjust as needed
+
+    fun syncAttendance() {
+        viewModelScope.launch {
+            _attendanceDetailUiState.update {
+                it.copy(
+                    isSyncing = true,
+                    syncStatus = false
+                )
+            }
+
+            val totalPresentList = attendanceDetailsUiState.value.attendanceList
+                .filter { !it.hasLeft && !it.deleted }
+                .toAttendanceDTOs()
+
+            val result = withContext(Dispatchers.IO) {
+                totalPresentList.chunked(BATCH_SIZE).forEach { batch ->
+                    Log.d("attendance", batch.toString())
+
+                    val success = postBulkAttendance(batch)
+                    if (success) {
+                        batch.forEach { attendee ->
+                            attendanceRepository.updateSyncStatus(
+                                attendee.studentId,
+                                attendee.date,
+                                true
+                            )
+                        }
+
+                        withContext(Dispatchers.Main){
+                            _attendanceDetailUiState.update {
+                                it.copy(
+                                    totalSynced = it.totalSynced + batch.size
+                                )
+                            }
+                        }
+
+                        Log.d("ApiService", "Attendance Posted batch count ${batch.size}")
+                    } else {
+                        Log.d("ApiService", "Attendance Posting Failed")
+                        return@withContext false // Exit early and return failure
+                    }
+                }
+                return@withContext true // If all batches succeed
+            }
+
+            _attendanceDetailUiState.update {
+                it.copy(
+                    isSyncing = false,
+                    syncStatus = result,
+                    totalSynced = 0
+                )
+            }
+        }
     }
 
 

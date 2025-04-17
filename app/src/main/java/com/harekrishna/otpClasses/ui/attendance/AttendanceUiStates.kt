@@ -31,26 +31,29 @@ data class AttendanceDetailsUiState(
     val totalRepeated: Int = 0,
     val assignedCount: Int = 0,
     val totalLeft : Int = 0,
-    val totalPresent: Int = totalAttendees - totalLeft,
+    val totalPresent: Int = 0,
+    val totalSynced: Int = 0,
     val isSyncing: Boolean = false,
+    val syncStatus : Boolean = false,
     val isLoading: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val showLeftDialog: Boolean = false,
     val showReturnDialog: Boolean = false,
     val selectedAttendee : StudentAttendee? = null,
     val isSearchMode : Boolean = false,
-    val searchText : String = ""
+    val searchText : String = "",
 )
 
 fun AttendanceDetailsUiState.recalculateStats(): AttendanceDetailsUiState {
-    val totalAttendees = attendanceList.size
-    val totalNew = attendanceList.count { it.repeatedTimes == 1 }
-    val totalRepeated = attendanceList.count { it.repeatedTimes > 1 }
+    val totalAttendees = attendanceList.count { !it.deleted }
+    val totalNew = attendanceList.count { it.repeatedTimes == 1 && !it.deleted }
+    val totalRepeated = attendanceList.count { it.repeatedTimes > 1 && !it.deleted }
     val assignedCount = attendanceList.count {
-        !it.facilitator.isNullOrBlank() && it.facilitator != "NA"
+        !it.facilitator.isNullOrBlank() && it.facilitator != "NA" && !it.deleted
     }
-    val totalLeft = attendanceList.count { it.hasLeft }
-    val totalPresent = totalAttendees - totalLeft
+    val totalLeft = attendanceList.count { it.hasLeft && !it.deleted }
+    val totalPresent = attendanceList.count{ !it.hasLeft && !it.deleted }
+
 
     return this.copy(
         totalAttendees = totalAttendees,

@@ -451,63 +451,7 @@ object ApiService {
     }
 
 
-    private const val BATCH_SIZE = 10  // Adjust as needed
 
-    suspend fun syncAttendance(
-        date : String,
-        attendanceList : List<AttendanceDTO>,
-        onSave: (Int) -> Unit
-    ): Boolean = withContext(Dispatchers.IO) {
-        var success = true
-
-
-            val totalForDay = attendanceList.size
-            val day = 1
-
-            // Split into smaller batches
-            attendanceList.chunked(BATCH_SIZE).forEach { batch ->
-                Log.d("attendance", batch.toString())
-
-                val result = postBulkAttendance(batch)
-                if (result) {
-                    Log.d("ApiService", "Attendance Posted batch count  ${batch.size}")
-                    onSave(batch.size)
-                } else {
-                    Log.d("ApiService", "Attendance Posting Failed ")
-                    success = false
-                    onSave(-1)
-                }
-            }
-
-        return@withContext success
-    }
-
-
-    //            val results = attendanceList.map { attendance ->
-//                async {
-//                    val result = postAttendance(attendance)
-//                    synchronized(progressLock) {
-//                        if (result) {
-//                            savedForDay++
-//                            postedCount++
-//                            val progress = (postedCount * 100) / totalAttendanceCount
-//                            onProgressUpdate(progress, day, totalForDay, savedForDay)
-//                        } else {
-//                            success = false
-//                            Log.e(
-//                                "SyncService",
-//                                "Failed to post attendance for studentID: ${attendance.studentId} on date: $date"
-//                            )
-//                        }
-//                    }
-//                    result
-//                }
-// }
-// Await all results for the current day
-//            results.awaitAll()
-
-//            if (!success) return@withContext false
-//        }
 
 
 }

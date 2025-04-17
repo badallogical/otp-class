@@ -20,6 +20,8 @@ data class StudentAttendee(
     val regDate: String,
     val hasLeft: Boolean = false,
     val leftTime: String? = null,
+    val deleted: Boolean = false,
+    val synced: Boolean = false,
     val id: String = phone // Using phone as unique identifier for simplicity
 )
 

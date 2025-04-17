@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.harekrishna.otpClasses"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 10 // version 1.1.8 - Attendance and validation check on registration
         versionName = "1.1.8"
@@ -78,6 +78,9 @@ android {
 }
 
 dependencies {
+
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
+
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))

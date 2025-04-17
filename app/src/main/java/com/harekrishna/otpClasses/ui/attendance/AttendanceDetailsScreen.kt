@@ -12,9 +12,15 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -27,25 +33,30 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Colors
+import androidx.compose.material.TabRowDefaults.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.PeopleAlt
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonPin
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Clear
@@ -58,6 +69,7 @@ import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.TableChart
 import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material.icons.outlined.TurnedIn
+import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -95,6 +107,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -110,7 +123,10 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harekrishna.otpClasses.data.models.StudentAttendee
 import com.harekrishna.otpClasses.ui.theme.AttendanceColors
+import kotlinx.coroutines.delay
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
+import java.io.FileOutputStream
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -145,13 +161,18 @@ fun AttendanceDetailsScreen(
                 }
             } else {
                 when (uiState.selectedFilter) {
-                    "New" -> uiState.attendanceList.filter { it.repeatedTimes == 1 }
-                    "Repeated" -> uiState.attendanceList.filter { it.repeatedTimes > 1 }
-                    "Unassigned" -> uiState.attendanceList.filter { it.facilitator.isNullOrBlank() || it.facilitator == "NA" }
-                    "Assigned" -> uiState.attendanceList.filter { !it.facilitator.isNullOrBlank() && it.facilitator != "NA" }
-                    "Left" -> uiState.attendanceList.filter { it.hasLeft }
-                    "Present" -> uiState.attendanceList.filter { !it.hasLeft }
-                    else -> uiState.attendanceList
+                    "New" -> uiState.attendanceList.filter { it.repeatedTimes == 1 && !it.deleted }
+                    "Repeated" -> uiState.attendanceList.filter { it.repeatedTimes > 1 && !it.deleted }
+                    "Unassigned" -> uiState.attendanceList.filter {
+                        (it.facilitator.isNullOrBlank() || it.facilitator == "NA") && !it.deleted
+                    }
+                    "Assigned" -> uiState.attendanceList.filter {
+                        !it.facilitator.isNullOrBlank() && it.facilitator != "NA" && !it.deleted
+                    }
+                    "Left" -> uiState.attendanceList.filter { it.hasLeft && !it.deleted }
+                    "Present" -> uiState.attendanceList.filter { !it.hasLeft && !it.deleted }
+                    "Deleted" -> uiState.attendanceList.filter { it.deleted }
+                    else -> uiState.attendanceList.filter { !it.deleted }
                 }
             }
         }
@@ -164,15 +185,15 @@ fun AttendanceDetailsScreen(
     if (uiState.showDeleteDialog && uiState.selectedAttendee != null) {
         AlertDialog(
             onDismissRequest = { viewModel.onDismissDeleteDialog() },
-            title = { Text("Delete Attendance") },
-            text = { Text("Are you sure you want to delete ${uiState.selectedAttendee?.name}'s attendance record?") },
+            title = { Text("${if (uiState.selectedAttendee!!.deleted ) "Undo" else "Delete"} Attendance") },
+            text = { Text("Are you sure you want to ${if( uiState.selectedAttendee!!.deleted) "undo" else "delete"} ${uiState.selectedAttendee?.name}'s attendance record?") },
             confirmButton = {
                 TextButton(
                     onClick = {
                        viewModel.onDeleteAttendee()
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(if( uiState.selectedAttendee!!.deleted ) "Undo" else "Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -240,7 +261,7 @@ fun AttendanceDetailsScreen(
                 attendeesList = uiState.attendanceList,
                 context = context,
                 onSyncClick = {
-                    // Handle sync action (e.g., trigger data refresh)
+                    viewModel.syncAttendance()
                 }
             )
         }
@@ -252,7 +273,7 @@ fun AttendanceDetailsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             // Stats Card
-            SmartStatisticsCard(uiState.totalAttendees, uiState.totalPresent, uiState.totalNew, uiState.totalLeft, uiState.totalRepeated, uiState.assignedCount)
+            SmartStatisticsCard(uiState.totalAttendees, uiState.totalPresent, uiState.totalNew, uiState.totalLeft, uiState.totalRepeated, uiState.assignedCount, uiState.isSyncing, uiState.syncStatus, uiState.totalSynced)
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -385,7 +406,7 @@ fun AttendanceTopAppBar(
                                 append("Attendance Report for $date\n")
                                 append("Total: $totalAttendees | Present: $presentCount | Left: $leftCount\n")
                                 append("New: $totalNew\n\n")
-                                attendeesList.forEachIndexed { index, attendee ->
+                                attendeesList.filter{ !it.deleted }.forEachIndexed { index, attendee ->
                                     append("${index + 1}. ${attendee.name} - ${attendee.phone}")
                                     if (attendee.hasLeft) {
                                         append(" (Left at ${attendee.leftTime})")
@@ -415,28 +436,52 @@ fun AttendanceTopAppBar(
                         text = { Text("Export as Excel") },
                         onClick = {
                             showShareMenu = false
-                            val csvData = buildString {
-                                append("Name,Phone,Facilitator,RepeatedTimes,IsNew,RegDate,HasLeft,LeftTime\n")
-                                attendeesList.forEach {
-                                    append("\"${it.name}\",\"${it.phone}\",\"${it.facilitator ?: "Unassigned"}\",${it.repeatedTimes},${it.isNew},\"${it.regDate}\",${it.hasLeft},\"${it.leftTime ?: ""}\"\n")
-                                }
+
+                            val workbook = XSSFWorkbook()
+                            val sheet = workbook.createSheet("Attendance")
+
+                            // Create Header Row
+                            val header = sheet.createRow(0)
+                            val headers = listOf("Name", "Phone", "Facilitator", "RepeatedTimes", "IsNew", "RegDate", "HasLeft", "LeftTime")
+                            headers.forEachIndexed { index, title ->
+                                val cell = header.createCell(index)
+                                cell.setCellValue(title)
                             }
 
-                            val fileName = "Attendance_Report_$date.csv"
-                            val file = File(context.cacheDir, fileName)
-                            file.writeText(csvData)
+                            // Create Data Rows
+                            attendeesList.filter{ !it.deleted }.forEachIndexed { rowIndex, attendee ->
+                                val row = sheet.createRow(rowIndex + 1)
+                                row.createCell(0).setCellValue(attendee.name)
+                                row.createCell(1).setCellValue(attendee.phone)
+                                row.createCell(2).setCellValue(attendee.facilitator ?: "Unassigned")
+                                row.createCell(3).setCellValue(attendee.repeatedTimes.toDouble())
+                                row.createCell(4).setCellValue(attendee.isNew)
+                                row.createCell(5).setCellValue(attendee.regDate)
+                                row.createCell(6).setCellValue(attendee.hasLeft)
+                                row.createCell(7).setCellValue(attendee.leftTime ?: "")
+                            }
 
+                            // Save to file
+                            val fileName = "Attendance_Report_$date.xlsx"
+                            val file = File(context.cacheDir, fileName)
+                            FileOutputStream(file).use { outputStream ->
+                                workbook.write(outputStream)
+                                workbook.close()
+                            }
+
+                            // Share via intent
                             val uri: Uri = FileProvider.getUriForFile(
                                 context,
-                                context.packageName + ".provider",
+                                "${context.packageName}.provider",
                                 file
                             )
 
                             val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/csv"
+                                type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                 putExtra(Intent.EXTRA_STREAM, uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
+
                             context.startActivity(
                                 Intent.createChooser(shareIntent, "Export Attendance")
                             )
@@ -449,6 +494,8 @@ fun AttendanceTopAppBar(
                             )
                         }
                     )
+
+
                 }
             }
         }
@@ -561,7 +608,8 @@ fun AttendanceFilterRow(
                         "New",
                         "Repeated",
                         "Unassigned",
-                        "Assigned"
+                        "Assigned",
+                        "Deleted"
                     )
                     filters.forEach { label ->
                         FilterChip(
@@ -577,6 +625,7 @@ fun AttendanceFilterRow(
     }
 }
 
+
 @Composable
 fun SmartStatisticsCard(
     total: Int,
@@ -585,12 +634,14 @@ fun SmartStatisticsCard(
     left: Int,
     repeat: Int,
     assigned: Int,
+    isSyncing: Boolean,
+    syncStatus: Boolean,
+    totalSync: Int = 0,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .height(160.dp),
+            .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -599,7 +650,7 @@ fun SmartStatisticsCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()  // Use fillMaxWidth instead of fillMaxSize
                 .padding(16.dp)
         ) {
             // Top Row: Main Stats
@@ -639,6 +690,149 @@ fun SmartStatisticsCard(
                 HorizontalChip(label = "Left", value = left)
                 HorizontalChip(label = "Repeat", value = repeat)
                 HorizontalChip(label = "Assigned", value = assigned)
+            }
+
+            // Only show sync progress components if we're syncing or just finished
+            if (isSyncing || syncStatus) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Divider(
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Add our simplified sync progress component
+                SyncProgressIndicator(
+                    isSyncing = isSyncing,
+                    syncResult = if(isSyncing) null else syncStatus,
+                    totalSynced = totalSync,
+                    totalPresent = present
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A composable that shows sync progress and success/failure status
+ */
+@Composable
+fun SyncProgressIndicator(
+    isSyncing: Boolean,
+    syncResult: Boolean?, // null when not synced yet, true for success, false for failure
+    totalSynced: Int,
+    totalPresent: Int,
+    modifier: Modifier = Modifier
+) {
+    var showSuccessIcon by remember { mutableStateOf(false) }
+    val animatedProgress = animateFloatAsState(
+        targetValue = when {
+            isSyncing -> (((totalSynced.toFloat() / totalPresent.takeIf { it > 0 }!!) ?: 1f))
+            syncResult == true -> 1f
+            else -> 0f
+        },
+        animationSpec = tween(durationMillis = 300),
+        label = "progressAnimation"
+    )
+
+    // Show success icon with delay
+    LaunchedEffect(isSyncing, syncResult) {
+        // When sync completes with success
+        if (!isSyncing && syncResult == true) {
+            delay(300) // Wait for progress bar to fill
+            showSuccessIcon = true
+            delay(1500) // Show success for 1.5 seconds
+            showSuccessIcon = false
+        } else {
+            showSuccessIcon = false
+        }
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AnimatedVisibility(
+                visible = !showSuccessIcon,
+                exit = fadeOut()
+            ) {
+                Text(
+                    text = when {
+                        isSyncing -> "Syncing attendance..."
+                        syncResult == true -> "Sync complete"
+                        syncResult == false -> "Sync failed"
+                        else -> ""
+                    },
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            AnimatedVisibility(
+                visible = isSyncing,
+                exit = fadeOut()
+            ) {
+                Text(
+                    text = "$totalSynced/$totalPresent",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Progress bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(animatedProgress.value)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(
+                        when {
+                            showSuccessIcon || syncResult == true -> Color(0xFF4CAF50) // Green
+                            syncResult == false -> Color(0xFFE53935) // Red
+                            else -> MaterialTheme.colorScheme.primary
+                        }
+                    )
+            )
+        }
+
+        // Success message
+        AnimatedVisibility(
+            visible = showSuccessIcon,
+            enter = scaleIn() + fadeIn(),
+            exit = scaleOut() + fadeOut()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Sync Complete",
+                    tint = Color(0xFF4CAF50),
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Sync complete",
+                    color = Color(0xFF4CAF50),
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }
@@ -985,13 +1179,24 @@ fun EnhancedAttendeeCard(
                     ),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Icon(
-                        Icons.Outlined.Delete,
-                        contentDescription = "Delete",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Delete", fontSize = 12.sp)
+                    if(attendee.deleted ){
+                        Icon(
+                            Icons.Outlined.Undo,
+                            contentDescription = "Undo",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Undo", fontSize = 12.sp)
+                    }else{
+                        Icon(
+                            Icons.Outlined.Delete,
+                            contentDescription = "Delete",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Delete", fontSize = 12.sp)
+                    }
+
                 }
             }
         }

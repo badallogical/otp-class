@@ -61,6 +61,9 @@ interface AttendanceDao {
         deleted: Boolean,
     )
 
+    @Query(" UPDATE attendance_dates SET synced = :sync WHERE attendancePhone = :phone AND date = :date")
+    suspend fun updateSyncStatus( phone : String, date: String, sync : Boolean )
+
 
 
     // ✅ Count only non-deleted dates
@@ -138,7 +141,8 @@ interface AttendanceDao {
             insertAttendanceDateFromRemote(
                 AttendanceDate(
                     date = date,
-                    attendancePhone = phone
+                    attendancePhone = phone,
+                    synced = true
                 )
             )
         }
@@ -224,14 +228,16 @@ interface AttendanceDao {
         s._facilitator AS facilitator,
         s.date AS regDate,
         CASE WHEN r.totalCount = 1 THEN 1 ELSE 0 END AS isNew,
+        d.deleted as deleted,
+        d.synced as synced,
         r.phone as id
     FROM attendance_dates d
     INNER JOIN attendance_response r ON r.phone = d.attendancePhone
     LEFT JOIN students s ON s._phone = d.attendancePhone
-    WHERE d.deleted = 0 AND d.date = :targetDate
+    WHERE d.date = :targetDate
     ORDER BY d.date DESC
 """)
-    suspend fun getStudentsDetailsAttendanceByDate(targetDate: String): List<StudentAttendee>
+     fun getStudentsDetailsAttendanceByDate(targetDate: String): Flow<List<StudentAttendee>>
 
 
     @Transaction
