@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -262,6 +263,26 @@ fun AttendanceDetailsScreen(
                 context = context,
                 onSyncClick = {
                     viewModel.syncAttendance()
+                },
+                onExportExcel = {
+                    viewModel.exportAttendanceToExcel(
+                        context = context,
+                        date = date,
+                        attendeesList = uiState.attendanceList
+                    ) { uri ->
+                        uri?.let {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(
+                                Intent.createChooser(shareIntent, "Export Attendance")
+                            )
+                        } ?: run {
+                            Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             )
         }
@@ -340,7 +361,8 @@ fun AttendanceTopAppBar(
     totalNew: Int,
     attendeesList: List<StudentAttendee>, // Replace with your actual StudentAttendee data class
     context: Context,
-    onSyncClick: () -> Unit
+    onSyncClick: () -> Unit,
+    onExportExcel: () -> Unit
 ) {
     var showShareMenu by remember { mutableStateOf(false) }
     val shareButtonPosition = remember { mutableStateOf(Offset.Zero) }
@@ -431,60 +453,11 @@ fun AttendanceTopAppBar(
                         }
                     )
 
-                    // Export as Excel Option
                     DropdownMenuItem(
                         text = { Text("Export as Excel") },
                         onClick = {
                             showShareMenu = false
-
-                            val workbook = XSSFWorkbook()
-                            val sheet = workbook.createSheet("Attendance")
-
-                            // Create Header Row
-                            val header = sheet.createRow(0)
-                            val headers = listOf("Name", "Phone", "Facilitator", "RepeatedTimes", "IsNew", "RegDate", "HasLeft", "LeftTime")
-                            headers.forEachIndexed { index, title ->
-                                val cell = header.createCell(index)
-                                cell.setCellValue(title)
-                            }
-
-                            // Create Data Rows
-                            attendeesList.filter{ !it.deleted }.forEachIndexed { rowIndex, attendee ->
-                                val row = sheet.createRow(rowIndex + 1)
-                                row.createCell(0).setCellValue(attendee.name)
-                                row.createCell(1).setCellValue(attendee.phone)
-                                row.createCell(2).setCellValue(attendee.facilitator ?: "Unassigned")
-                                row.createCell(3).setCellValue(attendee.repeatedTimes.toDouble())
-                                row.createCell(4).setCellValue(attendee.isNew)
-                                row.createCell(5).setCellValue(attendee.regDate)
-                                row.createCell(6).setCellValue(attendee.hasLeft)
-                                row.createCell(7).setCellValue(attendee.leftTime ?: "")
-                            }
-
-                            // Save to file
-                            val fileName = "Attendance_Report_$date.xlsx"
-                            val file = File(context.cacheDir, fileName)
-                            FileOutputStream(file).use { outputStream ->
-                                workbook.write(outputStream)
-                                workbook.close()
-                            }
-
-                            // Share via intent
-                            val uri: Uri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.provider",
-                                file
-                            )
-
-                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-
-                            context.startActivity(
-                                Intent.createChooser(shareIntent, "Export Attendance")
-                            )
+                            onExportExcel()
                         },
                         leadingIcon = {
                             Icon(
@@ -494,6 +467,7 @@ fun AttendanceTopAppBar(
                             )
                         }
                     )
+
 
 
                 }

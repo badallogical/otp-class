@@ -3,26 +3,24 @@ package com.harekrishna.otpClasses.ui.registeration
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
-import com.harekrishna.otpClasses.MyApplication.Companion.toCamelCase
+import com.harekrishna.otpClasses.data.api.AttendanceDataStore
 import com.harekrishna.otpClasses.data.local.repos.CallingReportRepository
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,13 +28,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.data.models.AttendeeItem
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -310,8 +301,6 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
             Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
         }
     }
-
-
 
     fun formatPhoneNumber(phone: String): String {
         // Check if the phone number starts with the country code +91

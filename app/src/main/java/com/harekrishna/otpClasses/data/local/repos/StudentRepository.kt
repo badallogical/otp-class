@@ -68,7 +68,7 @@ class StudentRepository(
                 callingReport.feedback,
                 callingReport.tag,
                 callingReport.remark,
-                photoUri = callingReport.photoUri
+                photoUri = student.photoUri
             )
         }
 

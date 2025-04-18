@@ -1,13 +1,11 @@
 package com.harekrishna.otpClasses.ui.attendance
 
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -23,10 +21,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -85,9 +85,6 @@ class AttendanceDetailViewModel(
             }
         }
     }
-
-
-
 
     fun onMarkLeftDialog(attendee: StudentAttendee) {
         _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
@@ -333,6 +330,59 @@ class AttendanceDetailViewModel(
                     syncStatus = result,
                     totalSynced = 0
                 )
+            }
+        }
+    }
+
+    fun exportAttendanceToExcel(
+        context: Context,
+        date: String,
+        attendeesList: List<StudentAttendee>,
+        onExported: (Uri?) -> Unit
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val workbook = XSSFWorkbook()
+                val sheet = workbook.createSheet("Attendance")
+
+                // Header row
+                val header = sheet.createRow(0)
+                val headers = listOf("Name", "Phone", "Facilitator", "RepeatedTimes", "IsNew", "RegDate", "HasLeft", "LeftTime")
+                headers.forEachIndexed { index, title ->
+                    val cell = header.createCell(index)
+                    cell.setCellValue(title)
+                }
+
+                // Data rows
+                attendeesList.filter { !it.deleted }.forEachIndexed { index, attendee ->
+                    val row = sheet.createRow(index + 1)
+                    row.createCell(0).setCellValue(attendee.name)
+                    row.createCell(1).setCellValue(attendee.phone)
+                    row.createCell(2).setCellValue(attendee.facilitator ?: "Unassigned")
+                    row.createCell(3).setCellValue(attendee.repeatedTimes.toDouble())
+                    row.createCell(4).setCellValue(attendee.isNew)
+                    row.createCell(5).setCellValue(attendee.regDate)
+                    row.createCell(6).setCellValue(attendee.hasLeft)
+                    row.createCell(7).setCellValue(attendee.leftTime ?: "")
+                }
+
+                // Write file
+                val fileName = "Attendance_Report_$date.xlsx"
+                val file = File(context.cacheDir, fileName)
+                FileOutputStream(file).use { workbook.write(it) }
+                workbook.close()
+
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+
+                // Post result on main thread
+                withContext(Dispatchers.Main) {
+                    onExported(uri)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    onExported(null)
+                }
             }
         }
     }

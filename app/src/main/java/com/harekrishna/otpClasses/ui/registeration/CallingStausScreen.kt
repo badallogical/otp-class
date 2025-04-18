@@ -4,21 +4,24 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,8 +29,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Phone
@@ -43,6 +49,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -57,37 +65,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.harekrishna.otpClasses.data.models.CallingReportPOJO
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.input.ImeAction
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 
 data class Student(val name: String, val phone: String, var status: String)
 
@@ -300,6 +296,302 @@ private fun TopSection(
     }
 }
 
+//@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+//@Composable
+//fun StudentListItem(
+//    student: CallingReportPOJO,
+//    onStudentUpdated: (CallingReportPOJO) -> Unit,
+//    onMessageIconClicked: (CallingReportPOJO) -> Unit,
+//    isSelected: Boolean = false,
+//    onLongClick: () -> Unit = {},
+//    onClick: () -> Unit = {},
+//    onRemarkChanged: (CallingReportPOJO) -> Unit
+//) {
+//    var showDialog by remember { mutableStateOf(false) }
+//    var expanded by remember { mutableStateOf(false) }
+//    var editAboutDialog by remember { mutableStateOf(false) }
+//
+//    val context = LocalContext.current
+//
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .border(
+//                width = if (isSelected) 2.dp else 0.5.dp,
+//                color = if (isSelected)
+//                    MaterialTheme.colorScheme.primary
+//                else
+//                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+//                shape = RoundedCornerShape(16.dp)
+//            )
+//            .combinedClickable(
+//                onClick = { onClick() },
+//                onLongClick = { onLongClick() }
+//            ),
+//        shape = RoundedCornerShape(16.dp),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+//        colors = CardDefaults.cardColors(
+//            containerColor = MaterialTheme.colorScheme.surface
+//        )
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .animateContentSize(
+//                    animationSpec = spring(
+//                        dampingRatio = Spring.DampingRatioLowBouncy,
+//                        stiffness = Spring.StiffnessMedium
+//                    ))
+//                .padding(16.dp)
+//                .fillMaxWidth(),
+//            verticalArrangement = Arrangement.spacedBy(12.dp)
+//        ) {
+//            // Student Info and Actions Row
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween,
+//                verticalAlignment = Alignment.Top
+//            ) {
+//                // Student Details
+//                Column(
+//                    modifier = Modifier.weight(1f),
+//                    verticalArrangement = Arrangement.spacedBy(4.dp)
+//                ) {
+//
+//                    CopyableText(
+//                        text = student.name,
+//                        style = MaterialTheme.typography.titleMedium.copy(
+//                            fontWeight = FontWeight.SemiBold,
+//                            letterSpacing = 0.sp
+//                        ),
+//                        color = MaterialTheme.colorScheme.onSurface
+//                    )
+//
+//                    CopyableText(
+//                        text = student.phone,
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
+//                }
+//
+//                // Action Buttons
+//                Row(
+//                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    ActionButton(
+//                        icon = Icons.AutoMirrored.Filled.Send,
+//                        description = "Send Message",
+//                        onClick = {
+//                            onStudentUpdated(student.copy(isInvited = true))
+//                            onMessageIconClicked(student)
+//                        },
+//                        isActive = student.isInvited
+//                    )
+//
+//                    Spacer( modifier = Modifier.width(4.dp))
+//
+//                    ActionButton(
+//                        icon = Icons.Default.Phone,
+//                        description = "Call",
+//                        onClick = {
+//                            val intent = Intent(Intent.ACTION_DIAL).apply {
+//                                data = Uri.parse("tel:${student.phone}")
+//                            }
+//                            context.startActivity(intent)
+//                            showDialog = true
+//                        }
+//                    )
+//                }
+//            }
+//
+//            Row(modifier = Modifier.fillMaxWidth(),
+//                verticalAlignment = Alignment.CenterVertically,
+//                horizontalArrangement = Arrangement.SpaceBetween) {
+//                // Status Chip
+//                AssistChip(
+//                    onClick = { showDialog = true },
+//                    label = {
+//                        Text(
+//                            text = student.status.split(",").firstOrNull()?.trim()
+//                                ?: student.status,
+//                            style = MaterialTheme.typography.labelMedium,
+//                            maxLines = 1,
+//                            overflow = TextOverflow.Ellipsis
+//                        )
+//                    },
+//                    modifier = Modifier.width(120.dp),
+//                    colors = AssistChipDefaults.assistChipColors(
+//                        containerColor = if (student.isInvited)
+//                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+//                        else
+//                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+//                        labelColor = if (student.isInvited)
+//                            MaterialTheme.colorScheme.primary
+//                        else
+//                            MaterialTheme.colorScheme.onSecondaryContainer
+//                    )
+//                )
+//
+//                IconButton(onClick = { expanded = !expanded }){
+//                    Icon( imageVector = if(expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = "",)
+//                }
+//
+//            }
+//
+//            val reason =  extractReason(student.status, "No,").ifEmpty {  extractReason(student.status, "❗,") }
+//
+//            if( reason.isNotEmpty() ){
+//                Surface(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    shape = RoundedCornerShape(8.dp),
+//                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+//                ) {
+//                    Text(
+//                        text = "❌ ${reason}",
+//                        style = MaterialTheme.typography.bodyMedium.copy(
+//                            fontStyle = FontStyle.Normal,
+//                            lineHeight = 20.sp,
+//                            fontWeight = FontWeight.Bold // Add bold weight here
+//                        ),
+//                        color = MaterialTheme.colorScheme.primary,
+//                        modifier = Modifier.padding(12.dp),
+//                        maxLines = 2,
+//                        overflow = TextOverflow.Ellipsis
+//                    )
+//                }
+//            }
+//            else if (student.feedback.isNotBlank()) {
+//                Surface(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    shape = RoundedCornerShape(8.dp),
+//                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+//                ) {
+//                    Text(
+//                        text = "\"${student.feedback}\"",
+//                        style = MaterialTheme.typography.bodyMedium.copy(
+//                            fontStyle = FontStyle.Italic,
+//                            lineHeight = 20.sp
+//                        ),
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                        modifier = Modifier.padding(12.dp),
+//                        maxLines = 2,
+//                        overflow = TextOverflow.Ellipsis
+//                    )
+//                }
+//            }
+//
+//            var about by remember { mutableStateOf(student.remark)}
+//            // About section
+//            if( expanded ){
+//
+//                    Surface(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        shape = RoundedCornerShape(8.dp),
+//                        color =  MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+//                    ) {
+//                        Column( // Using a Column to provide padding around the OutlinedTextField
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(4.dp) // Add padding to avoid clipping the outline
+//                        ) {
+//
+//                                // Profile Picture
+//                                Log.d("Student", "Photo uri ${student.name} is ${student.photoUri}")
+//                                if( !student.photoUri.isNullOrEmpty() && student.photoUri != "null" ) {
+//                                    Log.d("Student", student.photoUri.isNullOrEmpty().toString())
+//                                    Box(
+//                                        modifier = Modifier
+//                                            .fillMaxWidth()
+//                                            .padding(vertical = 16.dp),
+//                                        contentAlignment = Alignment.Center
+//                                    ) {
+//                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//                                            Box(
+//                                                modifier = Modifier
+//                                                    .size(150.dp)
+//                                                    .clip(CircleShape)
+//                                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+//                                                    .border(
+//                                                        2.dp,
+//                                                        MaterialTheme.colorScheme.primary,
+//                                                        CircleShape
+//                                                    ),
+//                                                contentAlignment = Alignment.Center
+//                                            ) {
+//                                                    AsyncImage(
+//                                                        model = Uri.parse(student.photoUri),
+//                                                        contentDescription = "Profile Photo",
+//                                                        modifier = Modifier.fillMaxSize(),
+//                                                        contentScale = ContentScale.Crop
+//                                                    )
+//                                            }
+//
+//                                        }
+//                                    }
+//                                }
+//
+//
+//                            // Message TextField
+//                            OutlinedTextField(
+//                                value = about,
+//                                onValueChange = {
+//                                    about = it
+//                                    onRemarkChanged(student.copy(remark = about))
+//                                },
+//                                modifier = Modifier
+//                                    .fillMaxWidth()
+//                                    .heightIn(min = 120.dp),
+//                                label = { Text("About") },
+//                                keyboardOptions = KeyboardOptions.Default.copy(
+//                                    imeAction = ImeAction.Done
+//                                ),
+//                                keyboardActions = KeyboardActions(
+//                                    onDone = {
+//                                        // Handle the "Done" action
+//                                        expanded = !expanded
+//                                        // Hide keyboard or trigger any other logic
+//                                    }
+//                                ),
+//                                placeholder = { Text("Enter your details here...") }, // Removed duplicate
+//                                textStyle = MaterialTheme.typography.bodyMedium,
+//                                colors = OutlinedTextFieldDefaults.colors(
+//                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+//                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(
+//                                        alpha = 0.5f
+//                                    )
+//                                ),
+//                                minLines = 4,
+//                                maxLines = Int.MAX_VALUE
+//                            )
+//
+//                        }
+//                    }
+//            }
+//
+//
+//        }
+//    }
+//
+//    if (showDialog) {
+//        showCallingStatusDialog(
+//            student = student,
+//            onDismiss = { showDialog = false },
+//            onSave = { updatedStudent ->
+//                onStudentUpdated(updatedStudent)
+//                showDialog = false
+//            }
+//        )
+//    }
+//}
+//
+//fun extractReason(status: String, prefix: String): String {
+//    return if (status.startsWith(prefix)) {
+//        status.split(",", limit = 2).getOrNull(1)?.trim() ?: ""
+//    } else {
+//        ""
+//    }
+//}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun StudentListItem(
@@ -316,6 +608,11 @@ fun StudentListItem(
     var editAboutDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+
+    val statusText = student.status.split(",").firstOrNull()?.trim() ?: student.status
+    val reason = extractReason(student.status, "No,").ifEmpty { extractReason(student.status, "❗,") }
+    val hasReason = reason.isNotEmpty()
+    val hasFeedback = student.feedback.isNotBlank()
 
     Card(
         modifier = Modifier
@@ -347,20 +644,18 @@ fun StudentListItem(
                     ))
                 .padding(16.dp)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Student Info and Actions Row
+            // Student Info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                // Student Details
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-
                     CopyableText(
                         text = student.name,
                         style = MaterialTheme.typography.titleMedium.copy(
@@ -369,7 +664,6 @@ fun StudentListItem(
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-
                     CopyableText(
                         text = student.phone,
                         style = MaterialTheme.typography.bodyMedium,
@@ -377,7 +671,6 @@ fun StudentListItem(
                     )
                 }
 
-                // Action Buttons
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -391,9 +684,7 @@ fun StudentListItem(
                         },
                         isActive = student.isInvited
                     )
-
-                    Spacer( modifier = Modifier.width(4.dp))
-
+                    Spacer(modifier = Modifier.width(4.dp))
                     ActionButton(
                         icon = Icons.Default.Phone,
                         description = "Call",
@@ -408,65 +699,91 @@ fun StudentListItem(
                 }
             }
 
-            Row(modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween) {
-                // Status Chip
-                AssistChip(
-                    onClick = { showDialog = true },
-                    label = {
-                        Text(
-                            text = student.status.split(",").firstOrNull()?.trim()
-                                ?: student.status,
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    modifier = Modifier.width(120.dp),
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (student.isInvited)
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                        else
-                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                        labelColor = if (student.isInvited)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                )
-
-                IconButton(onClick = { expanded = !expanded }){
-                    Icon( imageVector = if(expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = "",)
-                }
-
-            }
-
-            val reason =  extractReason(student.status, "No,").ifEmpty {  extractReason(student.status, "❗,") }
-
-            if( reason.isNotEmpty() ){
-                Surface(
+            // Status + Reason in a single Column
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "❌ ${reason}",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontStyle = FontStyle.Normal,
-                            lineHeight = 20.sp,
-                            fontWeight = FontWeight.Bold // Add bold weight here
-                        ),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(12.dp),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                    // Status Chip with appropriate colors based on status
+                    val isNegativeStatus = statusText.contains("No", ignoreCase = true) ||
+                            statusText.contains("❌", ignoreCase = true) ||
+                            statusText.contains("❗", ignoreCase = true)
+
+                    val chipBackgroundColor = when {
+                        isNegativeStatus -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
+                        statusText.contains("Yes", ignoreCase = true) -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                        statusText.contains("Will Try", ignoreCase = true) -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f)
+                        student.isInvited -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        else -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
+                    }
+
+                    val chipTextColor = when {
+                        isNegativeStatus -> MaterialTheme.colorScheme.onErrorContainer
+                        statusText.contains("Yes", ignoreCase = true) -> MaterialTheme.colorScheme.onPrimaryContainer
+                        statusText.contains("Will Try", ignoreCase = true) -> MaterialTheme.colorScheme.onTertiaryContainer
+                        student.isInvited -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.onSecondaryContainer
+                    }
+
+                    AssistChip(
+                        onClick = { showDialog = true },
+                        label = {
+                            Text(
+                                text = statusText,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        modifier = Modifier.width(120.dp),
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = chipBackgroundColor,
+                            labelColor = chipTextColor
+                        )
                     )
+
+                    IconButton(onClick = { expanded = !expanded }) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                            contentDescription = if (expanded) "Show less" else "Show more"
+                        )
+                    }
+                }
+
+                if (hasReason) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth().padding(start = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Reason",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = reason,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
-            else if (student.feedback.isNotBlank()) {
+
+
+            // Feedback (separate below)
+            if (hasFeedback) {
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
                     shape = RoundedCornerShape(8.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 ) {
@@ -476,103 +793,81 @@ fun StudentListItem(
                             fontStyle = FontStyle.Italic,
                             lineHeight = 20.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(12.dp),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            var about by remember { mutableStateOf(student.remark)}
-            // About section
-            if( expanded ){
+            // Expanded content
+            var about by remember { mutableStateOf(student.remark) }
 
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        color =  MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            if (expanded) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp)
                     ) {
-                        Column( // Using a Column to provide padding around the OutlinedTextField
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(4.dp) // Add padding to avoid clipping the outline
-                        ) {
-
-                                // Profile Picture
-                                Log.d("Student", "Photo uri ${student.name} is ${student.photoUri}")
-                                if( !student.photoUri.isNullOrEmpty() && student.photoUri != "null" ) {
-                                    Log.d("Student", student.photoUri.isNullOrEmpty().toString())
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(150.dp)
-                                                    .clip(CircleShape)
-                                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                                                    .border(
-                                                        2.dp,
-                                                        MaterialTheme.colorScheme.primary,
-                                                        CircleShape
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                    AsyncImage(
-                                                        model = Uri.parse(student.photoUri),
-                                                        contentDescription = "Profile Photo",
-                                                        modifier = Modifier.fillMaxSize(),
-                                                        contentScale = ContentScale.Crop
-                                                    )
-                                            }
-
-                                        }
-                                    }
-                                }
-
-
-                            // Message TextField
-                            OutlinedTextField(
-                                value = about,
-                                onValueChange = {
-                                    about = it
-                                    onRemarkChanged(student.copy(remark = about))
-                                },
+                        if (!student.photoUri.isNullOrEmpty() && student.photoUri != "null") {
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(min = 120.dp),
-                                label = { Text("About") },
-                                keyboardOptions = KeyboardOptions.Default.copy(
-                                    imeAction = ImeAction.Done
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onDone = {
-                                        // Handle the "Done" action
-                                        expanded = !expanded
-                                        // Hide keyboard or trigger any other logic
+                                    .padding(vertical = 16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(150.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                                            .border(
+                                                2.dp,
+                                                MaterialTheme.colorScheme.primary,
+                                                CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        AsyncImage(
+                                            model = Uri.parse(student.photoUri),
+                                            contentDescription = "Profile Photo",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
                                     }
-                                ),
-                                placeholder = { Text("Enter your details here...") }, // Removed duplicate
-                                textStyle = MaterialTheme.typography.bodyMedium,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(
-                                        alpha = 0.5f
-                                    )
-                                ),
-                                minLines = 4,
-                                maxLines = Int.MAX_VALUE
-                            )
-
+                                }
+                            }
                         }
+
+                        OutlinedTextField(
+                            value = about,
+                            onValueChange = {
+                                about = it
+                                onRemarkChanged(student.copy(remark = about))
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 120.dp),
+                            label = { Text("About") },
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { expanded = !expanded }),
+                            placeholder = { Text("Enter your details here...") },
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                            ),
+                            minLines = 4,
+                            maxLines = Int.MAX_VALUE
+                        )
                     }
+                }
             }
-
-
         }
     }
 
@@ -595,7 +890,6 @@ fun extractReason(status: String, prefix: String): String {
         ""
     }
 }
-
 
 
 
@@ -776,7 +1070,7 @@ fun showCallingStatusDialog(
 @Composable
 fun previewCallingListItem(){
     StudentListItem(
-        CallingReportPOJO("9532945033","Rohit","Will try",4,"2024-03-01",true,true,"I am busy in my studies, not find time.", "poor", "he is materialistic goals."),
+        CallingReportPOJO("9532945033","Rohit","No, Out of town",4,"2024-03-01",true,true,"I am busy in my studies, not find time.", "poor", "he is materialistic goals."),
         {},
         {},
         onRemarkChanged = {
