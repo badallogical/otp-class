@@ -5,6 +5,8 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -334,6 +336,9 @@ class AttendanceDetailViewModel(
         }
     }
 
+    private val _isExporting = mutableStateOf(false)
+    val isExporting: State<Boolean> = _isExporting
+
     fun exportAttendanceToExcel(
         context: Context,
         date: String,
@@ -342,12 +347,15 @@ class AttendanceDetailViewModel(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+
+                _isExporting.value = true
+
                 val workbook = XSSFWorkbook()
                 val sheet = workbook.createSheet("Attendance")
 
                 // Header row
                 val header = sheet.createRow(0)
-                val headers = listOf("Name", "Phone", "Facilitator", "RepeatedTimes", "IsNew", "RegDate", "HasLeft", "LeftTime")
+                val headers = listOf("Name", "Phone", "Facilitator","RegBy","RepeatedTimes", "IsNew", "RegDate", "HasLeft", "LeftTime")
                 headers.forEachIndexed { index, title ->
                     val cell = header.createCell(index)
                     cell.setCellValue(title)
@@ -359,11 +367,12 @@ class AttendanceDetailViewModel(
                     row.createCell(0).setCellValue(attendee.name)
                     row.createCell(1).setCellValue(attendee.phone)
                     row.createCell(2).setCellValue(attendee.facilitator ?: "Unassigned")
-                    row.createCell(3).setCellValue(attendee.repeatedTimes.toDouble())
-                    row.createCell(4).setCellValue(attendee.isNew)
-                    row.createCell(5).setCellValue(attendee.regDate)
-                    row.createCell(6).setCellValue(attendee.hasLeft)
-                    row.createCell(7).setCellValue(attendee.leftTime ?: "")
+                    row.createCell(3).setCellValue(attendee.regBy ?: "NA")
+                    row.createCell(4).setCellValue(attendee.repeatedTimes.toDouble())
+                    row.createCell(5).setCellValue(attendee.isNew)
+                    row.createCell(6).setCellValue(attendee.regDate)
+                    row.createCell(7).setCellValue(attendee.hasLeft)
+                    row.createCell(8).setCellValue(attendee.leftTime ?: "")
                 }
 
                 // Write file
@@ -376,6 +385,7 @@ class AttendanceDetailViewModel(
 
                 // Post result on main thread
                 withContext(Dispatchers.Main) {
+                    _isExporting.value = false
                     onExported(uri)
                 }
             } catch (e: Exception) {

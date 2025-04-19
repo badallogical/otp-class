@@ -14,6 +14,7 @@ data class StudentAttendee(
     val name: String,
     val phone: String,
     val facilitator: String?,
+    val regBy: String = "NA",
     val date: String,
     val repeatedTimes: Int,
     val isNew: Boolean,

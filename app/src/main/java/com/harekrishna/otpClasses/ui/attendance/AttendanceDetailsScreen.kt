@@ -26,6 +26,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -50,13 +51,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Colors
 import androidx.compose.material.TabRowDefaults.Divider
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EmergencyShare
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Forward
 import androidx.compose.material.icons.filled.PeopleAlt
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonPin
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.CalendarToday
@@ -116,12 +121,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.harekrishna.otpClasses.R
 import com.harekrishna.otpClasses.data.models.StudentAttendee
 import com.harekrishna.otpClasses.ui.theme.AttendanceColors
 import kotlinx.coroutines.delay
@@ -251,6 +258,25 @@ fun AttendanceDetailsScreen(
         )
     }
 
+    val isExporting by viewModel.isExporting
+
+    if (isExporting) {
+        AlertDialog(
+            onDismissRequest = { /* block dismiss */ },
+            confirmButton = {},
+            title = { Text("Preparing Report") },
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    Text("Exporting attendance to Excel...")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             AttendanceTopAppBar(
@@ -283,6 +309,8 @@ fun AttendanceDetailsScreen(
                             Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
                         }
                     }
+
+
                 }
             )
         }
@@ -308,13 +336,43 @@ fun AttendanceDetailsScreen(
                 onSearchModeToggle = { viewModel.onSearchMode(it) }
             )
 
-            // Filter info
-            Text(
-                "${filteredAttendees.size} ${if (uiState.selectedFilter == "All") "attendees" else "${uiState.selectedFilter} attendees"}",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
+            Row(modifier = Modifier
+                .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically) {
 
+                // Filter info
+                Text(
+                    "${filteredAttendees.size} ${if (uiState.selectedFilter == "All") "attendees" else "${uiState.selectedFilter} attendees"}",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+
+                Icon(
+                    painter = painterResource(id = R.drawable.icons8_share2), // Or use Icons.Outlined.ArrowForward
+                    contentDescription = "Forward",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.size(20.dp).padding(end = 4.dp).clickable {
+
+
+                        val message = buildString {
+                            append("Attendance Report for $date\n")
+                            append("${uiState.selectedFilter} Student : ${filteredAttendees.size}\n\n")
+                            filteredAttendees.forEachIndexed { index, attendee ->
+                                append("${index + 1}. ${attendee.name} - ${attendee.phone}")
+                                append("\n")
+                            }
+                        }
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, message)
+                        }
+                        context.startActivity(
+                            Intent.createChooser(intent, "Share Attendance Report")
+                        )
+                    }
+                )
+            }
             // List of attendees
             AnimatedVisibility(
                 visible = true,

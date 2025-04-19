@@ -13,8 +13,8 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10 // version 1.1.8 - Attendance and validation check on registration
-        versionName = "1.1.8"
+        versionCode = 11 // version 1.1.9 - Added Attendance Details Screen Reporting
+        versionName = "1.1.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

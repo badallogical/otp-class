@@ -256,13 +256,14 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
 @Composable
 fun AttendanceDialog(uiState: AttendanceUiState, onSubmit: (StudentPOJO) -> Unit, onDismiss: () -> Unit) {
     val student = uiState.selectedStudent
-    val currentDate = "2024-01-07"
 
-    if (currentDate == "") {
-        // no class today
-        NoClassesDialog()
-        return
-    }
+//    val currentDate = "2024-01-07"
+//
+//    if (currentDate == "") {
+//        // no class today
+//        NoClassesDialog()
+//        return
+//    }
 
     if (uiState.showCongratsAfterPosting) {
         AlertDialog(
@@ -365,7 +366,7 @@ fun NoClassesDialog() {
 fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, onRegister: (String, String,Boolean) -> Unit) {
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
-    var taken by remember { mutableStateOf(false) }
+    var taken by remember { mutableStateOf(true) }
 
     var isPhoneValid by remember { mutableStateOf(true) }
     var isNameValid by remember { mutableStateOf(true) }

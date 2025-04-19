@@ -226,6 +226,7 @@ interface AttendanceDao {
         d.leftEarlyTime AS leftTime,
         s._name AS name,
         s._facilitator AS facilitator,
+        s._by As regBy,
         s.date AS regDate,
         CASE WHEN r.totalCount = 1 THEN 1 ELSE 0 END AS isNew,
         d.deleted as deleted,
