@@ -3,17 +3,12 @@ package com.harekrishna.otpClasses.ui.registeration
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -22,7 +17,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
-import com.harekrishna.otpClasses.data.api.ApiService
 import com.harekrishna.otpClasses.data.api.AttendanceDataStore
 import com.harekrishna.otpClasses.data.local.repos.StudentRepository
 import com.harekrishna.otpClasses.data.models.StudentDTO
@@ -46,8 +40,10 @@ data class StudentFormUiState(
     var batch: String = "OTP",
     var profession: String = "student",
     var address: String = "na",
+    var city : String = "Lucknow",
     var showDropdownFacilitator: Boolean = false,
     var showDropdownBatch: Boolean = false,
+    var showDropdownCity : Boolean = false,
     var showSuccessDialog: Boolean = false,
     var isSubmitting: Boolean = false,
     var showPhoneDialog: Boolean = false,
@@ -184,6 +180,10 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
             }
             if (student != null) {
                 Log.d("Student form", student.toString())
+                val parts = student.address.split(",")
+                val addressOnly = parts.firstOrNull()?.trim() ?: ""
+                val cityOnly = parts.getOrNull(1)?.trim() ?: ""
+
                 _uiState.update { current ->
                     current.copy(
                         name = student.name ,
@@ -191,11 +191,12 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
                         facilitator = student.facilitator,
                         batch = student.batch,
                         profession = student.profession,
-                        address = student.address,
+                        address = addressOnly,
                         photoUri = student.photoUri?.toUri(),
                         showDataFetchedToast = true,
                         regData = student.date,
-                        regBy = student.by
+                        regBy = student.by,
+                        city = cityOnly
                     )
                 }
             } else {
@@ -255,6 +256,14 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         }
     }
 
+    fun onDismissCity() {
+        _uiState.update { current ->
+            current.copy(showDropdownCity = false)
+        }
+    }
+
+
+
     fun onBatchChange(newbatch: String) {
         _uiState.update { current ->
             current.copy(batch = newbatch, showDropdownBatch = false)
@@ -271,8 +280,20 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
         _uiState.update { current ->
             current.copy(showDropdownBatch = false)
         }
-        resetFormState()
     }
+
+    fun onCityChange(city: String) {
+        _uiState.update { current ->
+            current.copy( city = city, showDropdownCity = false)
+        }
+    }
+
+    fun onDropDownCity() {
+        _uiState.update { current ->
+            current.copy(showDropdownCity = !current.showDropdownCity)
+        }
+    }
+
 
     fun onInvited(){
         _uiState.update { current ->
@@ -299,7 +320,7 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
             uiState.value.facilitator,
             uiState.value.batch,
             uiState.value.profession,
-            uiState.value.address,
+            _address = "${uiState.value.address},${uiState.value.city}",
             uiState.value.regData,
             uiState.value.regBy,
             photoUri = uiState.value.photoUri.toString()
@@ -326,14 +347,13 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
 
 //        val currentDate = "2024-12-31"
 
-
         val student = StudentDTO(
             uiState.value.name,
             uiState.value.phone,
             uiState.value.facilitator,
             uiState.value.batch,
             uiState.value.profession,
-            uiState.value.address,
+            uiState.value.address + "," + uiState.value.city ,
             currentDate,
             userPhone,
             photoUri = uiState.value.photoUri.toString()

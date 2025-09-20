@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-10-25T08:01:51.007564400Z">
+        <DropdownSelection timestamp="2025-08-07T10:12:47.275086400Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\badal\.android\avd\Medium_Phone_API_28.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\badal\.android\avd\Medium_Phone.avd" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -38,10 +38,10 @@
       <SelectionState runConfigName="previewFollowUpScreen">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="ApiServiceTest">
+      <SelectionState runConfigName="getAttendanceResponsesTest()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="getAttendanceResponsesTest()">
+      <SelectionState runConfigName="previewScreenRegistration">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
