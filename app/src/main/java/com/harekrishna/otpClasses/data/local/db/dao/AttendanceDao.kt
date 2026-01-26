@@ -11,7 +11,6 @@ import com.harekrishna.otpClasses.data.models.AttendanceDate
 import com.harekrishna.otpClasses.data.models.AttendanceHistory
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.AttendanceWithDates
-import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import com.harekrishna.otpClasses.data.models.MonthCount
 import com.harekrishna.otpClasses.data.models.StudentAttendee
 import kotlinx.coroutines.flow.Flow
@@ -224,9 +223,9 @@ interface AttendanceDao {
         d.date AS date,
         d.leftEarly AS hasLeft,
         d.leftEarlyTime AS leftTime,
-        s._name AS name,
-        s._facilitator AS facilitator,
-        s._by As regBy,
+        s.name AS name,
+        s.facilitator AS facilitator,
+        s.byDev As regBy,
         s.date AS regDate,
         CASE WHEN r.totalCount = 1 THEN 1 ELSE 0 END AS isNew,
         d.deleted as deleted,
@@ -234,7 +233,7 @@ interface AttendanceDao {
         r.phone as id
     FROM attendance_dates d
     INNER JOIN attendance_response r ON r.phone = d.attendancePhone
-    LEFT JOIN students s ON s._phone = d.attendancePhone
+    LEFT JOIN students s ON s.phone = d.attendancePhone
     WHERE d.date = :targetDate
     ORDER BY d.date DESC
 """)

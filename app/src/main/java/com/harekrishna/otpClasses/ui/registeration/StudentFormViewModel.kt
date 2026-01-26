@@ -195,7 +195,7 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
                         photoUri = student.photoUri?.toUri(),
                         showDataFetchedToast = true,
                         regData = student.date,
-                        regBy = student.by,
+                        regBy = student.byDev,
                         city = cityOnly
                     )
                 }
@@ -320,7 +320,7 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
             uiState.value.facilitator,
             uiState.value.batch,
             uiState.value.profession,
-            _address = "${uiState.value.address},${uiState.value.city}",
+            address = "${uiState.value.address},${uiState.value.city}",
             uiState.value.regData,
             uiState.value.regBy,
             photoUri = uiState.value.photoUri.toString()
@@ -408,7 +408,7 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
 //        context.startActivity(intent)
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("https://wa.me/$phone?text=${Uri.encode(message.trimIndent())}")
+            data = "https://wa.me/$phone?text=${Uri.encode(message.trimIndent())}".toUri()
             setPackage("com.whatsapp") // Ensures only WhatsApp (not Business) opens
         }
 

@@ -269,8 +269,7 @@ fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel(factory = FollowUpVi
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 16.dp),
-            pageSpacing = 16.dp,
-            beyondBoundsPageCount = 1
+            pageSpacing = 16.dp
         ) { page ->
             AnimatedVisibility(
                 visible = true,

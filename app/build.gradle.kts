@@ -1,22 +1,28 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
-    id("com.google.devtools.ksp")
-    id("com.google.gms.google-services")
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.ksp)
+    alias(libs.plugins.google.services)
+
 }
 
 android {
     namespace = "com.harekrishna.otpClasses"
-    compileSdk = 35
+    compileSdk {
+        version = release(36)
+    }
 
     defaultConfig {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 11 // version 1.1.9 - Added Attendance Details Screen Reporting
         versionName = "1.1.9"
 
+        //resValue("string", "version_name", versionName ?: "unknown")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -33,51 +39,25 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
+
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.13"
-    }
+
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-
-    applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            val versionName = defaultConfig.versionName // Ensure this is correctly defined
-            val stringsFile = file("src/main/res/values/strings.xml") // Ensure this points to the correct file
-
-            // Check if the file exists
-            if (stringsFile.exists() ) {
-                val content = stringsFile.readText() // Read the file's content
-                val updatedContent = content.replace(
-                    Regex("<string name=\"version_name\">.*?</string>"),
-                    "<string name=\"version_name\">$versionName</string>"
-                )
-                stringsFile.writeText(updatedContent) // Write the updated content back
-                true
-            } else {
-                println("strings.xml not found at ${stringsFile.path}")
-                false
-            }
-
-        }
-    }
-
-
-
 }
 
 dependencies {
+
+//    ksp("com.google.devtools.ksp:symbol-processing-api:2.3.4")
 
     implementation("org.apache.poi:poi-ooxml:5.2.3")
 
@@ -142,7 +122,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -172,5 +151,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation(kotlin("script-runtime"))
 }

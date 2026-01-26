@@ -10,8 +10,6 @@ import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
 import com.harekrishna.otpClasses.data.models.UserAttendance
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
@@ -49,7 +47,7 @@ object ApiService {
                     put("profession", student.profession)
                     put("address", student.address)
                     put("date", student.date)
-                    put("by",student.by)
+                    put("by",student.byDev)
                 })
             }
 
@@ -80,7 +78,7 @@ object ApiService {
                 if (response.isSuccessful) {
                     response.body?.let { responseBody ->
                         val jsonString = responseBody.string()
-                        Log.d("ApiService Josn","Json String :" + jsonString);
+                        Log.d("ApiService Josn","Json String :" + jsonString)
                         val studentListType = object : TypeToken<List<StudentDTO>>() {}.type
                         val studentList: List<StudentDTO> = Gson().fromJson(jsonString, studentListType) ?: emptyList()
                         Log.d("ApiService", studentList.toString())
