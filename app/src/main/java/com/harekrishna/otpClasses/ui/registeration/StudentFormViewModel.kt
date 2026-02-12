@@ -1,25 +1,23 @@
 package com.harekrishna.otpClasses.ui.registeration
 
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.harekrishna.otpClasses.MyApplication
-import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.data.local.repos.StudentRepository
 import com.harekrishna.otpClasses.data.models.StudentDTO
+import com.harekrishna.otpClasses.data.sources.repos.AttendancePreferencesRepository
+import com.harekrishna.otpClasses.data.sources.repos.MessagePreferencesRepository
+import com.harekrishna.otpClasses.data.sources.repos.MessageType
+import com.harekrishna.otpClasses.data.sources.repos.StudentRepository
+import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
+import com.harekrishna.otpClasses.domain.PrepareWhatsappMessageUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +29,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
 data class StudentFormUiState(
     val photoUri: Uri? = null,
@@ -57,38 +56,29 @@ data class StudentFormUiState(
     var regBy: String = ""
 )
 
-
-class StudentFormViewModel(private val studentRepository: StudentRepository) : ViewModel() {
+@HiltViewModel
+class StudentFormViewModel @Inject constructor(
+    private val studentRepository: StudentRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val messageRepository: MessagePreferencesRepository,
+    private val attendancePreferencesRepository: AttendancePreferencesRepository,
+    private val prepareWhatsappMessageUseCase: PrepareWhatsappMessageUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StudentFormUiState())
     val uiState: StateFlow<StudentFormUiState> = _uiState.asStateFlow()
 
     lateinit var userName: String
     lateinit var userPhone: String
-    lateinit var welcomeMsg: String
+
 
     var tempPhotoUri: Uri? = null
 
     init {
         viewModelScope.launch {
-            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
+            val userData = userPreferencesRepository.getUserData().first() // Get the first emitted value
             userName = userData.first ?: "Rajiva Prabhu Ji"
             userPhone = userData.second ?: "+919807726801"
-
-            welcomeMsg = AttendanceDataStore.getWelcomeMessage()
-        }
-
-    }
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application =
-                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-                val repository =
-                    application.container.studentRepository // Assuming container contains the repository
-                StudentFormViewModel(repository)  // Pass the repository to the ViewModel constructor
-            }
         }
     }
 
@@ -195,7 +185,7 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
                         photoUri = student.photoUri?.toUri(),
                         showDataFetchedToast = true,
                         regData = student.date,
-                        regBy = student.byDev,
+                        regBy = student.byDev?:"na",
                         city = cityOnly
                     )
                 }
@@ -208,9 +198,9 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
     }
 
     fun onEditRegistration() {
-       _uiState.update { current ->
-           current.copy( updated = true )
-       }
+        _uiState.update { current ->
+            current.copy( updated = true )
+        }
     }
 
     fun onNameChange(newName: String) {
@@ -362,9 +352,9 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
             withContext(Dispatchers.IO){
                 registerStudent(student, updated = uiState.value.updated)
 
-                AttendanceDataStore.addDate(student.date)
+                attendancePreferencesRepository.addDate(student.date)
                 Log.d("registration","Added date to data store")
-                Log.d("registration","dates ${AttendanceDataStore.getDates.first()}")
+                Log.d("registration","dates ${attendancePreferencesRepository.dates.first()}")
             }
 
             _uiState.update { current ->
@@ -389,70 +379,13 @@ class StudentFormViewModel(private val studentRepository: StudentRepository) : V
     }
 
 
-    fun sendWhatsAppMessage(
-        context: Context,
+    suspend fun getWhatsAppMessage(
         phoneNumber: String,
-        name: String
-    ) {
+        type : MessageType
+    ) : String {
 
-        val phone = formatPhoneNumber(phoneNumber)
+        return prepareWhatsappMessageUseCase(phoneNumber, MessageType.WELCOME)
 
-        val greeting = "Hello \uD83D\uDC90\uD83D\uDC90\uD83D\uDC90";
-        val footer = "\uD83C\uDFDB *Venue*: ISKCON Youth Forum Seminar Hall, ISKCON Temple, Sushant Golf City, Lko\n\n*Contact*: 9807726801,6307444507 \n(Please save this number)\n\nRegards,\n" + "ISKCON Youth Forum"
-        val message = greeting + "\n\n" + welcomeMsg + "\n\n" + footer;
-
-
-        // TODO: if whatsapp business is their then open whatsapp only.
-//        val intent = Intent(Intent.ACTION_VIEW)
-//        intent.data = Uri.parse("https://wa.me/${phone}?text=${message.trimIndent()}")
-//        context.startActivity(intent)
-
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = "https://wa.me/$phone?text=${Uri.encode(message.trimIndent())}".toUri()
-            setPackage("com.whatsapp") // Ensures only WhatsApp (not Business) opens
-        }
-
-        try {
-            context.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-    fun formatPhoneNumber(phone: String): String {
-        // Check if the phone number starts with the country code +91
-        return if (phone.startsWith("+91")) {
-            phone  // Already has the correct country code
-        } else {
-            "+91${phone.filter { it.isDigit() }}" // Prepend +91 and remove any non-digit characters
-        }
-    }
-
-
-    fun String.toCamelCase(): String {
-        return this.lowercase()
-            .split(" ")
-            .joinToString(" ") { word ->
-                word.replaceFirstChar { it.uppercase() }
-            }
-    }
-
-
-
-    // Function to create a file in app-specific external storage
-    fun createImageFile(context: Context): Uri {
-        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val file = File.createTempFile(
-            "IMG_${System.currentTimeMillis()}", // File name
-            ".jpg",                              // File extension
-            storageDir                           // Directory
-        )
-        return FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.provider", // Replace with your app's provider authority
-            file
-        )
     }
 
 

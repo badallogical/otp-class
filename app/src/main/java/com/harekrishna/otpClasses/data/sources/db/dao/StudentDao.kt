@@ -1,4 +1,4 @@
-package com.harekrishna.otpClasses.data.local.db.dao
+package com.harekrishna.otpClasses.data.sources.db.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -18,10 +18,10 @@ interface StudentDao {
 
     @Query("""
         SELECT 
-            name AS name, 
-            phone AS phone, 
-            facilitator AS facilitator, 
-            batch AS batch,
+            _name AS name, 
+            _phone AS phone, 
+            _facilitator AS facilitator, 
+            _batch AS batch,
             date
         FROM students 
         WHERE phone = :phone
@@ -32,7 +32,7 @@ interface StudentDao {
         SELECT 
            *
         FROM students 
-        WHERE phone = :phone
+        WHERE _phone = :phone
     """)
     fun getStudentDTOByPhone(phone: String): StudentDTO?
 
@@ -40,15 +40,15 @@ interface StudentDao {
     @Update
     suspend fun update(student: StudentDTO)
 
-    @Query("DELETE FROM students WHERE phone = :phone")
+    @Query("DELETE FROM students WHERE _phone = :phone")
     suspend fun deleteByPhone(phone: String)
 
     @Query("""
         SELECT
-            name AS name, 
-            phone AS phone, 
-            facilitator AS facilitator, 
-            batch AS batch ,
+            _name AS name, 
+            _phone AS phone, 
+            _facilitator AS facilitator, 
+            _batch AS batch ,
             date
         FROM students
     """)
@@ -60,7 +60,7 @@ interface StudentDao {
            COUNT(*) AS counts, 
            MIN(sync) AS synced 
     FROM students 
-    WHERE byDev = :by 
+    WHERE _by = :by 
     GROUP BY date 
     ORDER BY date DESC
 """)
@@ -69,22 +69,22 @@ interface StudentDao {
     @Query("""
     SELECT *
     FROM students 
-    WHERE byDev = :by
+    WHERE _by = :by
     ORDER BY date DESC
 """)
     fun getFullRegistrationByBy(by : String) : Flow<List<StudentDTO>>
 
     // It will load the initial registration data that will later make the calling report.
-    @Query("SELECT name AS name, phone AS phone FROM students WHERE date = :date ORDER BY date DESC")
+    @Query("SELECT _name AS name, _phone AS phone FROM students WHERE date = :date ORDER BY date DESC")
     fun getRegistrations(date: String): Flow<List<Registration>>
 
-    @Query("SELECT * FROM students WHERE date = :date AND byDev = :by")
+    @Query("SELECT * FROM students WHERE date = :date AND _by = :by")
     fun getFullRegistrationsByDate(date: String, by: String): Flow<List<StudentDTO>>
 
-    @Query("SELECT * FROM students WHERE date = :date AND byDev = :by AND sync = 0")
+    @Query("SELECT * FROM students WHERE date = :date AND _by = :by AND sync = 0")
     fun getFullRegistrationsByDateNotSynced(date: String, by: String): Flow<List<StudentDTO>>
 
-    @Query("UPDATE students SET sync = 1 WHERE phone = :phone")
+    @Query("UPDATE students SET sync = 1 WHERE _phone = :phone")
     suspend fun updateToSync(phone: String)
 }
 

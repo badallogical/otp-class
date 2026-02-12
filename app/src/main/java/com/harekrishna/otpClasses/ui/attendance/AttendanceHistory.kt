@@ -1,6 +1,5 @@
 package com.harekrishna.otpClasses.ui.attendance
 
-import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -12,24 +11,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.harekrishna.otpClasses.R
 import com.harekrishna.otpClasses.ui.theme.Otp_class_appTheme
-import kotlinx.coroutines.launch
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttendanceHistoryScreen(
-    context: Context,
     navController: NavController,
-    viewModel: AttendanceHistoryViewModel = viewModel(factory = AttendanceHistoryViewModel.Factory)
+    viewModel: AttendanceHistoryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.attendanceHistoryUiState.collectAsState()
 

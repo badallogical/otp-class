@@ -1,4 +1,4 @@
-package com.harekrishna.otpClasses.data.local.db
+package com.harekrishna.otpClasses.data.sources.db
 
 import android.content.Context
 import androidx.room.Database
@@ -6,9 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.harekrishna.otpClasses.data.local.db.dao.AttendanceDao
-import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
-import com.harekrishna.otpClasses.data.local.db.dao.StudentDao
+import com.harekrishna.otpClasses.data.sources.db.dao.AttendanceDao
+import com.harekrishna.otpClasses.data.sources.db.dao.CallingReportDao
+import com.harekrishna.otpClasses.data.sources.db.dao.StudentDao
 import com.harekrishna.otpClasses.data.models.AttendanceDate
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO

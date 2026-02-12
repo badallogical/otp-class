@@ -1,15 +1,16 @@
-package com.harekrishna.otpClasses.data.local.repos
+package com.harekrishna.otpClasses.data.sources.repos
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import com.harekrishna.otpClasses.MyApplication
+import com.harekrishna.otpClasses.core.utils.NetworkChecker
 import com.harekrishna.otpClasses.data.api.ApiService
-import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.data.local.db.dao.AttendanceDao
-import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
-import com.harekrishna.otpClasses.data.local.db.dao.Registration
-import com.harekrishna.otpClasses.data.local.db.dao.StudentDao
+import com.harekrishna.otpClasses.data.sources.db.dao.AttendanceDao
+import com.harekrishna.otpClasses.data.sources.db.dao.CallingReportDao
+import com.harekrishna.otpClasses.data.sources.db.dao.Registration
+import com.harekrishna.otpClasses.data.sources.db.dao.StudentDao
 import com.harekrishna.otpClasses.data.models.AttendanceDate
 import com.harekrishna.otpClasses.data.models.AttendancePOJO
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
@@ -17,6 +18,7 @@ import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import com.harekrishna.otpClasses.data.models.RegistrationStatus
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -26,11 +28,14 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
-class StudentRepository(
+class StudentRepository @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val studentDao: StudentDao,
     private val callingDao: CallingReportDao,
     private val attendanceDao: AttendanceDao,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) {
 
     private val TAG = "StudentRepository"
@@ -112,7 +117,7 @@ class StudentRepository(
             updatedReport?.let { callingDao.update(it) }
 
             // Sync the update to the remote server if the internet is available
-            if (MyApplication.checkInternetConnection()) {
+            if (NetworkChecker.isInternetAvailable(context)) {
                 try {
                     ApiService.registerStudent(student, true)
                     updateStudentToSynced(student.phone)
@@ -171,9 +176,8 @@ class StudentRepository(
 
 
 
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun syncStudentData() {
-        val userData = AttendanceDataStore.getUserData().first();
+        val userData = userPreferencesRepository.getUserData().first()
         val phone = userData.second;
 
         val remoteStudents = withContext(Dispatchers.IO) {
@@ -198,9 +202,8 @@ class StudentRepository(
     }
 
     // It will load the registration made from remote and insert to database, and update calling.
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun syncMyStudentData() {
-        val userData = withContext(Dispatchers.IO) { AttendanceDataStore.getUserData().first() }
+        val userData = withContext(Dispatchers.IO) { userPreferencesRepository.getUserData().first() }
         Log.d(TAG, "USER DATA ${userData.second}")
 
         val remoteStudents = withContext(Dispatchers.IO) {
@@ -253,7 +256,7 @@ class StudentRepository(
 
         // If local data is empty, fetch from remote
         if (localStudents.isEmpty()) {
-            if (MyApplication.checkInternetConnection()) {
+            if (NetworkChecker.isInternetAvailable(context)) {
                 try {
                     // Sync to get the remote data
                     syncStudentData()
@@ -278,7 +281,7 @@ class StudentRepository(
     // Fetch list of registrations by date with counts
     @RequiresApi(Build.VERSION_CODES.O)
     fun getRegistrationList(): Flow<List<RegistrationStatus>> = flow {
-        val userData = AttendanceDataStore.getUserData().first()
+        val userData = userPreferencesRepository.getUserData().first()
 
         // Attempt to get the data from the local database (Room)
         val localRegistrationCounts = userData.second?.let {
@@ -296,7 +299,7 @@ class StudentRepository(
         if (localRegistrationCounts.isNullOrEmpty()) {
 
 
-            if (MyApplication.checkInternetConnection()) {
+            if (NetworkChecker.isInternetAvailable(context)) {
                 try {
                     // Fetch remote data if available
                     syncMyStudentData()
@@ -336,7 +339,7 @@ class StudentRepository(
 
         // If local data is empty, check for internet and fetch from remote
         if (localRegistrations.isEmpty()) {
-            if (MyApplication.checkInternetConnection()) {
+            if (NetworkChecker.isInternetAvailable(context)) {
                 try {
                     // Sync data from the remote source
                     syncStudentData()
@@ -361,7 +364,7 @@ class StudentRepository(
     suspend fun syncFullLocalRegistrations(date: String) {
         withContext(Dispatchers.IO) {
             // Get user data from DataStore
-            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
+            val userData = userPreferencesRepository.getUserData().first() // Get the first emitted value
 
             // Check userData and fetch registrations using Flow
             userData.second?.let { userId ->
@@ -403,7 +406,7 @@ class StudentRepository(
     suspend fun syncLocalRegistrations(date: String) {
         withContext(Dispatchers.IO) {
             // Get user data from DataStore
-            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
+            val userData = userPreferencesRepository.getUserData().first() // Get the first emitted value
 
             // Check userData and fetch registrations using Flow
             userData.second?.let { userId ->
@@ -444,7 +447,7 @@ class StudentRepository(
     suspend fun deleteRegistrationByDate( date: String ){
         withContext(Dispatchers.IO) {
             // Get user data from DataStore
-            val userData = AttendanceDataStore.getUserData().first() // Get the first emitted value
+            val userData = userPreferencesRepository.getUserData().first() // Get the first emitted value
 
             // Check userData and fetch registrations using Flow
             userData.second?.let { userId ->

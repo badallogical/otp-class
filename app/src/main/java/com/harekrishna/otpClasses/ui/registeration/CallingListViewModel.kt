@@ -1,22 +1,20 @@
 package com.harekrishna.otpClasses.ui.registeration
 
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.harekrishna.otpClasses.MyApplication
-import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.data.local.repos.CallingReportRepository
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
+import com.harekrishna.otpClasses.data.sources.repos.CallingReportRepository
+import com.harekrishna.otpClasses.data.sources.repos.MessagePreferencesRepository
+import com.harekrishna.otpClasses.data.sources.repos.MessageType
+import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
+import com.harekrishna.otpClasses.domain.PrepareWhatsappMessageUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -30,6 +28,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
 data class CallingListUiState(
     val registrations: List<CallingReportPOJO> = emptyList(),
@@ -43,7 +42,13 @@ data class CallingListUiState(
     val isDeleting : Boolean = false
 )
 
-class CallingListViewModel(private val callingReportRepository: CallingReportRepository) :
+@HiltViewModel
+class CallingListViewModel @Inject constructor(
+    private val callingReportRepository: CallingReportRepository,
+    private val messageRepository: MessagePreferencesRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val prepareWhatsappMessageUseCase: PrepareWhatsappMessageUseCase
+) :
     ViewModel() {
     private val _uiState = MutableStateFlow(CallingListUiState())
     val uiState: StateFlow<CallingListUiState> = _uiState.asStateFlow()
@@ -51,27 +56,15 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
     lateinit var userName : String
     lateinit var userPhone : String
 
-    lateinit var welcomeMsg : String
 
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application =
-                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-                val repository =
-                    application.container.callingReportRepository // Assuming container contains the repository
-                CallingListViewModel(repository)  // Pass the repository to the ViewModel constructor
-            }
-        }
-    }
 
     init{
         viewModelScope.launch {
-            val userData = AttendanceDataStore.getUserData().first()
+            val userData = userPreferencesRepository.getUserData().first()
             userName = userData.first ?: "Rajiva Prabhu Ji"
             userPhone = userData.second ?: "+919807726801"
 
-            welcomeMsg = AttendanceDataStore.getWelcomeMessage()
+
         }
     }
 
@@ -272,44 +265,13 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
         )
     }
 
-    fun sendWhatsAppMessage(
-        context: Context,
-        phoneNumber: String,
-        name: String
-    ) {
-
-        val phone = formatPhoneNumber(phoneNumber)
-
-        val greeting = "Hello \uD83D\uDC90\uD83D\uDC90\uD83D\uDC90";
-        val footer = "\uD83C\uDFDB *Venue*: ISKCON Youth Forum Seminar Hall, ISKCON Temple, Sushant Golf City, Lko\n\n*Contact*: 9807726801,6307444507 \n(Please save this number)\n\nRegards,\n" + "ISKCON Youth Forum"
-        val message = greeting + "\n\n" + welcomeMsg + "\n\n" + footer;
-
-
-        // TODO: if whatsapp business is their then open whatsapp only.
-//        val intent = Intent(Intent.ACTION_VIEW)
-//        intent.data = Uri.parse("https://wa.me/${phone}?text=${message.trimIndent()}")
-//        context.startActivity(intent)
-
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("https://wa.me/$phone?text=${Uri.encode(message.trimIndent())}")
-            setPackage("com.whatsapp") // Ensures only WhatsApp (not Business) opens
-        }
-
-        try {
-            context.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
-        }
+    suspend fun getWhatsAppMessage(
+        phoneNumber: String, type : MessageType
+    ): String {
+        return prepareWhatsappMessageUseCase(phoneNumber, type)
     }
 
-    fun formatPhoneNumber(phone: String): String {
-        // Check if the phone number starts with the country code +91
-        return if (phone.startsWith("+91")) {
-            phone  // Already has the correct country code
-        } else {
-            "+91${phone.filter { it.isDigit() }}" // Prepend +91 and remove any non-digit characters
-        }
-    }
+
 
     fun String.toCamelCase(): String {
         return this.lowercase()
@@ -318,6 +280,5 @@ class CallingListViewModel(private val callingReportRepository: CallingReportRep
                 word.replaceFirstChar { it.uppercase() }
             }
     }
-
 
 }

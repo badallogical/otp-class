@@ -11,17 +11,20 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
-import com.harekrishna.otpClasses.data.local.repos.AttendanceRepository
-import com.harekrishna.otpClasses.data.local.repos.StudentRepository
+import com.harekrishna.otpClasses.data.sources.repos.AttendanceRepository
+import com.harekrishna.otpClasses.data.sources.repos.StudentRepository
 import com.harekrishna.otpClasses.data.models.AttendanceHistory
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class AttendanceHistoryViewModel(
+@HiltViewModel
+class AttendanceHistoryViewModel @Inject constructor(
     private val studentRepository: StudentRepository,
     private val attendanceRepository: AttendanceRepository
 ) : ViewModel() {
@@ -30,22 +33,6 @@ class AttendanceHistoryViewModel(
     private val _attendanceHistoryUiState = MutableStateFlow(AttendanceHistoryUiState())
     val attendanceHistoryUiState: StateFlow<AttendanceHistoryUiState> =
         _attendanceHistoryUiState.asStateFlow()
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application =
-                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-                val repository1 =
-                    application.container.studentRepository // Assuming container contains the repository
-                val repository2 = application.container.attendanceResponseRepository
-                AttendanceHistoryViewModel(
-                    repository1,
-                    repository2
-                )  // Pass the repository to the ViewModel constructor
-            }
-        }
-    }
 
 
     fun getAttendanceHistory(){

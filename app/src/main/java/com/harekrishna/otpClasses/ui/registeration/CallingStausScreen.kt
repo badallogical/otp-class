@@ -62,6 +62,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +73,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -80,10 +82,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
+import com.harekrishna.otpClasses.data.sources.repos.MessageType
+import com.harekrishna.otpClasses.sendWhatsappMesssage
+import kotlinx.coroutines.launch
 
 data class Student(val name: String, val phone: String, var status: String)
 
@@ -92,10 +98,11 @@ data class Student(val name: String, val phone: String, var status: String)
 fun CallingListScreen(
     date: String,
     navController: NavController,
-    viewModel: CallingListViewModel = viewModel(factory = CallingListViewModel.Factory)
+    viewModel: CallingListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         Log.d("Calling Screen ", date)
@@ -167,7 +174,10 @@ fun CallingListScreen(
                         viewModel.updateStudentRemark(updatedReport.phone, updatedReport.remark)
                     },
                     onMessageIconClicked = { report ->
-                        viewModel.sendWhatsAppMessage(context, report.phone, report.name)
+                        scope.launch {
+                            val message = viewModel.getWhatsAppMessage(report.phone, MessageType.THANKS)
+                            context.sendWhatsappMesssage(report.phone, message)
+                        }
                     },
                     isSelected = uiState.selectedAttendees.contains(registrationReport.phone),
                     onLongClick = {
@@ -897,7 +907,7 @@ fun extractReason(status: String, prefix: String): String {
 @Composable
 fun CopyableText(
     text: String,
-    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyMedium,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
     color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     modifier: Modifier = Modifier
 ) {

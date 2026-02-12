@@ -1,27 +1,16 @@
 package com.harekrishna.otpClasses.ui.attendance
 
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.harekrishna.otpClasses.MyApplication
-import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.data.local.repos.AttendanceRepository
-import com.harekrishna.otpClasses.data.local.repos.StudentRepository
-import com.harekrishna.otpClasses.data.models.AttendanceHistory
 import com.harekrishna.otpClasses.data.models.AttendancePOJO
-import com.harekrishna.otpClasses.data.models.StudentAttendee
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
+import com.harekrishna.otpClasses.data.sources.repos.StudentRepository
+import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,41 +24,24 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
-@RequiresApi(Build.VERSION_CODES.O)
-class AttendanceViewModel(
+@HiltViewModel
+class AttendanceViewModel @Inject constructor(
     private val studentRepository: StudentRepository,
-    private val attendanceRepository: AttendanceRepository
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private var _uiState = MutableStateFlow(AttendanceUiState())
     val uiState: StateFlow<AttendanceUiState> = _uiState.asStateFlow()
-
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application =
-                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-                val repository1 =
-                    application.container.studentRepository // Assuming container contains the repository
-                val repository2 = application.container.attendanceResponseRepository
-                AttendanceViewModel(
-                    repository1,
-                    repository2
-                )
-            }
-        }
-    }
 
     lateinit var userPhone: String
 
     init {
         viewModelScope.launch {
             val userData = withContext(Dispatchers.IO) {
-                AttendanceDataStore.getUserData().first() // Fetch user data
+                userPreferencesRepository.getUserData().first() // Fetch user data
             }
             userPhone = userData.second ?: "+919807726801"
 
@@ -98,7 +70,6 @@ class AttendanceViewModel(
 
 
     // Function to fetch students and update UI state
-    @RequiresApi(Build.VERSION_CODES.O)
     fun fetchStudents(filter: Boolean = false) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -227,7 +198,6 @@ class AttendanceViewModel(
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun onRegisterStudent(name: String, phone: String, takenStatus: Boolean) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRegistering = true)
@@ -272,7 +242,6 @@ class AttendanceViewModel(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getCurrentOrNextSunday(): String {
         // Get the current date
         var currentDate = LocalDate.now()
@@ -290,7 +259,6 @@ class AttendanceViewModel(
         return currentDate.format(formatter)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getPreviousSunday(): String {
         // Get the current date
         val currentDate = LocalDate.now()
@@ -311,7 +279,6 @@ class AttendanceViewModel(
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun isTodayWeekend(): Boolean {
         // Get today's date
         val today = LocalDate.now()
@@ -323,7 +290,6 @@ class AttendanceViewModel(
         return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun postAttendance(student: StudentPOJO) {
         viewModelScope.launch {
 

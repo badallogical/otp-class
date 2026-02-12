@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.dagger.hilt)
 
 }
 
@@ -60,6 +61,13 @@ dependencies {
 //    ksp("com.google.devtools.ksp:symbol-processing-api:2.3.4")
 
     implementation("org.apache.poi:poi-ooxml:5.2.3")
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+    
+    // >>> ADDED HILT COMPOSE RUNTIME <<<
+    implementation(libs.androidx.hilt.navigation.compose)
 
 
     // Firebase

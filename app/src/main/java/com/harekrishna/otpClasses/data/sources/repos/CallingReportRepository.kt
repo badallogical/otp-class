@@ -1,11 +1,12 @@
-package com.harekrishna.otpClasses.data.local.repos
+package com.harekrishna.otpClasses.data.sources.repos
 
-import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
+import com.harekrishna.otpClasses.data.sources.db.dao.CallingReportDao
 import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class CallingReportRepository(private val callingReportDao: CallingReportDao) {
+class CallingReportRepository @Inject constructor(private val callingReportDao: CallingReportDao) {
 
     // Insert a calling report
     suspend fun insertCallingReport(callingReport: CallingReportPOJO) {

@@ -12,9 +12,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.harekrishna.otpClasses.MyApplication
-import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.data.local.repos.AttendanceRepository
+import com.harekrishna.otpClasses.data.sources.repos.AttendanceRepository
 import com.harekrishna.otpClasses.data.models.AttendeeItem
+import com.harekrishna.otpClasses.data.sources.repos.MessagePreferencesRepository
+import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +27,7 @@ import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
 data class FollowUpUiState(
     val attendees: List<AttendeeItem> = emptyList(),
@@ -48,9 +51,11 @@ data class FollowUpUiState(
     val initialLoading: Boolean = true,  // Add initial loading state
 )
 
-
-@RequiresApi(Build.VERSION_CODES.O)
-class FollowUpViewModel(private val attendanceRepository: AttendanceRepository) :
+@HiltViewModel
+class FollowUpViewModel @Inject constructor(
+    private val attendanceRepository: AttendanceRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val messagePreferencesRepository: MessagePreferencesRepository) :
     ViewModel() {
 
     // UI state
@@ -70,11 +75,11 @@ class FollowUpViewModel(private val attendanceRepository: AttendanceRepository) 
             try {
                 withContext(Dispatchers.IO) {
                     // Fetch user data on the IO dispatcher
-                    val userData = AttendanceDataStore.getUserData().first()
+                    val userData = userPreferencesRepository.getUserData().first()
                     userName = userData.first ?: "Rajiva Prabhu Ji"
                     userPhone = userData.second ?: "+919807726801"
 
-                    ThanksMsg = AttendanceDataStore.getThanksMessage()
+                    ThanksMsg = messagePreferencesRepository.thanksMessageFlow.first()
 
                     // Fetch attendees data based on userPhone
                     val attendees = attendanceRepository.getData(userPhone)
@@ -510,15 +515,6 @@ class FollowUpViewModel(private val attendanceRepository: AttendanceRepository) 
 
 
     companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application =
-                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-                val repository =
-                    application.container.attendanceResponseRepository // Assuming container contains the repository
-                FollowUpViewModel(repository)  // Pass the repository to the ViewModel constructor
-            }
-        }
 
         // It don't count the current sunday but give me last sundays.
         @RequiresApi(Build.VERSION_CODES.O)

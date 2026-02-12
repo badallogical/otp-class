@@ -1,18 +1,12 @@
 package com.harekrishna.otpClasses.ui.registeration
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.harekrishna.otpClasses.MyApplication
-import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.data.local.repos.StudentRepository
-import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import com.harekrishna.otpClasses.data.models.RegistrationStatus
+import com.harekrishna.otpClasses.data.sources.repos.AttendancePreferencesRepository
+import com.harekrishna.otpClasses.data.sources.repos.StudentRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -24,6 +18,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 data class RegistrationListUiState(
     val registrations: List<RegistrationStatus> = emptyList(),
@@ -37,25 +32,15 @@ data class RegistrationListUiState(
     val isDeleting: Boolean = false
 )
 
-@RequiresApi(Build.VERSION_CODES.O)
-class RegistrationViewModel(private val studentRepository: StudentRepository) : ViewModel() {
+@HiltViewModel
+class RegistrationViewModel @Inject constructor(
+    private val studentRepository: StudentRepository,
+    private val attendancePreferencesRepository: AttendancePreferencesRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegistrationListUiState())
     val uiState: StateFlow<RegistrationListUiState> = _uiState.asStateFlow()
 
     private val TAG = "RegistrationViewModel"
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application =
-                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-                val repository =
-                    application.container.studentRepository // Assuming container contains the repository
-                RegistrationViewModel(repository)  // Pass the repository to the ViewModel constructor
-            }
-        }
-    }
 
     init {
         viewModelScope.launch {
@@ -66,7 +51,6 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
     }
 
     // Get all the registrations from the local
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getRegistration() {
         viewModelScope.launch {
             try {
@@ -106,8 +90,8 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
             try {
                 // Fetch dates in IO dispatcher
                 val dates = withContext(Dispatchers.IO) {
-                    Log.d(TAG, "datas " + AttendanceDataStore.getDates.first())
-                    AttendanceDataStore.getDates.first() // Use first() safely
+                    Log.d(TAG, "datas " + attendancePreferencesRepository.dates.first())
+                    attendancePreferencesRepository.dates.first() // Use first() safely
                 }
 
                 Log.d(TAG, "to sync dates: $dates")
@@ -119,7 +103,7 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
                             try {
                                 studentRepository.syncLocalRegistrations(date) // Sync registrations for the date
                                 Log.d(TAG, "Sync Completed for date: $date")
-                                AttendanceDataStore.removeDate(date) // Remove synced date
+                                attendancePreferencesRepository.removeDate(date) // Remove synced date
                                 true // Return success
                             } catch (e: Exception) {
                                 Log.e(TAG, "Error syncing for date: $date", e)
@@ -161,8 +145,8 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
             try {
                 // Fetch dates in IO dispatcher
                 val dates = withContext(Dispatchers.IO) {
-                    Log.d(TAG, "datas " + AttendanceDataStore.getDates.first())
-                    AttendanceDataStore.getDates.first() // Use first() safely
+                    Log.d(TAG, "datas " + attendancePreferencesRepository.dates.first())
+                    attendancePreferencesRepository.dates.first() // Use first() safely
                 }
 
                 Log.d(TAG, "to sync dates: $dates")
@@ -174,7 +158,7 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
                             try {
                                 studentRepository.syncFullLocalRegistrations(date) // Sync registrations for the date
                                 Log.d(TAG, "Sync Completed for date: $date")
-                                AttendanceDataStore.removeDate(date) // Remove synced date
+                                attendancePreferencesRepository.removeDate(date) // Remove synced date
                                 true // Return success
                             } catch (e: Exception) {
                                 Log.e(TAG, "Error syncing for date: $date", e)
@@ -259,12 +243,12 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
             withContext(Dispatchers.IO) {
                 if (currentSelections.contains(date)) {
                     currentSelections.remove(date)
-                    AttendanceDataStore.removeDate(date)
+                    attendancePreferencesRepository.removeDate(date)
                 } else {
                     currentSelections.add(date)
-                    AttendanceDataStore.addDate(date)
+                    attendancePreferencesRepository.addDate(date)
                 }
-                Log.d(TAG,"Dates "+AttendanceDataStore.getDates.first())
+                Log.d(TAG,"Dates "+attendancePreferencesRepository.dates.first())
             }
 
 
@@ -279,7 +263,7 @@ class RegistrationViewModel(private val studentRepository: StudentRepository) : 
     fun clearSelections() {
         viewModelScope.launch(Dispatchers.IO) {
             uiState.value.selectedRegistrations.forEach { date ->
-                AttendanceDataStore.removeDate(date)
+                attendancePreferencesRepository.removeDate(date)
             }
         }
 

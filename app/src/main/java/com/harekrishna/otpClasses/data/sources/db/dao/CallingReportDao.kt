@@ -1,4 +1,4 @@
-package com.harekrishna.otpClasses.data.local.db.dao
+package com.harekrishna.otpClasses.data.sources.db.dao
 
 import androidx.room.Dao
 import androidx.room.Insert

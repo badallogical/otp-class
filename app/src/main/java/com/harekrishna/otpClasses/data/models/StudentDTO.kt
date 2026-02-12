@@ -1,5 +1,6 @@
 package com.harekrishna.otpClasses.data.models
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
@@ -8,29 +9,36 @@ import com.google.gson.annotations.SerializedName
 data class StudentDTO(
 
     @PrimaryKey
+    @ColumnInfo("_phone")
     @SerializedName("Phone")
     val phone: String,
 
+    @ColumnInfo("_name")
     @SerializedName("Name")
     val name: String,
 
+    @ColumnInfo("_facilitator")
     @SerializedName("Facilitator")
     val facilitator: String,
 
+    @ColumnInfo("_batch")
     @SerializedName("Batch")
     val batch: String,
 
+    @ColumnInfo("_profession")
     @SerializedName("Profession")
     val profession: String,
 
+    @ColumnInfo("_address")
     @SerializedName("Address")
     val address: String,
 
     @SerializedName("Date")
     val date: String,
 
+    @ColumnInfo("_by")
     @SerializedName("By")
-    val byDev: String,
+    val byDev: String? = null,
 
     val sync: Boolean = false,
     val photoUri: String? = null

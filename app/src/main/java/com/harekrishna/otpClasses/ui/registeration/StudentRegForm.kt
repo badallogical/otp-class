@@ -53,19 +53,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.core.content.ContextCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.harekrishna.otpClasses.data.sources.repos.MessageType
+import com.harekrishna.otpClasses.sendWhatsappMesssage
 import com.harekrishna.otpClasses.ui.registeration.StudentFormUiState
 import com.harekrishna.otpClasses.ui.registeration.StudentFormViewModel
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StudentFormScreen(
     editId: String? = null,
-    viewModel: StudentFormViewModel = viewModel(factory = StudentFormViewModel.Factory)
+    viewModel: StudentFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
 
     val facilitators = listOf(
@@ -199,7 +204,11 @@ fun StudentFormScreen(
                             onInviteClick = { phone ->
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 if (phone.length == 10 && phone.all { it.isDigit() }) {
-                                    viewModel.sendWhatsAppMessage(context, phone, uiState.name)
+                                    scope.launch{
+                                        val message = viewModel.getWhatsAppMessage(phone,
+                                            MessageType.WELCOME)
+                                        context.sendWhatsappMesssage(phone, message)
+                                    }
                                     viewModel.onInvited()
                                 } else {
                                     Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_SHORT).show()

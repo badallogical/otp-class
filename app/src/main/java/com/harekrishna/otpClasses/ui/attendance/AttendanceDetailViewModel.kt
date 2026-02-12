@@ -9,16 +9,12 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.data.api.ApiService.postBulkAttendance
-import com.harekrishna.otpClasses.data.local.repos.AttendanceRepository
-import com.harekrishna.otpClasses.data.local.repos.StudentRepository
+import com.harekrishna.otpClasses.data.sources.repos.AttendanceRepository
 import com.harekrishna.otpClasses.data.models.AttendanceDTO
 import com.harekrishna.otpClasses.data.models.StudentAttendee
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,9 +27,10 @@ import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
-class AttendanceDetailViewModel(
-    private val studentRepository: StudentRepository,
+@HiltViewModel
+class AttendanceDetailViewModel @Inject constructor(
     private val attendanceRepository: AttendanceRepository
 ) : ViewModel() {
 
@@ -41,22 +38,6 @@ class AttendanceDetailViewModel(
     private val _attendanceDetailUiState = MutableStateFlow(AttendanceDetailsUiState())
     val attendanceDetailsUiState: StateFlow<AttendanceDetailsUiState> =
         _attendanceDetailUiState.asStateFlow()
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application =
-                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-                val repository1 =
-                    application.container.studentRepository // Assuming container contains the repository
-                val repository2 = application.container.attendanceResponseRepository
-                AttendanceDetailViewModel(
-                    repository1,
-                    repository2
-                )  // Pass the repository to the ViewModel constructor
-            }
-        }
-    }
 
     fun loadAttendanceDetailData(date: String) {
         viewModelScope.launch {

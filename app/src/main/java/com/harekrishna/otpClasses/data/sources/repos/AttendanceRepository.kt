@@ -1,36 +1,40 @@
-package com.harekrishna.otpClasses.data.local.repos
+package com.harekrishna.otpClasses.data.sources.repos
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import com.harekrishna.otpClasses.MyApplication
+import com.harekrishna.otpClasses.core.utils.NetworkChecker
 import com.harekrishna.otpClasses.data.api.ApiService
-import com.harekrishna.otpClasses.data.local.db.dao.AttendanceDao
-import com.harekrishna.otpClasses.data.local.db.dao.CallingReportDao
 import com.harekrishna.otpClasses.data.models.AttendanceDate
 import com.harekrishna.otpClasses.data.models.AttendanceHistory
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
 import com.harekrishna.otpClasses.data.models.AttendanceWithDates
 import com.harekrishna.otpClasses.data.models.AttendeeItem
 import com.harekrishna.otpClasses.data.models.StudentAttendee
+import com.harekrishna.otpClasses.data.sources.db.dao.AttendanceDao
+import com.harekrishna.otpClasses.data.sources.db.dao.CallingReportDao
 import com.harekrishna.otpClasses.ui.followup.FollowUpViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class AttendanceRepository(
+class AttendanceRepository @Inject constructor(
     private val callingReportDao: CallingReportDao,
-    private val attendanceDao: AttendanceDao
+    private val attendanceDao: AttendanceDao,
+    @param:ApplicationContext private val context : Context
 ) {
 
     suspend fun getAllAttendanceHistoryData(lastMonth: Int = 0): List<AttendanceHistory> {
         return withContext(Dispatchers.IO) {
             // Load everything from remote to local
 
-            if( MyApplication.checkInternetConnection())
+            if(NetworkChecker.isInternetAvailable(context))
                 loadAttendanceData()
 
             // Return the data from local Room DB
@@ -77,7 +81,6 @@ class AttendanceRepository(
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getData(userPhone: String): List<AttendeeItem> {
         // Check if attendance data is empty
         if (attendanceDao.isAttendanceEmpty() == 0) {
@@ -97,7 +100,6 @@ class AttendanceRepository(
 
 
     // It will not only get me the last four week attendee but all last four attendees also.
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getAllLastFourWeekAttendeeAndRegistration(): List<AttendeeItem> = coroutineScope {
         val result = mutableListOf<AttendeeItem>()
 

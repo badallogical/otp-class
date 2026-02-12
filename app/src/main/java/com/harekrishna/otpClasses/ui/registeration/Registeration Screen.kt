@@ -1,8 +1,5 @@
 package com.harekrishna.otpClasses.ui.registeration
 
-import android.os.Build
-import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,19 +45,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.harekrishna.otpClasses.R
 import com.harekrishna.otpClasses.data.models.RegistrationStatus
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegistrationScreen(
     navController: NavController,
-    viewModel: RegistrationViewModel = viewModel(factory = RegistrationViewModel.Factory)
+    viewModel: RegistrationViewModel = hiltViewModel()
 ) {
     // Collect state from ViewModel
     val uiState by viewModel.uiState.collectAsState()
@@ -140,7 +136,6 @@ fun RegistrationScreen(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean, isInSelectionMode: Boolean) {
     Row(
@@ -183,7 +178,6 @@ fun HeaderSection(viewModel: RegistrationViewModel, syncing: Boolean, isInSelect
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DeleteConfirmationDialog(
     uiState: RegistrationListUiState,
@@ -236,7 +230,6 @@ fun DeleteConfirmationDialog(
 }
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegistrationListView(registrations: List<RegistrationStatus>, navController: NavController, uiState: RegistrationListUiState, viewModel: RegistrationViewModel) {
 
@@ -282,7 +275,6 @@ fun RegistrationListView(registrations: List<RegistrationStatus>, navController:
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RegistrationItem(data: RegistrationStatus, navController: NavController,isSelected: Boolean = false,
                      onLongClick: () -> Unit = {},
@@ -349,7 +341,6 @@ fun RegistrationItem(data: RegistrationStatus, navController: NavController,isSe
 
 
 // Example preview for this composable
-@RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
 fun PreviewRegistrationScreen() {

@@ -1,62 +1,77 @@
 package com.harekrishna.otpClasses.ui.dashboard
 
 // SettingsScreen.kt
-import android.net.Uri
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import coil.compose.AsyncImage
-import com.harekrishna.otpClasses.data.api.AttendanceDataStore
-import com.harekrishna.otpClasses.ui.followup.FollowUpUiState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen( navController: NavController,
-    viewModel: SettingsViewModel = viewModel()
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    var showWelcomeImagePicker by remember { mutableStateOf(false) }
-    var showThanksImagePicker by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -80,7 +95,7 @@ fun SettingsScreen( navController: NavController,
                             text = { Text("Reset") },
                             onClick = {
                                 expanded = false
-                                viewModel.resetSettings() // Call reset function
+                                viewModel.reset() // Call reset function
                             }
                         )
                     }
@@ -168,7 +183,7 @@ fun SettingsScreen( navController: NavController,
                     }
                 }
 
-                SaveButton(navController) { viewModel.saveSettings()
+                SaveButton(navController) { viewModel.save()
                 }
             }
         }
@@ -202,7 +217,6 @@ fun SaveButton(
             // Trigger the pop effect
             isPressed = true
             onClick() // Call the save logic
-            navController.popBackStack()
 
         },
         modifier = Modifier
@@ -303,159 +317,4 @@ data class SettingsUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
 )
-
-
-class SettingsViewModel : ViewModel() {
-
-    // The UI state encapsulating all the settings
-    private val _uiState = MutableStateFlow(SettingsUiState())
-    val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
-
-    private val defaultWelcomeMessage: String
-    private val defaultThanksMessage: String
-
-
-    init {
-
-        defaultWelcomeMessage = defaultWelcomeMessage()
-        defaultThanksMessage = defaultThanksMessage()
-
-        viewModelScope.launch {
-            val existingWelcomeMessage = AttendanceDataStore.getWelcomeMessage()
-            val existingThanksMessage = AttendanceDataStore.getThanksMessage()
-
-            // If the messages are not already set, save the default ones
-            if (existingWelcomeMessage.isNullOrEmpty()) {
-                // Save the Welcome Message
-                AttendanceDataStore.saveWelcomeMessage(defaultWelcomeMessage)
-            }
-
-            if (existingThanksMessage.isNullOrEmpty()) {
-                // Encode the Thanks Message and save it
-                AttendanceDataStore.saveThanksMessage(defaultThanksMessage)
-            }
-
-            loadSettings()
-        }
-    }
-
-    private fun defaultWelcomeMessage() : String {
-        // Define individual string components for the Welcome Message
-        val welcomePart1 =
-            "Thank you for registering in ISKCON Youth Forum (IYF) program. \uD83C\uDF89✌\n"
-        val welcomePart2 =
-            "\n" + "It is  a *life-changing* step to *discover yourself* and *unleash your true potential*. \uD83D\uDCAF\uD83C\uDF1F\n\n"
-        val welcomePart3 = "📢 *We invite you to the Sunday Program*:\n\n"
-        val welcomePart4 = "🕒 *Timing*: *4:30 PM*, this *Sunday*\n"
-        val welcomePart5 =
-            "\uD83C\uDF89 *Event*: Seminar \uD83E\uDDD1\u200D\uD83D\uDCBB\uD83D\uDDE3, Kirtan \uD83C\uDFA4, Music \uD83C\uDFB8, Q&A session , Mentorship and Delicious Snacks \uD83C\uDF5B\uD83C\uDF70\n"+"\n*Entry is Free*"
-
-        // Concatenate the parts
-        val welcomeMessage = welcomePart1 + welcomePart2 + welcomePart3 + welcomePart4 + welcomePart5
-
-        return welcomeMessage;
-    }
-
-    private fun defaultThanksMessage() : String {
-        // Define individual string components for the Thanks Message
-        val thanksPart1 =
-            "Thank you for attending our ISKCON Youth Forum (IYF) Program! 🌟\n"
-        val thanksPart2 =
-            "We're glad you joined, and we hope it was a fruitful experience for your spiritual journey. 🌱\n\n"
-        val thanksPart3 = "📢 *We warmly invite you to our next Sunday Program*:\n"
-        val thanksPart4 = "🕒 *Timing*: 4:30 PM, this Sunday\n"
-        val thanksPart5 =
-            "🎉 *Highlights*: Engaging Seminar 🧑‍💻🗣️, Soul-stirring Kirtan 🎤, Live Music 🎸, and Delicious Snacks 🍛🍰.\n\n"
-        val thanksPart6 = "🏛️ *Venue*: ISKCON Temple, Lucknow"
-
-        // Concatenate the parts
-        val thanksMessage = thanksPart1 + thanksPart2 + thanksPart3 + thanksPart4 + thanksPart5 + thanksPart6
-
-        return thanksMessage
-    }
-
-    fun resetSettings(){
-        viewModelScope.launch(Dispatchers.IO) {
-            AttendanceDataStore.saveWelcomeMessage(defaultWelcomeMessage)
-            AttendanceDataStore.saveThanksMessage(defaultThanksMessage)
-
-            withContext(Dispatchers.Main){
-                _uiState.value = _uiState.value.copy(
-                    welcomeMessage = defaultWelcomeMessage,
-                    thanksMessage = defaultThanksMessage
-                )
-            }
-        }
-    }
-
-
-    // Methods to update the UI state
-    fun updateName(name: String) {
-        _uiState.value = _uiState.value.copy(name = name)
-    }
-
-    fun updatePhone(phone: String) {
-        _uiState.value = _uiState.value.copy(phone = phone)
-    }
-
-    fun updateWelcomeMessage(message: String) {
-        _uiState.value = _uiState.value.copy(welcomeMessage = message)
-    }
-
-    fun updateThanksMessage(message: String) {
-        _uiState.value = _uiState.value.copy(thanksMessage = message)
-    }
-
-    fun updateNotifications(enabled: Boolean) {
-        _uiState.value = _uiState.value.copy(notificationsEnabled = enabled)
-    }
-
-    fun updateDarkMode(enabled: Boolean) {
-        _uiState.value = _uiState.value.copy(darkModeEnabled = enabled)
-    }
-
-    // Save settings in DataStore
-    fun saveSettings() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true)
-            try {
-                withContext(Dispatchers.IO) {
-                    AttendanceDataStore.saveUserData(_uiState.value.name, _uiState.value.phone)
-                    AttendanceDataStore.saveWelcomeMessage(_uiState.value.welcomeMessage)
-                    AttendanceDataStore.saveThanksMessage(_uiState.value.thanksMessage)
-                }
-            } catch (e: Exception) {
-                // Log or handle the error gracefully
-                Log.e("SaveSettings", "Error saving settings: ${e.message}", e)
-            } finally {
-                _uiState.value = _uiState.value.copy(isSaving = false)
-            }
-        }
-    }
-
-
-    // Load settings from DataStore into the UI state
-    fun loadSettings() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-
-            withContext(Dispatchers.IO) {
-                val userData = AttendanceDataStore.getUserData().first()
-
-                // Load the settings and update the UI state
-                val welcomeMessage = AttendanceDataStore.getWelcomeMessage()
-                val thanksMessage = AttendanceDataStore.getThanksMessage()
-
-                // Update the UI state with the loaded data
-                _uiState.value = _uiState.value.copy(
-                    name = userData.first ?: "",
-                    phone = userData.second ?: "",
-                    welcomeMessage = welcomeMessage,
-                    thanksMessage = thanksMessage,
-                    isLoading = false
-                )
-            }
-        }
-    }
-}
 

@@ -93,6 +93,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.harekrishna.otpClasses.R
 import com.harekrishna.otpClasses.data.models.AttendeeItem
@@ -103,7 +104,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun FollowUpScreen(viewModel: FollowUpViewModel = viewModel(factory = FollowUpViewModel.Factory)) {
+fun FollowUpScreen(viewModel: FollowUpViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
 
     val scope = rememberCoroutineScope()
