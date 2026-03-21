@@ -59,7 +59,7 @@ android {
 dependencies {
 
 //    ksp("com.google.devtools.ksp:symbol-processing-api:2.3.4")
-
+    // EXCEL Processing
     implementation("org.apache.poi:poi-ooxml:5.2.3")
 
     // Hilt
@@ -71,12 +71,11 @@ dependencies {
 
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-
-    // Add the dependency for the Firebase Authentication library
-    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")
+    implementation("com.google.firebase:firebase-config")
+    implementation("com.google.firebase:firebase-analytics")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")

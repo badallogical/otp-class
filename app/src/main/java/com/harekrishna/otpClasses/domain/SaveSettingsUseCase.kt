@@ -16,9 +16,5 @@ class SaveSettingsUseCase @Inject constructor(
 
     suspend operator fun invoke( state : SettingsUiState){
         userPrefRepo.saveUserData(state.name, state.phone)
-        Log.d("Save Message", state.welcomeMessage);
-        Log.d("Save Message", state.thanksMessage);
-        messagePrefRepo.saveWelcomeMessage(state.welcomeMessage)
-        messagePrefRepo.saveThanksMessage(state.thanksMessage)
     }
 }

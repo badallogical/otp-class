@@ -72,6 +72,7 @@ fun StudentFormScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    var isEligible by remember { mutableStateOf(false) }
 
     val facilitators = listOf(
         "NA",
@@ -275,7 +276,33 @@ fun StudentFormScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    verticalAlignment = Alignment.Top, // Changed to Top for multi-line text
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable { isEligible = !isEligible } // Makes the whole row toggle the checkbox
+                ) {
+                    Checkbox(
+                        checked = isEligible,
+                        onCheckedChange = { isEligible = it },
+                        modifier = Modifier.padding(top = 2.dp) // Aligns checkbox with the first line of text
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Text(
+                        text = "I confirm that this individual is eligible to register and has completed Class 12 or higher.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 20.sp
+                    )
+
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Enhanced Submit Button
                 AnimatedSubmitButton(
@@ -285,12 +312,24 @@ fun StudentFormScreen(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         val phone = uiState.phone
                         if (!uiState.isSubmitting) {
+
+                            if (!isEligible) {
+                                Toast.makeText(
+                                    context,
+                                    "Only students above Class 12 (graduates) can apply",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@AnimatedSubmitButton
+                            }
+
                             if (!(phone.length == 10 && phone.all { it.isDigit() })) {
                                 Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_SHORT).show()
                                 return@AnimatedSubmitButton
                             }
-                            if (uiState.name.isEmpty() || uiState.name.isBlank()) {
-                                Toast.makeText(context, "Please enter the name", Toast.LENGTH_SHORT).show()
+
+                            val isValid = uiState.name.matches(Regex("^[a-zA-Z ]+$"))
+                            if (uiState.name.isBlank() || !isValid  ) {
+                                Toast.makeText(context, "Please enter a valid name", Toast.LENGTH_SHORT).show()
                                 return@AnimatedSubmitButton
                             }
 

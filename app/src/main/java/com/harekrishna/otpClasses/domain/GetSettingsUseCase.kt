@@ -20,8 +20,6 @@ class GetSettingsUseCase @Inject constructor(
         return SettingsUiState(
             name = userData.first ?: "",
             phone = userData.second ?: "",
-            welcomeMessage = messagePrefRepo.welcomeMessageFlow.first(),
-            thanksMessage = messagePrefRepo.thanksMessageFlow.first()
         )
     }
 }

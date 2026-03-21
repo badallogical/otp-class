@@ -160,6 +160,7 @@ fun CallingListScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(uiState.registrations) { registrationReport ->
+                Log.d("CallingListScreen", registrationReport.toString());
                 StudentListItem(
                     student = registrationReport,
                     onStudentUpdated = { updatedReport ->

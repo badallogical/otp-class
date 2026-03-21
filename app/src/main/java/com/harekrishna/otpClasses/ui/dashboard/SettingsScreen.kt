@@ -149,23 +149,6 @@ fun SettingsScreen( navController: NavController,
                     )
                 }
 
-                // Enhanced Message Settings Section
-                SettingsSection(title = "Message Settings") {
-                    MessageSettingCard(
-                        title = "Welcome Message",
-                        message = uiState.welcomeMessage,
-                        onMessageChange = { viewModel.updateWelcomeMessage(it) }
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    MessageSettingCard(
-                        title = "Thanks Message",
-                        message = uiState.thanksMessage,
-                        onMessageChange = { viewModel.updateThanksMessage(it) }
-                    )
-                }
-
                 // Other Settings Section
                 SettingsSection(title = "Other Settings") {
                     // Notifications Toggle

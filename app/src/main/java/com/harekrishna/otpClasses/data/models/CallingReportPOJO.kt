@@ -1,12 +1,17 @@
 package com.harekrishna.otpClasses.data.models
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity("calling_report")
 data class CallingReportPOJO(
+
+    @ColumnInfo(name = "phone")
     @PrimaryKey val phone: String,
+    @ColumnInfo(name = "name")
     val name: String,
+
     val status : String,            // calling status
     val attendanceCount : Int,
     val date : String,              // registration date
