@@ -6,12 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.harekrishna.otpClasses.data.models.ReportDTO
 import com.harekrishna.otpClasses.screens.StudentFormScreen
 import com.harekrishna.otpClasses.ui.attendance.AttendanceDetailsScreen
 import com.harekrishna.otpClasses.ui.attendance.AttendanceHistoryScreen
 import com.harekrishna.otpClasses.ui.dashboard.DashboardScreen
-import com.harekrishna.otpClasses.ui.dashboard.SettingsScreen
+import com.harekrishna.otpClasses.ui.settings.SettingsScreen
 import com.harekrishna.otpClasses.ui.dashboard.WelcomeScreen
 import com.harekrishna.otpClasses.ui.followup.FollowUpScreen
 import com.harekrishna.otpClasses.ui.registeration.CallingListScreen

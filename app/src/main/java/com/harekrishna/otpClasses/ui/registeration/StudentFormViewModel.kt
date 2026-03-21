@@ -12,7 +12,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.sources.repos.AttendancePreferencesRepository
-import com.harekrishna.otpClasses.data.sources.repos.MessagePreferencesRepository
 import com.harekrishna.otpClasses.data.sources.repos.MessageType
 import com.harekrishna.otpClasses.data.sources.repos.StudentRepository
 import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
@@ -60,7 +59,6 @@ data class StudentFormUiState(
 class StudentFormViewModel @Inject constructor(
     private val studentRepository: StudentRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val messageRepository: MessagePreferencesRepository,
     private val attendancePreferencesRepository: AttendancePreferencesRepository,
     private val prepareWhatsappMessageUseCase: PrepareWhatsappMessageUseCase
 ) : ViewModel() {
@@ -100,6 +98,7 @@ class StudentFormViewModel @Inject constructor(
 
 
     private fun registerStudent(student: StudentDTO, updated: Boolean = false) {
+        Log.d("registration",student.toString())
         viewModelScope.launch {
             // Set isSubmitting to true before starting the registration process
             _uiState.update { current ->
@@ -297,7 +296,6 @@ class StudentFormViewModel @Inject constructor(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun onUpdate(){
         _uiState.update { current -> current.copy(isSubmitting = true, updated = true) }
 
@@ -328,7 +326,6 @@ class StudentFormViewModel @Inject constructor(
 
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun onSubmit() {
         _uiState.update { current -> current.copy(isSubmitting = true) }
 
@@ -338,21 +335,23 @@ class StudentFormViewModel @Inject constructor(
 //        val currentDate = "2024-12-31"
 
         val student = StudentDTO(
-            uiState.value.name,
-            uiState.value.phone,
-            uiState.value.facilitator,
-            uiState.value.batch,
-            uiState.value.profession,
-            uiState.value.address + "," + uiState.value.city ,
-            currentDate,
-            userPhone,
+            name = uiState.value.name,
+            phone = uiState.value.phone,
+            facilitator = uiState.value.facilitator,
+            batch = uiState.value.batch,
+            profession = uiState.value.profession,
+            address = uiState.value.address + "," + uiState.value.city ,
+            date = currentDate,
+            byDev = userPhone,
             photoUri = uiState.value.photoUri.toString()
         )
+        Log.d("registration",student.toString())
         viewModelScope.launch {
             withContext(Dispatchers.IO){
                 registerStudent(student, updated = uiState.value.updated)
 
                 attendancePreferencesRepository.addDate(student.date)
+
                 Log.d("registration","Added date to data store")
                 Log.d("registration","dates ${attendancePreferencesRepository.dates.first()}")
             }

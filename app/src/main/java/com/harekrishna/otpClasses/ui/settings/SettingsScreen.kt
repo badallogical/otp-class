@@ -1,10 +1,11 @@
-package com.harekrishna.otpClasses.ui.dashboard
+package com.harekrishna.otpClasses.ui.settings
 
 // SettingsScreen.kt
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -35,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -56,6 +59,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.harekrishna.otpClasses.ui.theme.ThemeMode
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,6 +70,19 @@ fun SettingsScreen( navController: NavController,
     val context = LocalContext.current
 
     val uiState by viewModel.uiState.collectAsState()
+
+    var name by remember { mutableStateOf("" ) }
+    var phone by remember { mutableStateOf("") }
+    var selectedThemeMode by remember { mutableStateOf(ThemeMode.SYSTEM) }
+    var notificationsEnabled by remember { mutableStateOf(false)}
+
+
+    LaunchedEffect(uiState) {
+        name = uiState.name
+        phone = uiState.phone
+        selectedThemeMode = uiState.themeMode
+        notificationsEnabled = uiState.notificationsEnabled
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { msg ->
@@ -131,8 +148,8 @@ fun SettingsScreen( navController: NavController,
                 // Profile Settings Section
                 SettingsSection(title = "Profile Settings") {
                     OutlinedTextField(
-                        value = uiState.name,
-                        onValueChange = { viewModel.updateName(it) },
+                        value = name,
+                        onValueChange = { name = it },
                         label = { Text("Name") },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -140,8 +157,8 @@ fun SettingsScreen( navController: NavController,
                     )
 
                     OutlinedTextField(
-                        value = uiState.phone,
-                        onValueChange = { viewModel.updatePhone(it) },
+                        value = phone,
+                        onValueChange = { phone = it },
                         label = { Text("Phone") },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -149,22 +166,41 @@ fun SettingsScreen( navController: NavController,
                     )
                 }
 
-                // Enhanced Message Settings Section
-                SettingsSection(title = "Message Settings") {
-                    MessageSettingCard(
-                        title = "Welcome Message",
-                        message = uiState.welcomeMessage,
-                        onMessageChange = { viewModel.updateWelcomeMessage(it) }
-                    )
+                SettingsSection(title = "Appearance") {
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Column(modifier = Modifier.padding(16.dp)) {
 
-                    MessageSettingCard(
-                        title = "Thanks Message",
-                        message = uiState.thanksMessage,
-                        onMessageChange = { viewModel.updateThanksMessage(it) }
-                    )
+                        Text("Theme")
+
+                        ThemeMode.values().forEach { mode ->
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedThemeMode = mode }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+
+                                RadioButton(
+                                    selected = selectedThemeMode == mode,
+                                    onClick = { selectedThemeMode = mode }
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Text(
+                                    text = when (mode) {
+                                        ThemeMode.LIGHT -> "Light"
+                                        ThemeMode.DARK -> "Dark"
+                                        ThemeMode.SYSTEM -> "System Default"
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
+
 
                 // Other Settings Section
                 SettingsSection(title = "Other Settings") {
@@ -177,13 +213,19 @@ fun SettingsScreen( navController: NavController,
                     ) {
                         Text("Enable Reminder Notification")
                         Switch(
-                            checked = uiState.notificationsEnabled,
-                            onCheckedChange = { viewModel.updateNotifications(it) }
+                            checked = notificationsEnabled,
+                            onCheckedChange = { notificationsEnabled = it }
                         )
                     }
                 }
 
-                SaveButton(navController) { viewModel.save()
+
+                SaveButton(navController) { viewModel.save(SettingsUiState(
+                    name = name,
+                    phone = phone,
+                    notificationsEnabled = notificationsEnabled,
+                    themeMode = selectedThemeMode
+                    ))
                 }
             }
         }
@@ -310,10 +352,8 @@ private fun SettingsSection(
 data class SettingsUiState(
     val name: String = "",
     val phone: String = "",
-    val welcomeMessage: String = "",
-    val thanksMessage: String = "",
     val notificationsEnabled: Boolean = false,
-    val darkModeEnabled: Boolean = false,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
 )

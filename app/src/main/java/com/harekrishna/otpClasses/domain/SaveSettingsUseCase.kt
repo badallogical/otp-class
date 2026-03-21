@@ -1,24 +1,18 @@
 package com.harekrishna.otpClasses.domain
 
-import android.util.Log
-import com.harekrishna.otpClasses.data.sources.repos.MessagePreferencesRepository
+import com.harekrishna.otpClasses.data.sources.repos.SettingsPreferencesRepository
 import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
-import com.harekrishna.otpClasses.ui.dashboard.SettingsUiState
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import com.harekrishna.otpClasses.ui.settings.SettingsUiState
 import javax.inject.Inject
 
 // Save all settings
 class SaveSettingsUseCase @Inject constructor(
     private val userPrefRepo : UserPreferencesRepository,
-    private val messagePrefRepo : MessagePreferencesRepository
+    private val settingsPrefRepo : SettingsPreferencesRepository,
 ) {
 
     suspend operator fun invoke( state : SettingsUiState){
         userPrefRepo.saveUserData(state.name, state.phone)
-        Log.d("Save Message", state.welcomeMessage);
-        Log.d("Save Message", state.thanksMessage);
-        messagePrefRepo.saveWelcomeMessage(state.welcomeMessage)
-        messagePrefRepo.saveThanksMessage(state.thanksMessage)
+        settingsPrefRepo.saveThemeMode(state.themeMode)
     }
 }

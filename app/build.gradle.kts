@@ -17,8 +17,8 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 26
         targetSdk = 36
-        versionCode = 11 // version 1.1.9 - Added Attendance Details Screen Reporting
-        versionName = "1.1.9"
+        versionCode = 12 // version 1.1.10 - Add term and condition validation on registration screen on submit..
+        versionName = "1.1.10"
 
         //resValue("string", "version_name", versionName ?: "unknown")
 
@@ -59,7 +59,7 @@ android {
 dependencies {
 
 //    ksp("com.google.devtools.ksp:symbol-processing-api:2.3.4")
-
+    // EXCEL Processing
     implementation("org.apache.poi:poi-ooxml:5.2.3")
 
     // Hilt
@@ -71,12 +71,11 @@ dependencies {
 
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-
-    // Add the dependency for the Firebase Authentication library
-    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")
+    implementation("com.google.firebase:firebase-config")
+    implementation("com.google.firebase:firebase-analytics")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")

@@ -4,13 +4,8 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.core.utils.NetworkChecker
 import com.harekrishna.otpClasses.data.api.ApiService
-import com.harekrishna.otpClasses.data.sources.db.dao.AttendanceDao
-import com.harekrishna.otpClasses.data.sources.db.dao.CallingReportDao
-import com.harekrishna.otpClasses.data.sources.db.dao.Registration
-import com.harekrishna.otpClasses.data.sources.db.dao.StudentDao
 import com.harekrishna.otpClasses.data.models.AttendanceDate
 import com.harekrishna.otpClasses.data.models.AttendancePOJO
 import com.harekrishna.otpClasses.data.models.AttendanceResponse
@@ -18,6 +13,10 @@ import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import com.harekrishna.otpClasses.data.models.RegistrationStatus
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
+import com.harekrishna.otpClasses.data.sources.db.dao.AttendanceDao
+import com.harekrishna.otpClasses.data.sources.db.dao.CallingReportDao
+import com.harekrishna.otpClasses.data.sources.db.dao.Registration
+import com.harekrishna.otpClasses.data.sources.db.dao.StudentDao
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

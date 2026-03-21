@@ -6,7 +6,12 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
+
+enum class ThemeMode {
+    LIGHT,
+    DARK,
+    SYSTEM
+}
 
 // Light Theme Color Scheme
 val OrangeLightColorScheme = lightColorScheme(
@@ -35,11 +40,16 @@ val OrangeDarkColorScheme = darkColorScheme(
 
 @Composable
 fun Otp_class_appTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(), // Use system theme or force dark mode
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
-    // Choose between light and dark color schemes based on the theme
-    val colorScheme = if (darkTheme) {
+    val isDarkTheme = when (themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+
+    val colorScheme = if (isDarkTheme) {
         OrangeDarkColorScheme
     } else {
         OrangeLightColorScheme
@@ -47,24 +57,9 @@ fun Otp_class_appTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // Use your defined typography or the default
+        typography = Typography,
         content = content
     )
 }
 
 
-@Preview(showBackground = true)
-@Composable
-fun LightThemePreview() {
-    Otp_class_appTheme(darkTheme = false) {
-        // Preview light theme
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DarkThemePreview() {
-    Otp_class_appTheme(darkTheme = true) {
-        // Preview dark theme
-    }
-}

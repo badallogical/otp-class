@@ -1,19 +1,28 @@
 package com.harekrishna.otpClasses.domain
 
+import android.util.Log
+import com.harekrishna.otpClasses.data.sources.repos.ConfigRepository
 import com.harekrishna.otpClasses.data.sources.repos.MessagePreferencesRepository
 import com.harekrishna.otpClasses.data.sources.repos.MessageType
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class PrepareWhatsappMessageUseCase @Inject constructor(
-    private val messagePreferencesRepository: MessagePreferencesRepository
+    private val configRepository: ConfigRepository
 ) {
 
     suspend operator fun invoke(
         phoneNumber: String,
         type: MessageType
     ) : String {
-        val msgFromStore = if( type == MessageType.WELCOME ) messagePreferencesRepository.welcomeMessageFlow.first() else messagePreferencesRepository.thanksMessageFlow.first()
+        val rawMessage = if( type == MessageType.WELCOME ) configRepository.getWelcomeMessage() else configRepository.getThanksMessage()
+
+
+
+        Log.d("PrepareWhatsappMessageUseCase", "rawMessage: $rawMessage")
+        // Safety check (VERY IMPORTANT)
+        val message = rawMessage.takeIf { it.isNotBlank() }?.replace("\\n", "\n")
+            ?: return "Message not available. Please try again."
 
         val greeting = "Hello 💐💐💐"
 
@@ -22,7 +31,7 @@ class PrepareWhatsappMessageUseCase @Inject constructor(
         val finalMessage = """
             |$greeting
             
-            |$msgFromStore
+            |$message
             
             |$footer""".trimMargin()
 

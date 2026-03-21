@@ -89,7 +89,7 @@ fun AboutScreen() {
 
             // Copyright Info
             Text(
-                text = "© 2024 IYF. All rights reserved.",
+                text = "© ${stringResource(R.string.year)} IYF. All rights reserved.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.padding(top = 8.dp)

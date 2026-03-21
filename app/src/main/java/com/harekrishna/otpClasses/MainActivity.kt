@@ -3,6 +3,7 @@ package com.harekrishna.otpClasses
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,10 +19,16 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+
+    private val viewModel: ThemeViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
-            Otp_class_appTheme { // Wrap content in AppTheme
+            val themeMode by viewModel.themeMode.collectAsState()
+            Otp_class_appTheme (themeMode = themeMode) { // Wrap content in AppTheme
                 AppStartEntry()
             }
         }

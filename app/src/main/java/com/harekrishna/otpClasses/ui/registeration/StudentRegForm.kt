@@ -10,26 +10,88 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.LocationCity
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Phone
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,7 +116,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.harekrishna.otpClasses.data.sources.repos.MessageType
 import com.harekrishna.otpClasses.sendWhatsappMesssage
@@ -72,6 +133,7 @@ fun StudentFormScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    var isEligible by rememberSaveable { mutableStateOf(false) }
 
     val facilitators = listOf(
         "NA",
@@ -120,10 +182,8 @@ fun StudentFormScreen(
     }
 
     // Fetch existing data if editId is not null
-    LaunchedEffect(editId) {
-        if (editId != null) {
-            viewModel.onFetchStudentByPhone(editId)
-        }
+    LaunchedEffect(Unit) {
+        editId?.let { viewModel.onFetchStudentByPhone(it) }
     }
 
     Scaffold(
@@ -275,7 +335,33 @@ fun StudentFormScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    verticalAlignment = Alignment.Top, // Changed to Top for multi-line text
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable { isEligible = !isEligible } // Makes the whole row toggle the checkbox
+                ) {
+                    Checkbox(
+                        checked = isEligible,
+                        onCheckedChange = { isEligible = it },
+                        modifier = Modifier.padding(top = 2.dp) // Aligns checkbox with the first line of text
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Text(
+                        text = "I confirm that this individual is eligible to register and has completed Class 12 or higher.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 20.sp
+                    )
+
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Enhanced Submit Button
                 AnimatedSubmitButton(
@@ -285,12 +371,24 @@ fun StudentFormScreen(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         val phone = uiState.phone
                         if (!uiState.isSubmitting) {
+
+                            if (!isEligible) {
+                                Toast.makeText(
+                                    context,
+                                    "Only students above Class 12 (graduates) can apply",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@AnimatedSubmitButton
+                            }
+
                             if (!(phone.length == 10 && phone.all { it.isDigit() })) {
                                 Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_SHORT).show()
                                 return@AnimatedSubmitButton
                             }
-                            if (uiState.name.isEmpty() || uiState.name.isBlank()) {
-                                Toast.makeText(context, "Please enter the name", Toast.LENGTH_SHORT).show()
+
+                            val isValid = uiState.name.matches(Regex("^[a-zA-Z ]+$"))
+                            if (uiState.name.isBlank() || !isValid  ) {
+                                Toast.makeText(context, "Please enter a valid name", Toast.LENGTH_SHORT).show()
                                 return@AnimatedSubmitButton
                             }
 

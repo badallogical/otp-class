@@ -8,14 +8,14 @@ import com.google.gson.annotations.SerializedName
 @Entity(tableName = "students")
 data class StudentDTO(
 
+    @ColumnInfo("_name")
+    @SerializedName("Name")
+    val name: String,
+
     @PrimaryKey
     @ColumnInfo("_phone")
     @SerializedName("Phone")
     val phone: String,
-
-    @ColumnInfo("_name")
-    @SerializedName("Name")
-    val name: String,
 
     @ColumnInfo("_facilitator")
     @SerializedName("Facilitator")
