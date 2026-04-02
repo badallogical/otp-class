@@ -12,7 +12,12 @@
           "package_name": "com.harekrishna.otpClasses"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "924469079316-e12t8d1vj1bvsds9c6s3oqil8p28fu9d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBlai_mNS1B5jwtLkPrCCl090r-Shwc8bw"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "924469079316-e12t8d1vj1bvsds9c6s3oqil8p28fu9d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
