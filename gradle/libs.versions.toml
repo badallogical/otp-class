@@ -32,6 +32,8 @@ googleServices="4.4.4"
 kotlin = "2.0.21"
 ksp = "2.0.21-1.0.25"
 agp = "9.0.0"
+appcompat = "1.6.1"
+material = "1.10.0"
 
 [libraries]
 accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanistPager" }
@@ -73,6 +75,8 @@ androidx-media3-common = { group = "androidx.media3", name = "media3-common", ve
 androidx-datastore-preferences = {  module = "androidx.datastore:datastore-preferences" ,version.ref = "datastore"}
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -81,3 +85,4 @@ google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services" , version.ref = "googleServices"}
 dagger-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hiltAndroid" }
+android-library = { id = "com.android.library", version.ref = "agp" }

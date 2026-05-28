@@ -26,6 +26,7 @@ data class AttendanceHistoryUiState(
 data class AttendanceDetailsUiState(
     val attendanceList: List<StudentAttendee> = emptyList(),
     val selectedFilter: String = "All",
+    val selectedSort: String = "None",
     val totalAttendees: Int = 0,
     val totalNew: Int = 0,
     val totalRepeated: Int = 0,

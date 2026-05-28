@@ -176,7 +176,7 @@ fun CallingListScreen(
                     },
                     onMessageIconClicked = { report ->
                         scope.launch {
-                            val message = viewModel.getWhatsAppMessage(report.phone, MessageType.THANKS)
+                            val message = viewModel.getWhatsAppMessage(report.phone, MessageType.WELCOME)
                             context.sendWhatsappMesssage(report.phone, message)
                         }
                     },

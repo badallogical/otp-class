@@ -358,7 +358,7 @@ fun NoClassesDialog() {
 @Composable
 fun QuickRegistrationDialog(uiState: AttendanceUiState, onDismiss: () -> Unit, onRegister: (String, String,Boolean) -> Unit) {
     var name by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf(uiState.searchQuery) }
     var taken by remember { mutableStateOf(true) }
 
     var isPhoneValid by remember { mutableStateOf(true) }

@@ -29,9 +29,13 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
+import com.harekrishna.otpClasses.data.sources.repos.MessageType
+import com.harekrishna.otpClasses.domain.PrepareWhatsappMessageUseCase
+
 @HiltViewModel
 class AttendanceDetailViewModel @Inject constructor(
-    private val attendanceRepository: AttendanceRepository
+    private val attendanceRepository: AttendanceRepository,
+    private val prepareWhatsappMessageUseCase: PrepareWhatsappMessageUseCase
 ) : ViewModel() {
 
     // Attendance Details Ui State
@@ -235,6 +239,16 @@ class AttendanceDetailViewModel @Inject constructor(
         _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
             selectedFilter = filter
         )
+    }
+
+    fun onSort(sort: String = attendanceDetailsUiState.value.selectedSort) {
+        _attendanceDetailUiState.value = _attendanceDetailUiState.value.copy(
+            selectedSort = sort
+        )
+    }
+
+    suspend fun getWhatsAppMessage(phone: String, type: MessageType): String {
+        return prepareWhatsappMessageUseCase(phone, type)
     }
 
     fun onSearchMode( mode : Boolean = true) {

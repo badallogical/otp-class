@@ -22,4 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "otp_class_app"
 include(":app")
- 
+include(":auth")

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "924469079316-b726p1m9docdeib3v4atd7pmmfv5r0eq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.harekrishna.otpClasses",
+            "certificate_hash": "4def1a6e14b4a6b2e61a578ed64e19181c158fbe"
+          }
+        },
+        {
           "client_id": "924469079316-e12t8d1vj1bvsds9c6s3oqil8p28fu9d.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -119,6 +119,10 @@ import com.harekrishna.otpClasses.R
 import com.harekrishna.otpClasses.data.models.StudentAttendee
 import com.harekrishna.otpClasses.ui.theme.AttendanceColors
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import com.harekrishna.otpClasses.sendWhatsappMesssage
+import com.harekrishna.otpClasses.data.sources.repos.MessageType
+import androidx.compose.material.icons.automirrored.filled.Send
 
 @Composable
 fun AttendanceDetailsScreen(
@@ -142,9 +146,9 @@ fun AttendanceDetailsScreen(
     }
 
 
-    val filteredAttendees by remember {
+    val filteredAttendees : List<StudentAttendee> by remember {
         derivedStateOf {
-            if (uiState.isSearchMode) {
+            val filtered = if (uiState.isSearchMode) {
                 uiState.attendanceList.filter { attendee ->
                     attendee.name.contains(uiState.searchText, ignoreCase = true) ||
                             attendee.phone.contains(uiState.searchText, ignoreCase = true) ||
@@ -165,6 +169,12 @@ fun AttendanceDetailsScreen(
                     "Deleted" -> uiState.attendanceList.filter { it.deleted }
                     else -> uiState.attendanceList.filter { !it.deleted }
                 }
+            }
+            
+            when (uiState.selectedSort) {
+                "A-Z" -> filtered.sortedBy { it.name.trim().lowercase() }
+                "Z-A" -> filtered.sortedByDescending { it.name.trim().lowercase() }
+                else -> filtered
             }
         }
     }
@@ -331,11 +341,39 @@ fun AttendanceDetailsScreen(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
 
-                Icon(
-                    painter = painterResource(id = R.drawable.icons8_share2), // Or use Icons.Outlined.ArrowForward
-                    contentDescription = "Forward",
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.size(20.dp).padding(end = 4.dp).clickable {
+                var showSortMenu by remember { mutableStateOf(false) }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box {
+                        Text(
+                            text = "Sort: ${uiState.selectedSort}",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .clickable { showSortMenu = true }
+                                .padding(end = 12.dp)
+                        )
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            listOf("None", "A-Z", "Z-A").forEach { sortOption ->
+                                DropdownMenuItem(
+                                    text = { Text(sortOption) },
+                                    onClick = {
+                                        viewModel.onSort(sortOption)
+                                        showSortMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Icon(
+                        painter = painterResource(id = R.drawable.icons8_share2), // Or use Icons.Outlined.ArrowForward
+                        contentDescription = "Forward",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        modifier = Modifier.size(20.dp).padding(end = 4.dp).clickable {
 
 
                         val message = buildString {
@@ -346,6 +384,7 @@ fun AttendanceDetailsScreen(
                                 append("\n")
                             }
                         }
+
                         val intent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, message)
@@ -353,8 +392,10 @@ fun AttendanceDetailsScreen(
                         context.startActivity(
                             Intent.createChooser(intent, "Share Attendance Report")
                         )
-                    }
-                )
+
+                        }
+                    )
+                }
             }
             // List of attendees
             AnimatedVisibility(
@@ -377,6 +418,12 @@ fun AttendanceDetailsScreen(
                             },
                             onJoinedBackClick = {
                                 viewModel.onReturnBackDialog(attendee)
+                            },
+                            onSendMessageClick = {
+                                scope.launch {
+                                    val message = viewModel.getWhatsAppMessage(attendee.phone, MessageType.THANKS)
+                                    context.sendWhatsappMesssage(attendee.phone, message)
+                                }
                             }
                         )
                     }
@@ -984,7 +1031,8 @@ fun EnhancedAttendeeCard(
     attendee: StudentAttendee,
     onDeleteClick: () -> Unit,
     onMarkLeftClick: () -> Unit,
-    onJoinedBackClick: () -> Unit
+    onJoinedBackClick: () -> Unit,
+    onSendMessageClick: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
 
@@ -1076,7 +1124,59 @@ fun EnhancedAttendeeCard(
                     )
                 }
 
-                // Status indicator
+
+                    // Send Message Button
+                    IconButton(
+                        onClick = onSendMessageClick,
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .size(36.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                shape = CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Send Thanks Message",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Facilitator info
+                InfoBadge(
+                    icon = Icons.Outlined.Badge,
+                    text = attendee.facilitator ?: "Unassigned",
+                    modifier = Modifier.weight(1f),
+                    isHighlighted = attendee.facilitator == null
+                )
+
+                // Registration date
+                InfoBadge(
+                    icon = Icons.Outlined.CalendarToday,
+                    text = attendee.regDate,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Action buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
                 if (attendee.isNew) {
                     AssistChip(
                         onClick = { },
@@ -1118,37 +1218,9 @@ fun EnhancedAttendeeCard(
                         border = null
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Facilitator info
-                InfoBadge(
-                    icon = Icons.Outlined.Badge,
-                    text = attendee.facilitator ?: "Unassigned",
-                    modifier = Modifier.weight(1f),
-                    isHighlighted = attendee.facilitator == null
-                )
-
-                // Registration date
-                InfoBadge(
-                    icon = Icons.Outlined.CalendarToday,
-                    text = attendee.regDate,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
                 // Mark as Left button (only show if not already left)
                 if (!attendee.hasLeft) {
                     OutlinedButton(
