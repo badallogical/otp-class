@@ -17,8 +17,8 @@ android {
         applicationId = "com.harekrishna.otpClasses"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12 // version 1.1.10 - Add term and condition validation on registration screen on submit..
-        versionName = "1.1.10"
+        versionCode = 13 // version 1.1.11 - Added Events Harinaam
+        versionName = "1.1.11"
 
         //resValue("string", "version_name", versionName ?: "unknown")
 

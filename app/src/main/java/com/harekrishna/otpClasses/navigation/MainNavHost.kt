@@ -12,6 +12,10 @@ import com.harekrishna.otpClasses.ui.attendance.AttendanceHistoryScreen
 import com.harekrishna.otpClasses.ui.dashboard.DashboardScreen
 import com.harekrishna.otpClasses.ui.settings.SettingsScreen
 import com.harekrishna.otpClasses.ui.dashboard.WelcomeScreen
+import com.harekrishna.otpClasses.ui.events.EventsScreen
+import com.harekrishna.otpClasses.ui.events.HarinaamFormScreen
+import com.harekrishna.otpClasses.ui.events.HarinaamListScreen
+import com.harekrishna.otpClasses.ui.events.HarinaamRegistrationDetailsScreen
 import com.harekrishna.otpClasses.ui.followup.FollowUpScreen
 import com.harekrishna.otpClasses.ui.registeration.CallingListScreen
 import com.harekrishna.otpClasses.ui.registeration.RegistrationScreen
@@ -35,7 +39,9 @@ fun MainNavHost(
         composable("about") { AboutScreen() }
         composable("welcome") { WelcomeScreen(navController) }
         composable("registration") { RegistrationScreen(navController) }
-
+        composable("events") { EventsScreen(navController) }
+        composable("harinaam_list") { HarinaamListScreen(navController) }
+        composable("harinaam_form") { HarinaamFormScreen(navController) }
 
 
         composable("form") { StudentFormScreen(null) }
@@ -44,6 +50,9 @@ fun MainNavHost(
         }
         composable("calling_screen/{date}") {
             CallingListScreen(it.arguments?.getString("date") ?: "", navController)
+        }
+        composable("harinaam_details/{date}") {
+            HarinaamRegistrationDetailsScreen(it.arguments?.getString("date") ?: "")
         }
 
         composable("attendance") { AttendanceScreen(navController) }

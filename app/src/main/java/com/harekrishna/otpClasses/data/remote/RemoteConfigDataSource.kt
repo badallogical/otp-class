@@ -1,6 +1,7 @@
 package com.harekrishna.otpClasses.data.remote
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.harekrishna.otpClasses.data.sources.keys.MessageKeys
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -22,5 +23,13 @@ class RemoteConfigDataSource @Inject constructor(
 
     fun getThanksMessage(): String {
         return remoteConfig.getString("thanks_message")
+    }
+
+    fun getCongregationWelcomeMessage(): String {
+        return remoteConfig.getString(MessageKeys.CONGREGATION_WELCOME_KEY.name)
+    }
+
+    fun getCongregationThanksMessage(): String {
+        return remoteConfig.getString( MessageKeys.CONGREGATION_THANKS_KEY.name)
     }
 }

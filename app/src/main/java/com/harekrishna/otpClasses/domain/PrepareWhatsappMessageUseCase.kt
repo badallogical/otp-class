@@ -15,8 +15,13 @@ class PrepareWhatsappMessageUseCase @Inject constructor(
         phoneNumber: String,
         type: MessageType
     ) : String {
-        val rawMessage = if( type == MessageType.WELCOME ) configRepository.getWelcomeMessage() else configRepository.getThanksMessage()
 
+        val rawMessage = when (type) {
+            MessageType.WELCOME -> configRepository.getWelcomeMessage()
+            MessageType.THANKS -> configRepository.getThanksMessage()
+            MessageType.CONGREGATION_WELCOME -> configRepository.getCongregationWelcomeMessage()
+            MessageType.CONGREGATION_THANKS -> configRepository.getCongregationThanksMessage()
+        }
 
 
         Log.d("PrepareWhatsappMessageUseCase", "rawMessage: $rawMessage")

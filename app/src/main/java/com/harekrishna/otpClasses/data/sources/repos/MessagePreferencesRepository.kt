@@ -11,7 +11,9 @@ import javax.inject.Inject
 
 enum class MessageType {
     WELCOME,
-    THANKS
+    THANKS,
+    CONGREGATION_WELCOME,
+    CONGREGATION_THANKS
 }
 
 class MessagePreferencesRepository @Inject constructor(
@@ -26,6 +28,26 @@ class MessagePreferencesRepository @Inject constructor(
         // WAIT until DataStore emits the new value
         context.dataStore.data
             .map { it[MessageKeys.WELCOME_MESSAGE_KEY] }
+            .first { it == message.trimIndent().trim() }
+    }
+
+    suspend fun saveCongregationWelcome(message : String){
+        context.dataStore.edit { preferences ->
+            preferences[MessageKeys.CONGREGATION_WELCOME_KEY] = message.trimIndent().trim()
+        }
+
+        context.dataStore.data
+            .map { it[MessageKeys.CONGREGATION_WELCOME_KEY] }
+            .first { it == message.trimIndent().trim() }
+    }
+
+    suspend fun saveCongregationThanksMessage(message : String){
+        context.dataStore.edit { preferences ->
+            preferences[MessageKeys.CONGREGATION_THANKS_KEY] = message.trimIndent().trim()
+        }
+
+        context.dataStore.data
+            .map { it[MessageKeys.CONGREGATION_WELCOME_KEY]}
             .first { it == message.trimIndent().trim() }
     }
 
@@ -45,5 +67,10 @@ class MessagePreferencesRepository @Inject constructor(
     val thanksMessageFlow = context.dataStore.data
         .map { it[MessageKeys.THANKS_MESSAGE_KEY] ?: "" }
 
+    val congregationWelcomeMessageFlow = context.dataStore.data
+        .map { it[MessageKeys.CONGREGATION_WELCOME_KEY] ?: "" }
+
+    val congregationThankMessageFlow = context.dataStore.data
+        .map { it[MessageKeys.CONGREGATION_WELCOME_KEY] ?: "" }
 
 }

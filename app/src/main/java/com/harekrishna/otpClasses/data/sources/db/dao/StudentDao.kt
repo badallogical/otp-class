@@ -78,6 +78,9 @@ interface StudentDao {
     @Query("SELECT _name AS name, _phone AS phone FROM students WHERE date = :date ORDER BY date DESC")
     fun getRegistrations(date: String): Flow<List<Registration>>
 
+    @Query("SELECT * FROM students WHERE date = :date")
+    fun getStudentsByDate(date: String): List<StudentDTO>
+
     @Query("SELECT * FROM students WHERE date = :date AND _by = :by")
     fun getFullRegistrationsByDate(date: String, by: String): Flow<List<StudentDTO>>
 
@@ -93,4 +96,3 @@ data class Registration(
     val name: String,
     val phone: String,
 )
-

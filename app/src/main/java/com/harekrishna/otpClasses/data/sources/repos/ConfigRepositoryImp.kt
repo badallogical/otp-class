@@ -6,6 +6,8 @@ interface ConfigRepository {
     suspend fun fetchConfig(): Boolean
     fun getWelcomeMessage(): String
     fun getThanksMessage(): String
+    fun getCongregationWelcomeMessage(): String
+    fun getCongregationThanksMessage(): String
 }
 
 class ConfigRepositoryImpl(
@@ -22,6 +24,14 @@ class ConfigRepositoryImpl(
 
     override fun getThanksMessage(): String {
         return dataSource.getThanksMessage()
+    }
+
+    override fun getCongregationWelcomeMessage(): String {
+        return dataSource.getCongregationWelcomeMessage()
+    }
+
+    override fun getCongregationThanksMessage(): String {
+        return dataSource.getCongregationThanksMessage()
     }
 
 }

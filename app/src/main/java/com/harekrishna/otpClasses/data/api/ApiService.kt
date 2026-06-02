@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken
 import com.harekrishna.otpClasses.data.models.AttendanceDTO
 import com.harekrishna.otpClasses.data.models.AttendanceData
 import com.harekrishna.otpClasses.data.models.ReportDTO
+import com.harekrishna.otpClasses.data.models.SangkirtanStudentDTO
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
 import com.harekrishna.otpClasses.data.models.UserAttendance
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit
 
 object ApiService {
     private const val BASE_URL = "https://script.google.com/macros/s/AKfycbxYWKL_e_AlYY3DlwPjlfJpTAzH8h8euNgXcjYq3NvCHV80XFUG5ofgoqAnOSCZssMW/exec"
+//        "https://script.google.com/macros/s/AKfycbxYWKL_e_AlYY3DlwPjlfJpTAzH8h8euNgXcjYq3NvCHV80XFUG5ofgoqAnOSCZssMW/exec"
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -48,6 +50,36 @@ object ApiService {
                     put("address", student.address)
                     put("date", student.date)
                     put("by",student.byDev)
+                })
+            }
+
+            val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+            val body = jsonObject.toString().toRequestBody(mediaType)
+
+            val request = Request.Builder()
+                .url(BASE_URL)
+                .post(body)
+                .build()
+
+            val response = client.newCall(request).execute()
+            return@withContext response
+        }
+    }
+
+    suspend fun registerSangkirtanStudent(sangkirtanStudent: SangkirtanStudentDTO, updated : Boolean = false ): Response {
+        return withContext(Dispatchers.IO) {
+            val jsonObject = JSONObject().apply {
+                put("type", "registerHarinaamStudent")
+                put("updated", updated)// Add the request type
+                put("student", JSONObject().apply {
+                    put("name", sangkirtanStudent.name)
+                    put("phone", sangkirtanStudent.phone)
+                    put("category", sangkirtanStudent.category)
+                    put("location", sangkirtanStudent.location)
+                    put("date", sangkirtanStudent.date)
+                    put("by", sangkirtanStudent.byDev)
+                    put("date", sangkirtanStudent.date)
+                    put("by",sangkirtanStudent.byDev)
                 })
             }
 
@@ -91,6 +123,37 @@ object ApiService {
             } catch (e: Exception) {
                 Log.e("ApiService", "GET request failed: ${e.message}")
                 emptyList<StudentDTO>()
+            }
+        }
+    }
+
+    suspend fun getSangkirtanStudents(): List<SangkirtanStudentDTO> {
+        return withContext(Dispatchers.IO) {
+
+            try {
+                val url = "$BASE_URL?getHarinaam=${true}"
+                val request = Request.Builder()
+                    .url(url)
+                    .get()
+                    .build()
+
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    response.body?.let { responseBody ->
+                        val jsonString = responseBody.string()
+                        Log.d("ApiService Josn","Json String :" + jsonString)
+                        val studentListType = object : TypeToken<List<SangkirtanStudentDTO>>() {}.type
+                        val studentList: List<SangkirtanStudentDTO> = Gson().fromJson(jsonString, studentListType) ?: emptyList()
+                        Log.d("ApiService", studentList.toString())
+                        studentList
+                    }?: emptyList<SangkirtanStudentDTO>()
+                } else {
+                    Log.e("ApiService", "GET request failed with code: ${response.code}")
+                    emptyList<SangkirtanStudentDTO>()
+                }
+            } catch (e: Exception) {
+                Log.e("ApiService", "GET request failed: ${e.message}")
+                emptyList<SangkirtanStudentDTO>()
             }
         }
     }
