@@ -34,7 +34,8 @@ fun AboutScreen() {
             TopAppBar(
                 title = { Text("About") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.primary, // Background color from the theme
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary // Title text color from the theme
                 )
             )
         }

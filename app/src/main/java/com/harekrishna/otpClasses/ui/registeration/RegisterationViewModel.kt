@@ -24,8 +24,6 @@ data class RegistrationListUiState(
     val registrations: List<RegistrationStatus> = emptyList(),
     val isSyncing: Boolean = false,
     val isLoading: Boolean = false,
-
-    // Add new selection-related states
     val selectedRegistrations: Set<String> = emptySet(), // Store selected dates numbers
     val isInSelectionMode: Boolean = false,
     val showDeleteDialog: Boolean = false,
@@ -45,7 +43,6 @@ class RegistrationViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             getRegistration()  // This will now manage the loading state internally
-
             Log.d(TAG, "ViewModel Init Registration called")
         }
     }
@@ -190,7 +187,6 @@ class RegistrationViewModel @Inject constructor(
     }
 
 
-    // TODO:
     fun deleteSelectedRegistrations() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDeleting = true)

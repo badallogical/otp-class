@@ -4,13 +4,14 @@ import android.content.Context
 import com.harekrishna.otpClasses.data.sources.db.StudentDatabase
 import com.harekrishna.otpClasses.data.sources.db.dao.AttendanceDao
 import com.harekrishna.otpClasses.data.sources.db.dao.CallingReportDao
+import com.harekrishna.otpClasses.data.sources.db.dao.SangkirtanStudentDao
 import com.harekrishna.otpClasses.data.sources.db.dao.StudentDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import jakarta.inject.Singleton
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -37,6 +38,8 @@ object DatabaseModule{
         return database.getAttendanceResponseDao()
     }
 
-
-
+    @Provides
+    fun provideSangkirtanStudentDao( database : StudentDatabase) : SangkirtanStudentDao {
+        return database.getSangkirtanStudentDao()
+    }
 }

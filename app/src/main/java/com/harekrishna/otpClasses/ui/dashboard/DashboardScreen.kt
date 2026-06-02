@@ -1,7 +1,5 @@
 package com.harekrishna.otpClasses.ui.dashboard
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -155,10 +153,10 @@ fun DashboardContent(navController: NavController){
                     onClick = { navController.navigate("attendance") }
                 )
                 DashboardOption(
-                    icon = painterResource(R.drawable.outline_report_24),
-                    title = "Follow Up",
-                    subtitle = "Monitor and Track students",
-                    onClick = { navController.navigate("followup") }
+                    icon = painterResource(R.drawable.event),
+                    title = "Events",
+                    subtitle = "Customised Special Occasion",
+                    onClick = { navController.navigate("events") }
                 )
             }
             Spacer(modifier = Modifier.weight(1f)) // Adjust the space between top and bottom content
@@ -299,5 +297,3 @@ fun DashboardPreview() {
 
     }
 }
-
-
