@@ -10,6 +10,7 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.harekrishna.otpClasses.data.api.FirestoreService
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.sources.repos.AttendancePreferencesRepository
 import com.harekrishna.otpClasses.data.sources.repos.MessageType
@@ -60,7 +61,8 @@ class StudentFormViewModel @Inject constructor(
     private val studentRepository: StudentRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val attendancePreferencesRepository: AttendancePreferencesRepository,
-    private val prepareWhatsappMessageUseCase: PrepareWhatsappMessageUseCase
+    private val prepareWhatsappMessageUseCase: PrepareWhatsappMessageUseCase,
+    private val firestoreService: FirestoreService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StudentFormUiState())
@@ -116,15 +118,16 @@ class StudentFormViewModel @Inject constructor(
                     current.copy(isSubmitting = false, isSuccessfull = true)
                 }
 
-                // Now, perform the remote sync operation in a separate thread without blocking the UI
-                // We don't wait for the result of the remote sync before proceeding
+                // Remote sync (API and Firestore)
                 launch(Dispatchers.IO) {
                     try {
-                        // Simulate the remote request (for example, syncing to a remote server)
+                        // API Sync
                         studentRepository.syncStudent(student,updated)
                         studentRepository.updateStudentToSynced(student.phone)
+                        
+                        // Firestore Sync
+                        firestoreService.registerStudent(student)
                     } catch (e: Exception) {
-                        // Log or handle any errors related to remote sync
                         Log.e("RemoteSync", "Failed to sync student to remote", e)
                     }
                 }
@@ -316,6 +319,7 @@ class StudentFormViewModel @Inject constructor(
         viewModelScope.launch {
             withContext(Dispatchers.IO){
                 studentRepository.updateStudent(student)
+                firestoreService.updateStudent(student)
                 Log.d("registration","Updated")
             }
 
@@ -384,8 +388,5 @@ class StudentFormViewModel @Inject constructor(
     ) : String {
 
         return prepareWhatsappMessageUseCase(phoneNumber, MessageType.WELCOME)
-
     }
-
-
 }

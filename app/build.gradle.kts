@@ -76,6 +76,7 @@ dependencies {
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-config")
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-firestore")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
