@@ -14,8 +14,8 @@ import com.harekrishna.otpClasses.ui.settings.SettingsScreen
 import com.harekrishna.otpClasses.ui.dashboard.WelcomeScreen
 import com.harekrishna.otpClasses.ui.events.EventsScreen
 import com.harekrishna.otpClasses.ui.events.HarinaamFormScreen
-import com.harekrishna.otpClasses.ui.events.HarinaamListScreen
 import com.harekrishna.otpClasses.ui.events.HarinaamRegistrationDetailsScreen
+import com.harekrishna.otpClasses.ui.events.HarinaanApp
 import com.harekrishna.otpClasses.ui.followup.FollowUpScreen
 import com.harekrishna.otpClasses.ui.registeration.CallingListScreen
 import com.harekrishna.otpClasses.ui.registeration.RegistrationScreen
@@ -40,7 +40,7 @@ fun MainNavHost(
         composable("welcome") { WelcomeScreen(navController) }
         composable("registration") { RegistrationScreen(navController) }
         composable("events") { EventsScreen(navController) }
-        composable("harinaam_list") { HarinaamListScreen(navController) }
+        composable("harinaam_list") { HarinaanApp() }
         composable("harinaam_form") { HarinaamFormScreen(navController) }
 
 

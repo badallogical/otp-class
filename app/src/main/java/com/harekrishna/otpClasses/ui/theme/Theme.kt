@@ -1,6 +1,7 @@
 package com.harekrishna.otpClasses.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.Colors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -12,10 +13,10 @@ enum class ThemeMode {
     DARK,
     SYSTEM
 }
-
+val primary = Color(0xFFFF5722)
 // Light Theme Color Scheme
 val OrangeLightColorScheme = lightColorScheme(
-    primary = Color(0xFFFF5722), // Bright orange
+    primary = Saffron, // Bright orange
     onPrimary = Color.White, // Text on primary color should be white
     secondary = Color(0xFFFFAB91),
     onSecondary = Color.Black, // Text on secondary color should be black
@@ -27,7 +28,7 @@ val OrangeLightColorScheme = lightColorScheme(
 
 // Dark Theme Color Scheme
 val OrangeDarkColorScheme = darkColorScheme(
-    primary = Color(0xFFFF5722), // Bright orange
+    primary = Saffron, // Bright orange
     onPrimary = Color.White, // Text on primary color should be white
     secondary = Color(0xFFFFAB91),
     onSecondary = Color.White, // Text on secondary should be white for contrast
@@ -35,7 +36,6 @@ val OrangeDarkColorScheme = darkColorScheme(
     onBackground = Color.White, // Text on dark background should be white
     surface = Color(0xFF1E1E1E), // Dark surface color
     onSurface = Color.White, // Text on dark surface should be white
-
 )
 
 @Composable
