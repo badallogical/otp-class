@@ -14,28 +14,39 @@ enum class ThemeMode {
     SYSTEM
 }
 val primary = Color(0xFFFF5722)
+
 // Light Theme Color Scheme
 val OrangeLightColorScheme = lightColorScheme(
-    primary = Saffron, // Bright orange
-    onPrimary = Color.White, // Text on primary color should be white
-    secondary = Color(0xFFFFAB91),
-    onSecondary = Color.Black, // Text on secondary color should be black
-    background = Color(0xFFF5F5F5), // Light background color
-    onBackground = Color.Black, // Text on light background should be black
-    surface = Color.White, // White surface color
-    onSurface = Color.Black, // Text on white surface should be black
+    primary = Saffron,
+    onPrimary = Color.White,
+    secondary = SaffronLight,
+    onSecondary = SaffronDark,
+    tertiary = GreenSuccess,
+    onTertiary = Color.White,
+    background = SurfaceWhite,       // Using your custom warm white
+    onBackground = TextPrimary,      // Using your custom dark text
+    surface = CardBg, // Your CardBg map perfectly to surface
+    onSurface = TextPrimary,         // Main text on cards
+    surfaceTint = GreenLight,
+    surfaceVariant = SaffronLight,   // Nice subtle tint for alternate containers
+    onSurfaceVariant = TextSecondary // Muted text for subtitles
 )
 
 // Dark Theme Color Scheme
 val OrangeDarkColorScheme = darkColorScheme(
-    primary = Saffron, // Bright orange
-    onPrimary = Color.White, // Text on primary color should be white
-    secondary = Color(0xFFFFAB91),
-    onSecondary = Color.White, // Text on secondary should be white for contrast
-    background = Color(0xFF121212), // Very dark background
-    onBackground = Color.White, // Text on dark background should be white
-    surface = Color(0xFF1E1E1E), // Dark surface color
-    onSurface = Color.White, // Text on dark surface should be white
+    primary = Saffron,
+    onPrimary = Color.White,
+    secondary = SaffronLight,
+    onSecondary = SaffronDark,
+    tertiary = GreenSuccess,
+    onTertiary = Color.White,
+    background = Color(0xFF121212),
+    onBackground = Color.White,
+    surface = Color(0xFF1E1E1E),     // Darker grey for dark mode cards
+    onSurface = Color.White,
+    surfaceTint = GreenLight,
+    surfaceVariant = Color(0xFF2A2A2A),
+    onSurfaceVariant = Color(0xFFC1BFBF) // Muted grey for dark mode subtitles
 )
 
 @Composable

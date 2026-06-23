@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -323,13 +324,12 @@ fun EventListScreen(
 fun OverviewBanner(events: List<HarinaanEvent>) {
     Box(
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(listOf(Saffron, SaffronDark))).padding(18.dp)
+            .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))).padding(18.dp)
     ) {
         Column {
             Text("Overview", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
             Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
-                BannerStat("${events.size}", "Events")
+            Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
                 BannerStat("${events.sumOf { it.registrations.size }}", "Students")
                 BannerStat("${events.sumOf { it.attendance.size }}", "Devotees")
             }
@@ -350,16 +350,16 @@ fun EventCard(event: HarinaanEvent, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+        colors = CardDefaults.cardColors( MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
+        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top ) {
             // Icon box
             Box(
-                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(SaffronLight),
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.MusicNote, null, tint = Saffron, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.MusicNote, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -383,9 +383,9 @@ fun EventCard(event: HarinaanEvent, onClick: () -> Unit) {
 @Composable
 fun StatusBadge(isUpcoming: Boolean) {
     val (text, fg, bg) = if (isUpcoming)
-        Triple("Upcoming", MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+        Triple("Upcoming", GreenSuccess, GreenLight)
     else
-        Triple("Done", GreenSuccess, GreenLight)
+        Triple("Done", MaterialTheme.colorScheme.onSecondary, MaterialTheme.colorScheme.secondary)
 
     Surface(shape = RoundedCornerShape(6.dp), color = bg) {
         Text(text, fontSize = 10.sp, color = fg, fontWeight = FontWeight.SemiBold,
@@ -644,21 +644,53 @@ fun TimePickerDialogWrapper(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormField(label: String, value: String, onChange: (String) -> Unit, hint: String, icon: ImageVector) {
+fun FormField(
+    label: String,
+    value: String,
+    onChange: (String) -> Unit,
+    hint: String,
+    icon: ImageVector,
+    colorAccent : Color = MaterialTheme.colorScheme.primary
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        singleLine = true,
+        label = { Text(label, color = colorAccent) },
+        placeholder = {
+            Text(
+                text = hint,
+                fontSize = 13.sp,
+                // Using onSurfaceVariant is standard for hints/placeholders
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colorAccent,
+                modifier = Modifier.size(18.dp)
+            )
+        },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(11.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            // Handle ALL text states here cleanly
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
 
-        OutlinedTextField(
-            value = value, onValueChange = onChange, singleLine = true,
-            label = { Text(label) },
-            placeholder = { Text(hint, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)) },
-            leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(11.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = DividerColor,
-                focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface
-            ),
-            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, color = MaterialTheme.colorScheme.onPrimary)
-        )
+            // Border colors
+            focusedBorderColor = colorAccent,
+            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+
+            // Background container colors
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+        ),
+        // REMOVED color from here so the colors block above can do its job
+        textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+    )
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -683,19 +715,19 @@ fun EventDetailScreen(
                 title = {
                     Column {
                         Text(live.title, fontWeight = FontWeight.Bold, fontSize = 16.sp,
-                            color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text("${live.date}  •  ${live.time}", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                            color = MaterialTheme.colorScheme.onPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("${live.date}  •  ${live.time}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, null, tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Saffron)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
             )
         },
-        containerColor = SurfaceWhite
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
@@ -707,12 +739,12 @@ fun EventDetailScreen(
                     // Location pill
                     Row(
                         modifier = Modifier.clip(RoundedCornerShape(9.dp))
-                            .background(SaffronLight).padding(horizontal = 12.dp, vertical = 8.dp),
+                            .background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 12.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.LocationOn, null, tint = Saffron, modifier = Modifier.size(14.dp))
-                        Text(live.location, fontSize = 13.sp, color = SaffronDark, fontWeight = FontWeight.Medium,
+                        Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                        Text(live.location, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium,
                             modifier = Modifier.weight(1f))
                         StatusBadge(live.isUpcoming)
                     }
@@ -725,8 +757,8 @@ fun EventDetailScreen(
                             icon = Icons.Default.School,
                             value = "${live.registrations.size}",
                             label = "Students\nRegistered",
-                            accentColor = Saffron,
-                            bgColor = SaffronLight
+                            accentColor = MaterialTheme.colorScheme.primary,
+                            bgColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                         // Devotees who attended Harinaam (green)
                         DetailStatCard(
@@ -734,8 +766,8 @@ fun EventDetailScreen(
                             icon = Icons.Default.Groups,
                             value = "${live.attendance.size}",
                             label = "Devotees\nin Harinaam",
-                            accentColor = GreenSuccess,
-                            bgColor = GreenLight
+                            accentColor = MaterialTheme.colorScheme.tertiary,
+                            bgColor = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.5f)
                         )
                     }
 
@@ -746,7 +778,7 @@ fun EventDetailScreen(
                             onClick = { showRegisterSheet = true },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(11.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Saffron)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(5.dp))
@@ -757,7 +789,7 @@ fun EventDetailScreen(
                             onClick = onTakeAttendance,
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(11.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = GreenSuccess)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
                         ) {
                             Icon(Icons.Default.HowToReg, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(5.dp))
@@ -769,25 +801,35 @@ fun EventDetailScreen(
                 HorizontalDivider(color = DividerColor)
 
                 // ── Tabs ─────────────────────────────────────────────
+                val tabs = listOf(
+                    "Students (${live.registrations.size})",
+                    "Harinaam (${live.attendance.size})"
+                )
                 TabRow(
-                    selectedTabIndex = tab, containerColor = CardBg, contentColor = Saffron,
-                    indicator = { pos ->
-                        TabRowDefaults.Indicator(
-                            Modifier.tabIndicatorOffset(pos[tab]).padding(horizontal = 20.dp),
-                            color = Saffron, height = 3.dp
+                    selectedTabIndex = tab,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[tab]),
+                            height = 3.dp,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 ) {
-                    listOf(
-                        "Students (${live.registrations.size})",
-                        "Harinaam (${live.attendance.size})"
-                    ).forEachIndexed { i, label ->
-                        Tab(selected = tab == i, onClick = { tab = i }, text = {
-                            Text(label,
-                                fontWeight = if (tab == i) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (tab == i) Saffron else TextSecondary,
-                                fontSize = 13.sp)
-                        })
+                    tabs.forEachIndexed { i, label ->
+                        Tab(
+                            selected = tab == i,
+                            onClick = { tab = i },
+                            text = {
+                                Text(
+                                    label,
+                                    fontWeight = if (tab == i) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (tab == i) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        )
                     }
                 }
             }
@@ -844,7 +886,7 @@ fun DetailStatCard(modifier: Modifier, icon: ImageVector, value: String, label: 
             }
             Spacer(Modifier.height(8.dp))
             Text(value, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = accentColor)
-            Text(label, fontSize = 11.sp, color = TextSecondary, lineHeight = 15.sp)
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 15.sp)
         }
     }
 }
@@ -867,18 +909,16 @@ fun StudentRow(student: RegisteredStudent, index: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(SaffronLight),
+        Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center) {
-            Text(student.name.first().toString(), fontWeight = FontWeight.Bold, color = Saffron, fontSize = 16.sp)
+            Text(student.name.first().toString(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(student.name, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onPrimary)
-            Text(student.phone, fontSize = 12.sp, color = TextSecondary)
+            Text(student.name, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(student.phone, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text("#$index", fontSize = 11.sp, color = TextSecondary)
-            if (student.registeredOn.isNotEmpty())
-                Text(student.registeredOn, fontSize = 10.sp, color = TextSecondary.copy(alpha = 0.7f))
+            Text("#$index", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -921,19 +961,19 @@ fun RegisterStudentSheet(eventId: String, viewModel: HarinaanViewModel, onDismis
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = CardBg,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 36.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(SaffronLight),
+                Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondary),
                     contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.PersonAdd, null, tint = Saffron, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.PersonAdd, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
                 Spacer(Modifier.width(10.dp))
                 Column {
-                    Text("Register Student", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
-                    Text("Add student to this event", fontSize = 12.sp, color = TextSecondary)
+                    Text("Register Student", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Add student to this event", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Spacer(Modifier.height(18.dp))
@@ -951,7 +991,7 @@ fun RegisterStudentSheet(eventId: String, viewModel: HarinaanViewModel, onDismis
                 enabled = name.isNotBlank() && phone.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Saffron)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -1006,20 +1046,20 @@ fun TakeAttendanceScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Harinaam Attendance", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White)
-                        Text(live.title, fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f),
+                        Text("Harinaam Attendance", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = MaterialTheme.colorScheme.onPrimary)
+                        Text(live.title, fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                             maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, null, tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = GreenSuccess)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.tertiary)
             )
         },
-        containerColor = SurfaceWhite
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             LazyColumn(
@@ -1029,18 +1069,18 @@ fun TakeAttendanceScreen(
 
                 // ── Header: devotee count ──────────────────────────────
                 item {
-                    Column(modifier = Modifier.background(GreenSuccess).padding(horizontal = 16.dp, vertical = 14.dp)) {
+                    Column(modifier = Modifier.background(MaterialTheme.colorScheme.tertiary).padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Devotees in Harinaam", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
-                                Text("${live.attendance.size}", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                                Text("Devotees in Harinaam", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f), fontSize = 12.sp)
+                                Text("${live.attendance.size}", color = MaterialTheme.colorScheme.onPrimary, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                             }
-                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(alpha = 0.2f)) {
+                            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.2f)) {
                                 Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Groups, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                    Text("${live.date}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                    Icon(Icons.Default.Groups, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
+                                    Text("${live.date}", color = MaterialTheme.colorScheme.onPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                 }
                             }
                         }
@@ -1049,21 +1089,21 @@ fun TakeAttendanceScreen(
 
                 // ── Search box ────────────────────────────────────────
                 item {
-                    Column(modifier = Modifier.background(CardBg)
+                    Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)
                         .padding(horizontal = 16.dp, vertical = 12.dp)) {
 
                         Text("Mark Attendance", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(bottom = 10.dp))
+                            color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 10.dp))
 
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("Search devotee by name or phone…", fontSize = 13.sp, color = TextSecondary.copy(alpha = 0.6f)) },
-                            leadingIcon = { Icon(Icons.Default.Search, null, tint = GreenSuccess, modifier = Modifier.size(20.dp)) },
+                            placeholder = { Text("Search devotee by name or phone…", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) },
+                            leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp)) },
                             trailingIcon = {
                                 if (searchQuery.isNotEmpty()) {
                                     IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Default.Close, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                                     }
                                 }
                             },
@@ -1071,10 +1111,10 @@ fun TakeAttendanceScreen(
                             shape = RoundedCornerShape(12.dp),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenSuccess, unfocusedBorderColor = DividerColor,
-                                focusedContainerColor = SurfaceWhite, unfocusedContainerColor = SurfaceWhite
+                                focusedBorderColor = MaterialTheme.colorScheme.tertiary, unfocusedBorderColor = DividerColor,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface
                             ),
-                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, color = MaterialTheme.colorScheme.onPrimary)
+                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                         )
 
                         // Search results
@@ -1084,22 +1124,22 @@ fun TakeAttendanceScreen(
                                 // No match — offer to add new
                                 Row(
                                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp))
-                                        .background(SurfaceWhite)
+                                        .background(MaterialTheme.colorScheme.surface)
                                         .border(1.dp, DividerColor, RoundedCornerShape(11.dp))
                                         .padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    Icon(Icons.Default.PersonSearch, null, tint = TextSecondary, modifier = Modifier.size(22.dp))
+                                    Icon(Icons.Default.PersonSearch, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("No match found for ${searchQuery}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Medium)
-                                        Text("Add as new devotee", fontSize = 12.sp, color = TextSecondary)
+                                        Text("No match found for ${searchQuery}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
+                                        Text("Add as new devotee", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     Button(
                                         onClick = { showAddNewSheet = true },
                                         shape = RoundedCornerShape(9.dp),
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = GreenSuccess)
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
                                     ) {
                                         Icon(Icons.Default.Add, null, modifier = Modifier.size(14.dp))
                                         Spacer(Modifier.width(4.dp))
@@ -1110,8 +1150,8 @@ fun TakeAttendanceScreen(
                                 // Show search matches
                                 Column(
                                     modifier = Modifier.clip(RoundedCornerShape(11.dp))
-                                        .border(1.dp, DividerColor, RoundedCornerShape(11.dp))
-                                        .background(CardBg)
+                                        .border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(11.dp))
+                                        .background(MaterialTheme.colorScheme.surface)
                                 ) {
                                     searchResults.forEachIndexed { i, devotee ->
                                         SearchResultRow(devotee,
@@ -1122,7 +1162,7 @@ fun TakeAttendanceScreen(
                                             }
                                         )
                                         if (i < searchResults.size - 1)
-                                            HorizontalDivider(color = DividerColor, thickness = 0.8.dp)
+                                            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant, thickness = 0.8.dp)
                                     }
                                 }
                             }
@@ -1135,8 +1175,8 @@ fun TakeAttendanceScreen(
                             onClick = { showAddNewSheet = true },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(11.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = GreenSuccess),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, GreenSuccess)
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.tertiary),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.tertiary)
                         ) {
                             Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
@@ -1154,9 +1194,9 @@ fun TakeAttendanceScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(Icons.Default.CheckCircle, null, tint = GreenSuccess, modifier = Modifier.size(15.dp))
+                            Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(15.dp))
                             Text("Marked Present (${live.attendance.size})", fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onPrimary)
+                                fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -1173,7 +1213,7 @@ fun TakeAttendanceScreen(
                             onUnmark = { viewModel.removeAttendance(live.id, devotee.id) }
                         )
                         if (i < live.attendance.size - 1)
-                            HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = DividerColor, thickness = 0.8.dp)
+                            HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, thickness = 0.8.dp)
                     }
                 }
             }
@@ -1183,12 +1223,12 @@ fun TakeAttendanceScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                     Box(
                         modifier = Modifier.padding(bottom = 16.dp).padding(horizontal = 24.dp)
-                            .clip(RoundedCornerShape(12.dp)).background(Color(0xFF1B5E20))
+                            .clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceTint)
                             .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            Text(msg, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(18.dp))
+                            Text(msg, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -1217,19 +1257,19 @@ fun SearchResultRow(devotee: HarinaanDevotee, onMark: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(GreenLight),
+        Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceTint),
             contentAlignment = Alignment.Center) {
-            Text(devotee.name.first().toString(), fontWeight = FontWeight.Bold, color = GreenSuccess, fontSize = 15.sp)
+            Text(devotee.name.first().toString(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary, fontSize = 15.sp)
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(devotee.name, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimary)
-            Text(devotee.phone, fontSize = 11.sp, color = TextSecondary)
+            Text(devotee.name, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(devotee.phone, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Button(
             onClick = onMark,
             shape = RoundedCornerShape(9.dp),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = GreenSuccess)
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
         ) {
             Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(4.dp))
@@ -1241,23 +1281,23 @@ fun SearchResultRow(devotee: HarinaanDevotee, onMark: () -> Unit) {
 @Composable
 fun MarkedDevoteeRow(devotee: HarinaanDevotee, index: Int, onUnmark: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(GreenLight.copy(alpha = 0.35f))
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.35f))
             .padding(horizontal = 16.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(GreenSuccess),
+        Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.tertiary),
             contentAlignment = Alignment.Center) {
-            Text(devotee.name.first().toString(), fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+            Text(devotee.name.first().toString(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary, fontSize = 15.sp)
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(devotee.name, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onPrimary)
-            Text(devotee.phone, fontSize = 12.sp, color = TextSecondary)
+            Text(devotee.name, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(devotee.phone, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text("#$index", fontSize = 11.sp, color = TextSecondary, modifier = Modifier.padding(end = 4.dp))
-        Icon(Icons.Default.CheckCircle, null, tint = GreenSuccess, modifier = Modifier.size(20.dp))
+        Text("#$index", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 4.dp))
+        Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
         IconButton(onClick = onUnmark, modifier = Modifier.size(28.dp)) {
-            Icon(Icons.Default.Close, null, tint = TextSecondary.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
         }
     }
 }
@@ -1275,32 +1315,32 @@ fun AddDevoteeSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = CardBg,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 36.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(GreenLight),
+                Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceTint),
                     contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Groups, null, tint = GreenSuccess, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Groups, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
                 }
                 Spacer(Modifier.width(10.dp))
                 Column {
-                    Text("Add Devotee to Harinaam", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
-                    Text("Mark as present in this kirtan", fontSize = 12.sp, color = TextSecondary)
+                    Text("Add Devotee to Harinaam", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Mark as present in this kirtan", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Spacer(Modifier.height(18.dp))
-            FormField("Devotee Name", name, { name = it }, "e.g. Radha Devi Dasi", Icons.Default.Person)
+            FormField("Devotee Name", name, { name = it }, "e.g. Radha Devi Dasi", Icons.Default.Person, MaterialTheme.colorScheme.tertiary)
             Spacer(Modifier.height(12.dp))
-            FormField("Mobile Number", phone, { phone = it }, "e.g. +91 98765 43210", Icons.Default.Phone)
+            FormField("Mobile Number", phone, { phone = it }, "e.g. +91 98765 43210", Icons.Default.Phone, MaterialTheme.colorScheme.tertiary)
             Spacer(Modifier.height(20.dp))
             Button(
                 onClick = { if (name.isNotBlank() && phone.isNotBlank()) onAdd(name.trim(), phone.trim()) },
                 enabled = name.isNotBlank() && phone.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = GreenSuccess)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
             ) {
                 Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -1310,24 +1350,20 @@ fun AddDevoteeSheet(
     }
 }
 
-// Extension
-fun Modifier.tabIndicatorOffset(tabPosition: TabPosition): Modifier =
-    this.wrapContentSize(Alignment.BottomCenter).width(tabPosition.width).offset(x = tabPosition.left)
-
 // ─────────────────────────────────────────────────────────────────
 // PREVIEWS
 // ─────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, showSystemUi = true, name = "01 – Full App")
-@Composable
-fun PreviewApp() = HarinaanApp()
-
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "02 – Dark Mode")
-@Composable
-fun PreviewList() {
-    val vm = remember { HarinaanViewModel() }
-    MaterialTheme { EventListScreen(vm) {} }
-}
+//@Preview(showBackground = true, showSystemUi = true, name = "01 – Full App")
+//@Composable
+//fun PreviewApp() = HarinaanApp()
+//
+//@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "02 – Dark Mode")
+//@Composable
+//fun PreviewList() {
+//    val vm = remember { HarinaanViewModel() }
+//    MaterialTheme { EventListScreen(vm) {} }
+//}
 
 //@Preview(showBackground = true, showSystemUi = true, name = "03 – Event Detail (Upcoming)")
 //@Composable
@@ -1337,7 +1373,7 @@ fun PreviewList() {
 //        EventDetailScreen(vm.events.value.first { it.isUpcoming }, vm, {}, {})
 //    }
 //}
-
+//
 //@Preview(showBackground = true, showSystemUi = true, name = "04 – Event Detail (Done)")
 //@Composable
 //fun PreviewDetailDone() {
@@ -1347,15 +1383,15 @@ fun PreviewList() {
 //    }
 //}
 
-//@Preview(showBackground = true, showSystemUi = true, name = "05 – Take Attendance")
-//@Composable
-//fun PreviewAttendance() {
-//    val vm = remember { HarinaanViewModel() }
-//    MaterialTheme { TakeAttendanceScreen(vm.events.value.first(), vm) {} }
-//}
-
-@Preview(showBackground = true, name = "06 – Create Event Dialog")
+@Preview(showBackground = true, showSystemUi = true, name = "05 – Take Attendance")
 @Composable
-fun PreviewCreateDialog() {
-    MaterialTheme { CreateEventDialog({}) { _, _, _, _ -> } }
+fun PreviewAttendance() {
+    val vm = remember { HarinaanViewModel() }
+    MaterialTheme { TakeAttendanceScreen(vm.events.value.first(), vm) {} }
 }
+
+//@Preview(showBackground = true, name = "06 – Create Event Dialog")
+//@Composable
+//fun PreviewCreateDialog() {
+//    MaterialTheme { CreateEventDialog({}) { _, _, _, _ -> } }
+//}
