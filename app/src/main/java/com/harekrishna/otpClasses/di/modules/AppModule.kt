@@ -1,10 +1,13 @@
 package com.harekrishna.otpClasses.di.modules
 
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.harekrishna.otpClasses.data.remote.RemoteConfigDataSource
+import com.harekrishna.otpClasses.data.sources.repos.AuthRepository
+import com.harekrishna.otpClasses.data.sources.repos.AuthRepositoryImpl
 import com.harekrishna.otpClasses.data.sources.repos.ConfigRepository
 import com.harekrishna.otpClasses.data.sources.repos.ConfigRepositoryImpl
 import dagger.Module
@@ -42,5 +45,15 @@ object AppModule {
     fun provideRepository(
         dataSource: RemoteConfigDataSource
     ): ConfigRepository = ConfigRepositoryImpl(dataSource)
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(
+        auth: FirebaseAuth
+    ): AuthRepository = AuthRepositoryImpl(auth)
 
 }

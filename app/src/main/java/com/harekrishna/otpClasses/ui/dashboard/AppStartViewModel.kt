@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.harekrishna.otpClasses.core.utils.NetworkChecker
+import com.harekrishna.otpClasses.data.sources.repos.AuthRepository
 import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AppStartViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val userPrefRepo: UserPreferencesRepository
+    private val userPrefRepo: UserPreferencesRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AppStartState())
@@ -31,16 +33,27 @@ class AppStartViewModel @Inject constructor(
 
             val isConnected = NetworkChecker.isInternetAvailable(context)
 
-            val isRegistered = userPrefRepo.getUserData()
+            val currentUser = authRepository.getCurrentUser()
+
+            // User is authenticated in Firebase
+            val isFirebaseAuthenticated = currentUser != null
+
+            val isProfileCompleted = userPrefRepo.getUserData()
                 .first()
                 .let { (name, phone) ->
                     !name.isNullOrEmpty() && !phone.isNullOrEmpty()
                 }
 
+            val destination = when {
+                isFirebaseAuthenticated && isProfileCompleted -> "dashboard"
+                isFirebaseAuthenticated -> "dashboard" // Adjust if profile filling screen exists
+                else -> "login"
+            }
+
             _uiState.value = AppStartState(
                 isReady = true,
                 isConnected = isConnected,
-                startDestination = if (isRegistered) "dashboard" else "welcome"
+                startDestination = destination
             )
         }
     }

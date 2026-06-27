@@ -3,6 +3,7 @@ package com.harekrishna.otpClasses.navigation
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,6 +18,7 @@ import com.harekrishna.otpClasses.ui.events.HarinaamFormScreen
 import com.harekrishna.otpClasses.ui.events.HarinaamRegistrationDetailsScreen
 import com.harekrishna.otpClasses.ui.events.HarinaanApp
 import com.harekrishna.otpClasses.ui.followup.FollowUpScreen
+import com.harekrishna.otpClasses.ui.login.LoginScreen
 import com.harekrishna.otpClasses.ui.registeration.CallingListScreen
 import com.harekrishna.otpClasses.ui.registeration.RegistrationScreen
 import com.harekrishna.otpClasses.ui.screens.AttendanceScreen
@@ -34,6 +36,7 @@ fun MainNavHost(
         exitTransition = { ExitTransition.None }
     ) {
 
+        composable("login") { LoginScreen({ navController.navigate("dashboard")}) }
         composable("dashboard") { DashboardScreen(navController) }
         composable("settings") { SettingsScreen(navController) }
         composable("about") { AboutScreen() }
