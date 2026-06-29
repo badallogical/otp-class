@@ -1,6 +1,7 @@
 package com.harekrishna.otpClasses.ui.login
 
 import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -52,6 +53,7 @@ fun LoginScreen(
 
     LaunchedEffect(state.loginState) {
         if (state.loginState is LoginState.Success) onLoginSuccess()
+
     }
 
     LoginScreenContent(
@@ -170,6 +172,7 @@ fun LoginScreenContent(
             ) {
                 if (errorMessage != null) {
                     Spacer(Modifier.height(12.dp))
+                    Log.d("Login", errorMessage)
                     ErrorChip(message = errorMessage, onDismiss = onClearError)
                 }
             }

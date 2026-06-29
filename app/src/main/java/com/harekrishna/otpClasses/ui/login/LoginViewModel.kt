@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.util.Log
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UI State models
@@ -112,6 +113,7 @@ class LoginViewModel @Inject constructor(
                         }
                     }
                     .onFailure { e ->
+                        e.message?.let { Log.d("Login", it) }
                         _uiState.update {
                             it.copy(
                                 loginState = LoginState.Error(

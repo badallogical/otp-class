@@ -1,5 +1,6 @@
 package com.harekrishna.otpClasses.navigation
 
+import ProfileScreen
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
@@ -37,6 +38,7 @@ fun MainNavHost(
     ) {
 
         composable("login") { LoginScreen({ navController.navigate("dashboard")}) }
+        composable("profile") { ProfileScreen({ navController.navigate("login")}) }
         composable("dashboard") { DashboardScreen(navController) }
         composable("settings") { SettingsScreen(navController) }
         composable("about") { AboutScreen() }
