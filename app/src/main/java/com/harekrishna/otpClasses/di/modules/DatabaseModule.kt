@@ -6,6 +6,7 @@ import com.harekrishna.otpClasses.data.sources.db.dao.AttendanceDao
 import com.harekrishna.otpClasses.data.sources.db.dao.CallingReportDao
 import com.harekrishna.otpClasses.data.sources.db.dao.SangkirtanStudentDao
 import com.harekrishna.otpClasses.data.sources.db.dao.StudentDao
+import com.harekrishna.otpClasses.data.sources.db.dao.UserEntityDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,6 +27,11 @@ object DatabaseModule{
     @Provides
     fun provideStudentDao( database : StudentDatabase) : StudentDao {
         return database.getStudentDao()
+    }
+
+    @Provides
+    fun provideUserEntityDao( database: StudentDatabase ): UserEntityDao{
+        return database.getUserEntityDao()
     }
 
     @Provides

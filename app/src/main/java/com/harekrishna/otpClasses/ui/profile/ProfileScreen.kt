@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.harekrishna.otpClasses.R
-import com.harekrishna.otpClasses.data.models.User
+import com.harekrishna.otpClasses.data.models.UserEntity
 import com.harekrishna.otpClasses.ui.profile.ProfileViewModel
 import com.harekrishna.otpClasses.ui.theme.*
 
@@ -46,6 +46,7 @@ import com.harekrishna.otpClasses.ui.theme.*
 @Composable
 fun ProfileScreen(
     onSignOutSuccess: () -> Unit = {},
+    navigateToDashboard: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -55,6 +56,13 @@ fun ProfileScreen(
         if (uiState.signOutSuccess) {
             viewModel.onSignOutHandled()
             onSignOutSuccess()
+        }
+    }
+
+    LaunchedEffect(uiState.isProfileCompleted){
+        if( uiState.isProfileCompleted){
+            snackbarHostState.showSnackbar("Profile Completed")
+            navigateToDashboard()
         }
     }
 
@@ -80,7 +88,7 @@ fun ProfileScreen(
         isSavingProfile = uiState.isSavingProfile,
         snackbarHostState = snackbarHostState,
         onSignOut = viewModel::signOut,
-        onSignInWithGoogle = viewModel::signInWithGoogle,
+        onSignInWithGoogle = viewModel::linkWithGoogle,
         onSaveProfile = viewModel::updateProfile
     )
 }
@@ -89,7 +97,7 @@ fun ProfileScreen(
 
 @Composable
 fun ProfileScreenContent(
-    user: User?,
+    user: UserEntity?,
     isLoading: Boolean = false,
     isSigningOut: Boolean = false,
     isLinkingGoogle: Boolean = false,
@@ -154,7 +162,7 @@ fun ProfileScreenContent(
 
 @Composable
 private fun ProfileBody(
-    user: User,
+    user: UserEntity,
     isSigningOut: Boolean,
     isLinkingGoogle: Boolean,
     isSavingProfile: Boolean,
@@ -165,9 +173,11 @@ private fun ProfileBody(
     var showSignOutDialog by remember { mutableStateOf(false) }
 
     // Edit state — local to UI only, committed on Save
-    var isEditing by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf( user.name.isBlank() || user.phone.isBlank() ) }
     var editName by remember(user.name) { mutableStateOf(user.name) }
-    var editPhone by remember(user.phone) { mutableStateOf(user.phone) }
+    var editPhone by remember(user.phone) {
+        mutableStateOf(user.phone)
+    }
 
     // When save completes (isSavingProfile goes false while editing), exit edit mode
     LaunchedEffect(isSavingProfile) {
@@ -215,13 +225,13 @@ private fun ProfileBody(
                 onEditPhoneChange = { editPhone = it },
                 onEditClick = {
                     editName = user.name
-                    editPhone = user.phone
+                    editPhone = user.phone?:"NA"
                     isEditing = true
                 },
                 onSaveClick = { onSaveProfile(editName, editPhone) },
                 onCancelClick = {
                     editName = user.name
-                    editPhone = user.phone
+                    editPhone = user.phone?: "NA"
                     isEditing = false
                 }
             )
@@ -255,7 +265,7 @@ private fun ProfileBody(
 // ─── Hero Header ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun ProfileHeader(user: User) {
+private fun ProfileHeader(user: UserEntity) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -330,9 +340,12 @@ private fun ProfileHeader(user: User) {
 }
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
-
 @Composable
-private fun ProfileAvatar(photoURL: String, name: String, isGuest: Boolean) {
+private fun ProfileAvatar(
+    photoURL: String?,
+    name: String,
+    isGuest: Boolean
+) {
     Box(
         modifier = Modifier
             .size(88.dp)
@@ -341,37 +354,44 @@ private fun ProfileAvatar(photoURL: String, name: String, isGuest: Boolean) {
             .background(SaffronLight),
         contentAlignment = Alignment.Center
     ) {
-        if (photoURL.isNotBlank() && !isGuest) {
-            AsyncImage(
-                model = photoURL,
-                contentDescription = "Profile photo of $name",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().clip(CircleShape)
-            )
-        } else if (isGuest || name.isBlank()) {
-            Icon(
-                imageVector = Icons.Rounded.Person,
-                contentDescription = "Guest",
-                tint = Saffron,
-                modifier = Modifier.size(44.dp)
-            )
-        } else {
-            Text(
-                text = name.take(1).uppercase(),
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Saffron
+        when {
+            !isGuest && !photoURL.isNullOrBlank() -> {
+                AsyncImage(
+                    model = photoURL,
+                    contentDescription = "Profile photo of $name",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
                 )
-            )
+            }
+
+            name.isNotBlank() -> {
+                Text(
+                    text = name.first().uppercase(),
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Saffron
+                    )
+                )
+            }
+
+            else -> {
+                Icon(
+                    imageVector = Icons.Rounded.Person,
+                    contentDescription = "Guest",
+                    tint = Saffron,
+                    modifier = Modifier.size(44.dp)
+                )
+            }
         }
     }
 }
-
 // ─── Info Card (view + edit modes) ───────────────────────────────────────────
 
 @Composable
 private fun ProfileInfoCard(
-    user: User,
+    user: UserEntity,
     isEditing: Boolean,
     isSaving: Boolean,
     editName: String,
@@ -488,7 +508,7 @@ private fun ProfileInfoCard(
                 isReadOnly = true
             )
 
-            if (user.phone.isNotBlank() || isEditing) {
+
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
                     modifier = Modifier.padding(horizontal = 16.dp)
@@ -511,10 +531,10 @@ private fun ProfileInfoCard(
                     ProfileInfoRow(
                         icon = Icons.Outlined.Phone,
                         label = "Phone",
-                        value = user.phone
+                        value = user.phone ?: "NA"
                     )
                 }
-            }
+
 
             // ── Save / Cancel row (edit mode only) ────────────────────────────
             AnimatedVisibility(visible = isEditing) {
@@ -716,7 +736,7 @@ private fun EditableInfoRow(
 // ─── Account Status Card ──────────────────────────────────────────────────────
 
 @Composable
-private fun AccountStatusCard(user: User) {
+private fun AccountStatusCard(user: UserEntity) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -953,7 +973,7 @@ private fun SignOutDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         },
         confirmButton = {
             Button(
-                onClick = onConfirm,
+                onClick = { onConfirm() },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 shape = RoundedCornerShape(10.dp)
             ) {
@@ -973,7 +993,7 @@ private fun SignOutDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 private fun ProfileViewModePreview() {
     Otp_class_appTheme(themeMode = ThemeMode.LIGHT) {
         ProfileScreenContent(
-            user = User(
+            user = UserEntity(
                 id = "firebase_uid_abc123xyz",
                 name = "Radha Madhav Das",
                 phone = "+91 98765 43210",
@@ -992,7 +1012,7 @@ private fun ProfileEditModePreview() {
         // Directly show the card in edit state for quick preview
         Column(modifier = Modifier.padding(16.dp)) {
             ProfileInfoCard(
-                user = User(
+                user = UserEntity(
                     id = "firebase_uid_abc123xyz",
                     name = "Radha Madhav Das",
                     phone = "+91 98765 43210",
@@ -1020,7 +1040,7 @@ private fun ProfileSavingPreview() {
     Otp_class_appTheme(themeMode = ThemeMode.LIGHT) {
         Column(modifier = Modifier.padding(16.dp)) {
             ProfileInfoCard(
-                user = User(
+                user = UserEntity(
                     id = "firebase_uid_abc123xyz",
                     name = "Radha Madhav Das",
                     phone = "+91 98765 43210",
@@ -1047,7 +1067,7 @@ private fun ProfileSavingPreview() {
 private fun ProfileDarkPreview() {
     Otp_class_appTheme(themeMode = ThemeMode.DARK) {
         ProfileScreenContent(
-            user = User(
+            user = UserEntity(
                 id = "firebase_uid_abc123xyz",
                 name = "Vrindavan Chandra Das",
                 phone = "+91 99887 76655",

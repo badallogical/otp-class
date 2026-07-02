@@ -57,6 +57,7 @@ data class AttendanceWithDates(
         parentColumn = "phone",
         entityColumn = "attendancePhone"
     )
+
     val attendanceDates: List<AttendanceDate>
 )
 

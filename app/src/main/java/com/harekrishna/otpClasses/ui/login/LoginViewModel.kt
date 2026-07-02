@@ -10,7 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.harekrishna.otpClasses.core.utils.NetworkChecker
-import com.harekrishna.otpClasses.data.models.User
+import com.harekrishna.otpClasses.data.models.UserEntity
 import com.harekrishna.otpClasses.data.sources.repos.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -20,6 +20,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import android.util.Log
+import com.harekrishna.otpClasses.data.sources.repos.UserProfileRepository
+import com.harekrishna.otpClasses.domain.model.Role
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UI State models
@@ -28,7 +32,7 @@ import android.util.Log
 sealed interface LoginState {
     object Idle : LoginState
     object Loading : LoginState
-    data class Success(val userId: String) : LoginState
+    data class Success(val userId: String, val route : String) : LoginState
     data class Error(val message: String) : LoginState
 }
 
@@ -47,6 +51,7 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val userProfileRepository: UserProfileRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -70,11 +75,23 @@ class LoginViewModel @Inject constructor(
 
     private fun checkNetworkAndSession() {
         _uiState.update { it.copy(isOffline = !NetworkChecker.isInternetAvailable(context)) }
+
         // If Firebase already has a valid session (Google or anonymous), skip login
-        val current = authRepository.getCurrentUser()
-        if (current != null) {
-            _uiState.update { it.copy(loginState = LoginState.Success(current.id)) }
+        viewModelScope.launch {
+            authRepository.getCurrentUser()?.let { user ->
+                val route =
+                    if (user.displayName.isNullOrBlank() || user.phoneNumber.isNullOrBlank()) {
+                        "profile"
+                    } else {
+                        "dashboard"
+                    }
+
+                _uiState.update { it.copy(loginState = LoginState.Success(user.uid, route)) }
+            }
         }
+
+
+
     }
 
     fun retryConnectivity() {
@@ -105,12 +122,19 @@ class LoginViewModel @Inject constructor(
             if (idToken != null) {
                 authRepository.signInWithGoogle(idToken)
                     .onSuccess { user ->
-                        _uiState.update {
-                            it.copy(
-                                loginState = LoginState.Success(user.id),
-                                loadingSource = LoadingSource.NONE
-                            )
+
+                        userProfileRepository.syncUserProfile(user)
+
+                        val currentUser = userProfileRepository.observeUser().first()
+                        val route = if(currentUser.name.isBlank() || currentUser.phone.isBlank()){
+                            "profile"
+                        }else{
+                            "dashboard"
                         }
+
+                        _uiState.update { it.copy(loginState = LoginState.Success(user.uid , route)) }
+
+
                     }
                     .onFailure { e ->
                         e.message?.let { Log.d("Login", it) }
@@ -144,12 +168,24 @@ class LoginViewModel @Inject constructor(
             }
             authRepository.signInAnonymously()
                 .onSuccess { user ->
+                    // save to room
+                    userProfileRepository.syncUserProfile(user)
+
+                    val currentUser = userProfileRepository.observeUser().first()
+                    val route = if(currentUser.name.isBlank() || currentUser.phone.isBlank()){
+                        "profile"
+                    }else{
+                        "dashboard"
+                    }
+
                     _uiState.update {
                         it.copy(
-                            loginState = LoginState.Success(user.id),
+                            loginState = LoginState.Success(user.uid, route),
                             loadingSource = LoadingSource.NONE
                         )
                     }
+
+
                 }
                 .onFailure { e ->
                     _uiState.update {
@@ -162,10 +198,6 @@ class LoginViewModel @Inject constructor(
                     }
                 }
         }
-    }
-
-    fun getCurrentUser() : User? {
-        return authRepository.getCurrentUser()
     }
 
 }

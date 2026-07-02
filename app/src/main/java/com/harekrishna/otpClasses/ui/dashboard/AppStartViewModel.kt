@@ -1,11 +1,14 @@
 package com.harekrishna.otpClasses.ui.dashboard
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.harekrishna.otpClasses.core.utils.NetworkChecker
+import com.harekrishna.otpClasses.data.models.UserEntity
 import com.harekrishna.otpClasses.data.sources.repos.AuthRepository
 import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
+import com.harekrishna.otpClasses.data.sources.repos.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AppStartViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val userPrefRepo: UserPreferencesRepository,
+    private val userProfileRepo: UserProfileRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
@@ -33,22 +36,30 @@ class AppStartViewModel @Inject constructor(
 
             val isConnected = NetworkChecker.isInternetAvailable(context)
 
-            val currentUser = authRepository.getCurrentUser()
-
             // User is authenticated in Firebase
-            val isFirebaseAuthenticated = currentUser != null
+            val isFirebaseAuthenticated = authRepository.getCurrentUser() != null
 
-            val isProfileCompleted = userPrefRepo.getUserData()
-                .first()
-                .let { (name, phone) ->
-                    !name.isNullOrEmpty() && !phone.isNullOrEmpty()
-                }
+            var currentUser : UserEntity = UserEntity()
+            var isProfileCompleted : Boolean = false
+            if( isFirebaseAuthenticated ){
+
+
+
+                currentUser = userProfileRepo.observeUser().first()
+                isProfileCompleted = !( currentUser.name.isNullOrEmpty() || currentUser.phone.isNullOrEmpty())
+            }
+
+
 
             val destination = when {
                 isFirebaseAuthenticated && isProfileCompleted -> "dashboard"
-                isFirebaseAuthenticated -> "dashboard" // Adjust if profile filling screen exists
+                isFirebaseAuthenticated -> "profile" // Adjust if profile filling screen exists
                 else -> "login"
             }
+
+            Log.d("login", "Firebase Authenticated  : ${isFirebaseAuthenticated} )")
+
+            Log.d("login", "Current user : ${currentUser?.name} + ${currentUser?.phone} Profile , ${isProfileCompleted}   destination ${destination}")
 
             _uiState.value = AppStartState(
                 isReady = true,

@@ -15,9 +15,10 @@ import com.harekrishna.otpClasses.data.sources.db.dao.*
         CallingReportPOJO::class,
         AttendanceResponse::class,
         AttendanceDate::class,
-        SangkirtanStudentDTO::class
+        SangkirtanStudentDTO::class,
+        UserEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class StudentDatabase : RoomDatabase() {
@@ -26,6 +27,7 @@ abstract class StudentDatabase : RoomDatabase() {
     abstract fun getCallingReportDao(): CallingReportDao
     abstract fun getAttendanceResponseDao(): AttendanceDao
     abstract fun getSangkirtanStudentDao(): SangkirtanStudentDao
+    abstract fun getUserEntityDao(): UserEntityDao
 
     companion object {
         @Volatile
@@ -38,7 +40,7 @@ abstract class StudentDatabase : RoomDatabase() {
                     klass = StudentDatabase::class.java,
                     name = "devotees"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                     .also { Instance = it }
             }
@@ -93,6 +95,23 @@ abstract class StudentDatabase : RoomDatabase() {
                         `sync` INTEGER NOT NULL DEFAULT 0, 
                         `photoUri` TEXT, 
                         PRIMARY KEY(`_phone`)
+                    )
+                """)
+            }
+        }
+        
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `user` (
+                        `id` TEXT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `phone` TEXT NOT NULL, 
+                        `photoURL` TEXT, 
+                        `email` TEXT NOT NULL, 
+                        `isGuest` INTEGER NOT NULL DEFAULT 0, 
+                        `role` TEXT NOT NULL, 
+                        PRIMARY KEY(`id`)
                     )
                 """)
             }

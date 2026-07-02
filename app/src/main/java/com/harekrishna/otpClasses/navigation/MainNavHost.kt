@@ -37,8 +37,16 @@ fun MainNavHost(
         exitTransition = { ExitTransition.None }
     ) {
 
-        composable("login") { LoginScreen({ navController.navigate("dashboard")}) }
-        composable("profile") { ProfileScreen({ navController.navigate("login")}) }
+        composable("login") { LoginScreen({ route ->
+                navController.navigate(route)
+        } )}
+
+        composable("profile") {
+            ProfileScreen(
+                { navController.navigate("login")},
+                { navController.navigate("dashboard")})
+        }
+
         composable("dashboard") { DashboardScreen(navController) }
         composable("settings") { SettingsScreen(navController) }
         composable("about") { AboutScreen() }

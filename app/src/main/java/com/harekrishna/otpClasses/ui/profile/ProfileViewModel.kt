@@ -1,11 +1,13 @@
 package com.harekrishna.otpClasses.ui.profile
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.harekrishna.otpClasses.R
-import com.harekrishna.otpClasses.data.models.User
+import com.harekrishna.otpClasses.data.models.UserEntity
 import com.harekrishna.otpClasses.data.sources.repos.AuthRepository
+import com.harekrishna.otpClasses.data.sources.repos.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,9 +17,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.harekrishna.otpClasses.ui.login.fetchGoogleIdToken
+import kotlinx.coroutines.flow.first
 
 data class ProfileUiState(
-    val user: User? = null,
+    val user: UserEntity = UserEntity(),
     val isLoading: Boolean = false,
     val isSigningOut: Boolean = false,
     val isLinkingGoogle: Boolean = false,
@@ -25,12 +28,14 @@ data class ProfileUiState(
     val error: String? = null,
     val signOutSuccess: Boolean = false,
     val googleLinkSuccess: Boolean = false,
-    val profileUpdateSuccess: Boolean = false
+    val profileUpdateSuccess: Boolean = false,
+    val isProfileCompleted: Boolean = false,
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val userProfileRepository: UserProfileRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -45,9 +50,12 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val user = authRepository.getCurrentUser()
-                _uiState.update { it.copy(user = user, isLoading = false) }
+                userProfileRepository.observeUser().collect { user ->
+                    Log.d("login", user.toString())
+                    _uiState.update { it.copy(user = user, isLoading = false) }
+                }
             } catch (e: Exception) {
+                Log.d("login", e.message ?: "User Entity is not recieved properly")
                 _uiState.update {
                     it.copy(
                         error = e.message ?: "Failed to load user profile",
@@ -64,6 +72,12 @@ class ProfileViewModel @Inject constructor(
             try {
                 authRepository.signOut(context)
                     .onSuccess {
+
+                        // Delete the guest user on sign 0ut
+                        if( uiState.value.user.isGuest ) {
+                            userProfileRepository.deleteGuestUser()
+                        }
+
                         _uiState.update { it.copy(isSigningOut = false, signOutSuccess = true) }
                     }
                     .onFailure {
@@ -86,7 +100,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun signInWithGoogle() {
+    fun linkWithGoogle() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLinkingGoogle = true) }
             try {
@@ -95,14 +109,13 @@ class ProfileViewModel @Inject constructor(
 
                 if (token != null) {
                     // Check if there's a live anonymous session right now
-                    val isCurrentlyAnonymous = authRepository.getCurrentUser()?.isGuest == true
-
-                    val result = if (isCurrentlyAnonymous) {
-                        authRepository.linkAnonymousWithGoogle(token)
-                    } else {
-                        authRepository.signInWithGoogle(token)
-                    }
+                    authRepository.linkAnonymousWithGoogle(token)
+                        .onSuccess { user ->
+                            userProfileRepository.updateGuestUser(user)
+                            _uiState.update { it.copy(isLinkingGoogle = false, googleLinkSuccess = true) }
+                        }
                 }
+
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -124,8 +137,9 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSavingProfile = true) }
             try {
-                authRepository.updateUserProfile(name = trimmedName, phone = trimmedPhone)
-                val updatedUser = authRepository.getCurrentUser()
+                userProfileRepository.updateProfileName(_uiState.value.user.id, trimmedName)
+                userProfileRepository.updateProfilePhone(_uiState.value.user.id,trimmedPhone)
+                val updatedUser = userProfileRepository.observeUser().first()
                 _uiState.update {
                     it.copy(
                         user = updatedUser,
@@ -133,6 +147,11 @@ class ProfileViewModel @Inject constructor(
                         profileUpdateSuccess = true
                     )
                 }
+
+                if( !(updatedUser.name.isNullOrBlank() || updatedUser.phone.isNullOrBlank()) ){
+                    _uiState.update { it.copy( isProfileCompleted = true )}
+                }
+
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(

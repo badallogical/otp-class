@@ -2,14 +2,19 @@ package com.harekrishna.otpClasses.di.modules
 
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.harekrishna.otpClasses.data.remote.RemoteConfigDataSource
+import com.harekrishna.otpClasses.data.sources.db.dao.UserEntityDao
 import com.harekrishna.otpClasses.data.sources.repos.AuthRepository
 import com.harekrishna.otpClasses.data.sources.repos.AuthRepositoryImpl
 import com.harekrishna.otpClasses.data.sources.repos.ConfigRepository
 import com.harekrishna.otpClasses.data.sources.repos.ConfigRepositoryImpl
+import com.harekrishna.otpClasses.data.sources.repos.UserProfileRepository
+import com.harekrishna.otpClasses.data.sources.repos.UserProfileRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,8 +52,19 @@ object AppModule {
     ): ConfigRepository = ConfigRepositoryImpl(dataSource)
 
     @Provides
+    fun provideUserProfileRepository(userEntityDao : UserEntityDao,firestore: FirebaseFirestore,auth: FirebaseAuth): UserProfileRepository = UserProfileRepositoryImpl(
+        userEntityDao,
+        firestore,
+        auth
+    )
+
+    @Provides
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore = Firebase.firestore
 
     @Provides
     @Singleton
