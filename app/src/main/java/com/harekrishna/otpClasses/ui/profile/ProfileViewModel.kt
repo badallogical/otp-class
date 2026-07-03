@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.harekrishna.otpClasses.R
 import com.harekrishna.otpClasses.data.models.UserEntity
 import com.harekrishna.otpClasses.data.sources.repos.AuthRepository
@@ -74,7 +76,7 @@ class ProfileViewModel @Inject constructor(
                     .onSuccess {
 
                         // Delete the guest user on sign 0ut
-                        if( uiState.value.user.isGuest ) {
+                        if (uiState.value.user.isGuest) {
                             userProfileRepository.deleteGuestUser()
                         }
 
@@ -112,8 +114,55 @@ class ProfileViewModel @Inject constructor(
                     authRepository.linkAnonymousWithGoogle(token)
                         .onSuccess { user ->
                             userProfileRepository.updateGuestUser(user)
-                            _uiState.update { it.copy(isLinkingGoogle = false, googleLinkSuccess = true) }
+                            val newUser = userProfileRepository.observeUser().first()
+                            _uiState.update {
+                                it.copy(
+                                    user = newUser,
+                                    isLinkingGoogle = false,
+                                    googleLinkSuccess = true
+                                )
+                            }
+                        }.onFailure { e ->
+                            when (e) {
+
+                                is FirebaseAuthUserCollisionException -> {
+                                    _uiState.update {
+                                        it.copy(
+                                            isLinkingGoogle = false,
+                                            googleLinkSuccess = false,
+                                            error = "This Google account is already registered.. Please sign in with other instead."
+                                        )
+                                    }
+                                }
+
+                                is FirebaseNetworkException -> {
+                                    _uiState.update {
+                                        it.copy(
+                                            isLinkingGoogle = false,
+                                            error = "No internet connection."
+                                        )
+                                    }
+                                }
+
+                                else -> {
+                                    _uiState.update {
+                                        it.copy(
+                                            isLinkingGoogle = false,
+                                            error = e.message ?: "Unable to link account."
+                                        )
+                                    }
+                                }
+                            }
+
                         }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isLinkingGoogle = false,
+                        )
+                    }
+                    return@launch
+
                 }
 
             } catch (e: Exception) {
@@ -138,7 +187,7 @@ class ProfileViewModel @Inject constructor(
             _uiState.update { it.copy(isSavingProfile = true) }
             try {
                 userProfileRepository.updateProfileName(_uiState.value.user.id, trimmedName)
-                userProfileRepository.updateProfilePhone(_uiState.value.user.id,trimmedPhone)
+                userProfileRepository.updateProfilePhone(_uiState.value.user.id, trimmedPhone)
                 val updatedUser = userProfileRepository.observeUser().first()
                 _uiState.update {
                     it.copy(
@@ -148,8 +197,8 @@ class ProfileViewModel @Inject constructor(
                     )
                 }
 
-                if( !(updatedUser.name.isNullOrBlank() || updatedUser.phone.isNullOrBlank()) ){
-                    _uiState.update { it.copy( isProfileCompleted = true )}
+                if (!(updatedUser.name.isNullOrBlank() || updatedUser.phone.isNullOrBlank())) {
+                    _uiState.update { it.copy(isProfileCompleted = true) }
                 }
 
             } catch (e: Exception) {
@@ -166,7 +215,6 @@ class ProfileViewModel @Inject constructor(
     fun onProfileUpdateHandled() {
         _uiState.update { it.copy(profileUpdateSuccess = false) }
     }
-
 
 
     fun dismissError() {

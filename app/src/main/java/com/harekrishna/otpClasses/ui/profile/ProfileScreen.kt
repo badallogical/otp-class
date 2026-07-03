@@ -405,7 +405,14 @@ private fun ProfileInfoCard(
     val nameFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(isEditing) {
-        if (isEditing) nameFocusRequester.requestFocus()
+        if (isEditing) {
+            try {
+                kotlinx.coroutines.delay(100)
+                nameFocusRequester.requestFocus()
+            } catch (e: Exception) {
+                // Prevent crashes if the FocusRequester is not yet attached to a layout node
+            }
+        }
     }
 
     Card(
@@ -438,7 +445,6 @@ private fun ProfileInfoCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                return@Card
             }
 
             // ── Card header row: "Profile Info" label + Edit button ──────────
@@ -495,18 +501,22 @@ private fun ProfileInfoCard(
                 )
             }
 
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
 
-            // ── Email row — always read-only ──────────────────────────────────
-            ProfileInfoRow(
-                icon = Icons.Outlined.Email,
-                label = "Email",
-                value = user.email.ifBlank { "—" },
-                isReadOnly = true
-            )
+            if(  !user.isGuest ) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                // ── Email row — always read-only ──────────────────────────────────
+                ProfileInfoRow(
+                    icon = Icons.Outlined.Email,
+                    label = "Email",
+                    value = user.email.ifBlank { "—" },
+                    isReadOnly = true
+                )
+            }
+
 
 
                 HorizontalDivider(

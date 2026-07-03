@@ -12,7 +12,7 @@ import com.harekrishna.otpClasses.data.models.CallingReportPOJO
 import com.harekrishna.otpClasses.data.sources.repos.CallingReportRepository
 import com.harekrishna.otpClasses.data.sources.repos.MessagePreferencesRepository
 import com.harekrishna.otpClasses.data.sources.repos.MessageType
-import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
+import com.harekrishna.otpClasses.domain.GetUserProfileUseCase
 import com.harekrishna.otpClasses.domain.PrepareWhatsappMessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +46,7 @@ data class CallingListUiState(
 class CallingListViewModel @Inject constructor(
     private val callingReportRepository: CallingReportRepository,
     private val messageRepository: MessagePreferencesRepository,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val getUserProfileUseCase: GetUserProfileUseCase,
     private val prepareWhatsappMessageUseCase: PrepareWhatsappMessageUseCase
 ) :
     ViewModel() {
@@ -60,11 +60,9 @@ class CallingListViewModel @Inject constructor(
 
     init{
         viewModelScope.launch {
-            val userData = userPreferencesRepository.getUserData().first()
+            val userData = getUserProfileUseCase.getUserData().first()
             userName = userData.first ?: "Rajiva Prabhu Ji"
             userPhone = userData.second ?: "+919807726801"
-
-
         }
     }
 

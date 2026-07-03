@@ -7,15 +7,11 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.harekrishna.otpClasses.MyApplication
 import com.harekrishna.otpClasses.data.sources.repos.AttendanceRepository
 import com.harekrishna.otpClasses.data.models.AttendeeItem
 import com.harekrishna.otpClasses.data.sources.repos.MessagePreferencesRepository
-import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
+import com.harekrishna.otpClasses.domain.GetUserProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,7 +50,7 @@ data class FollowUpUiState(
 @HiltViewModel
 class FollowUpViewModel @Inject constructor(
     private val attendanceRepository: AttendanceRepository,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val getUserProfileUseCase: GetUserProfileUseCase,
     private val messagePreferencesRepository: MessagePreferencesRepository) :
     ViewModel() {
 
@@ -75,7 +71,7 @@ class FollowUpViewModel @Inject constructor(
             try {
                 withContext(Dispatchers.IO) {
                     // Fetch user data on the IO dispatcher
-                    val userData = userPreferencesRepository.getUserData().first()
+                    val userData = getUserProfileUseCase.getUserData().first()
                     userName = userData.first ?: "Rajiva Prabhu Ji"
                     userPhone = userData.second ?: "+919807726801"
 

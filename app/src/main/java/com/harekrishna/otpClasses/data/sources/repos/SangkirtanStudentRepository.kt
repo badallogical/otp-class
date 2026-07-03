@@ -8,6 +8,7 @@ import com.harekrishna.otpClasses.data.models.SangkirtanStudentDTO
 import com.harekrishna.otpClasses.data.models.SangkirtanStudentPOJO
 import com.harekrishna.otpClasses.data.models.SangkirtanRegistrationStatus
 import com.harekrishna.otpClasses.data.sources.db.dao.SangkirtanStudentDao
+import com.harekrishna.otpClasses.domain.GetUserProfileUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +21,7 @@ import javax.inject.Inject
 class SangkirtanStudentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val sangkirtanStudentDao: SangkirtanStudentDao,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val getUserProfileUseCase: GetUserProfileUseCase
 ) {
 
     private val TAG = "SangkirtanStudentRepository"
@@ -63,7 +64,7 @@ class SangkirtanStudentRepository @Inject constructor(
     }
 
     fun getRegistrationList(): Flow<List<SangkirtanRegistrationStatus>> = flow {
-        val userData = userPreferencesRepository.getUserData().first()
+        val userData = getUserProfileUseCase.getUserData().first()
 
         // Attempt to get the data from the local database (Room)
         val localRegistrationCounts = userData.second?.let {
@@ -101,7 +102,7 @@ class SangkirtanStudentRepository @Inject constructor(
 
     suspend fun syncFullLocalRegistrations(date: String) {
         withContext(Dispatchers.IO) {
-            val userData = userPreferencesRepository.getUserData().first()
+            val userData = getUserProfileUseCase.getUserData().first()
             userData.second?.let { userId ->
                 sangkirtanStudentDao.getFullRegistrationsByDate(date, userId)
                     .take(1)
@@ -127,7 +128,7 @@ class SangkirtanStudentRepository @Inject constructor(
 
     suspend fun syncLocalRegistrations(date: String) {
         withContext(Dispatchers.IO) {
-            val userData = userPreferencesRepository.getUserData().first()
+            val userData = getUserProfileUseCase.getUserData().first()
             userData.second?.let { userId ->
                 sangkirtanStudentDao.getFullRegistrationsByDateNotSynced(date, userId)
                     .take(1)
@@ -153,7 +154,7 @@ class SangkirtanStudentRepository @Inject constructor(
 
     suspend fun deleteRegistrationByDate(date: String) {
         withContext(Dispatchers.IO) {
-            val userData = userPreferencesRepository.getUserData().first()
+            val userData = getUserProfileUseCase.getUserData().first()
             userData.second?.let { userId ->
                 sangkirtanStudentDao.getFullRegistrationsByDate(date, userId)
                     .take(1)

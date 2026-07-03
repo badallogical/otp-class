@@ -9,6 +9,7 @@ import com.harekrishna.otpClasses.data.sources.db.dao.UserEntityDao
 import com.harekrishna.otpClasses.domain.model.Role
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -170,7 +171,7 @@ class UserProfileRepositoryImpl @Inject constructor(
                 UserEntity(
                     id = currentUser.uid,
                     isGuest = currentUser.isAnonymous,
-                    name = currentUser.displayName.orEmpty(),
+                    name = oldUser?.name.orEmpty(),
                     phone = oldUser?.phone.orEmpty(),
                     email = currentUser.email.orEmpty(),
                     photoURL = currentUser.photoUrl?.toString().orEmpty(),
@@ -184,6 +185,15 @@ class UserProfileRepositoryImpl @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    override fun getUserProfile(): Flow<UserEntity> {
+        val uid: String = auth.currentUser?.uid
+            ?: throw IllegalStateException("User not authenticated")
+
+        return userEntityDao.getUser(uid).map { user ->
+            user ?: throw NoSuchElementException("User not found")
         }
     }
 }

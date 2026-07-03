@@ -2,10 +2,8 @@ package com.harekrishna.otpClasses.ui.registeration
 
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -14,7 +12,7 @@ import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.sources.repos.AttendancePreferencesRepository
 import com.harekrishna.otpClasses.data.sources.repos.MessageType
 import com.harekrishna.otpClasses.data.sources.repos.StudentRepository
-import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
+import com.harekrishna.otpClasses.domain.GetUserProfileUseCase
 import com.harekrishna.otpClasses.domain.PrepareWhatsappMessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +56,7 @@ data class StudentFormUiState(
 @HiltViewModel
 class StudentFormViewModel @Inject constructor(
     private val studentRepository: StudentRepository,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val getUserProfileUseCase: GetUserProfileUseCase,
     private val attendancePreferencesRepository: AttendancePreferencesRepository,
     private val prepareWhatsappMessageUseCase: PrepareWhatsappMessageUseCase
 ) : ViewModel() {
@@ -74,7 +72,7 @@ class StudentFormViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val userData = userPreferencesRepository.getUserData().first() // Get the first emitted value
+            val userData = getUserProfileUseCase.getUserData().first() // Get the first emitted value
             userName = userData.first ?: "Rajiva Prabhu Ji"
             userPhone = userData.second ?: "+919807726801"
         }

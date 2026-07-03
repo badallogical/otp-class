@@ -9,7 +9,7 @@ import com.harekrishna.otpClasses.data.models.AttendancePOJO
 import com.harekrishna.otpClasses.data.models.StudentDTO
 import com.harekrishna.otpClasses.data.models.StudentPOJO
 import com.harekrishna.otpClasses.data.sources.repos.StudentRepository
-import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
+import com.harekrishna.otpClasses.domain.GetUserProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +30,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AttendanceViewModel @Inject constructor(
     private val studentRepository: StudentRepository,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val getUserProfileUseCase: GetUserProfileUseCase
 ) : ViewModel() {
 
     private var _uiState = MutableStateFlow(AttendanceUiState())
@@ -41,7 +41,7 @@ class AttendanceViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val userData = withContext(Dispatchers.IO) {
-                userPreferencesRepository.getUserData().first() // Fetch user data
+                getUserProfileUseCase.getUserData().first() // Fetch user data
             }
             userPhone = userData.second ?: "+919807726801"
 

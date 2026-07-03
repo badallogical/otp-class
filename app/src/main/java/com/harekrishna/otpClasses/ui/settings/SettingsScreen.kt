@@ -71,15 +71,11 @@ fun SettingsScreen( navController: NavController,
 
     val uiState by viewModel.uiState.collectAsState()
 
-    var name by remember { mutableStateOf("" ) }
-    var phone by remember { mutableStateOf("") }
     var selectedThemeMode by remember { mutableStateOf(ThemeMode.SYSTEM) }
     var notificationsEnabled by remember { mutableStateOf(false)}
 
 
     LaunchedEffect(uiState) {
-        name = uiState.name
-        phone = uiState.phone
         selectedThemeMode = uiState.themeMode
         notificationsEnabled = uiState.notificationsEnabled
     }
@@ -145,27 +141,6 @@ fun SettingsScreen( navController: NavController,
                     .verticalScroll(rememberScrollState())
                     .alpha(if (uiState.isLoading) 0.5f else 1f) // Dim content if loading
             ) {
-                // Profile Settings Section
-                SettingsSection(title = "Profile Settings") {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Name") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-
-                    OutlinedTextField(
-                        value = phone,
-                        onValueChange = { phone = it },
-                        label = { Text("Phone") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
-
                 SettingsSection(title = "Appearance") {
 
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -221,8 +196,6 @@ fun SettingsScreen( navController: NavController,
 
 
                 SaveButton(navController) { viewModel.save(SettingsUiState(
-                    name = name,
-                    phone = phone,
                     notificationsEnabled = notificationsEnabled,
                     themeMode = selectedThemeMode
                     ))
@@ -350,8 +323,6 @@ private fun SettingsSection(
 }
 
 data class SettingsUiState(
-    val name: String = "",
-    val phone: String = "",
     val notificationsEnabled: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val isLoading: Boolean = false,

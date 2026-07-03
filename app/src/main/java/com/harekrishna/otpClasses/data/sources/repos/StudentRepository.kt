@@ -17,6 +17,7 @@ import com.harekrishna.otpClasses.data.sources.db.dao.AttendanceDao
 import com.harekrishna.otpClasses.data.sources.db.dao.CallingReportDao
 import com.harekrishna.otpClasses.data.sources.db.dao.Registration
 import com.harekrishna.otpClasses.data.sources.db.dao.StudentDao
+import com.harekrishna.otpClasses.domain.GetUserProfileUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +35,7 @@ class StudentRepository @Inject constructor(
     private val studentDao: StudentDao,
     private val callingDao: CallingReportDao,
     private val attendanceDao: AttendanceDao,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val getUserProfileUseCase: GetUserProfileUseCase
 ) {
 
     private val TAG = "StudentRepository"
@@ -176,7 +177,7 @@ class StudentRepository @Inject constructor(
 
 
     suspend fun syncStudentData() {
-        val userData = userPreferencesRepository.getUserData().first()
+        val userData = getUserProfileUseCase.getUserData().first()
         val phone = userData.second;
 
         val remoteStudents = withContext(Dispatchers.IO) {
@@ -202,7 +203,7 @@ class StudentRepository @Inject constructor(
 
     // It will load the registration made from remote and insert to database, and update calling.
     suspend fun syncMyStudentData() {
-        val userData = withContext(Dispatchers.IO) { userPreferencesRepository.getUserData().first() }
+        val userData = withContext(Dispatchers.IO) { getUserProfileUseCase.getUserData().first() }
         Log.d(TAG, "USER DATA ${userData.second}")
 
         val remoteStudents = withContext(Dispatchers.IO) {
@@ -280,7 +281,7 @@ class StudentRepository @Inject constructor(
     // Fetch list of registrations by date with counts
     @RequiresApi(Build.VERSION_CODES.O)
     fun getRegistrationList(): Flow<List<RegistrationStatus>> = flow {
-        val userData = userPreferencesRepository.getUserData().first()
+        val userData = getUserProfileUseCase.getUserData().first()
 
         // Attempt to get the data from the local database (Room)
         val localRegistrationCounts = userData.second?.let {
@@ -363,7 +364,7 @@ class StudentRepository @Inject constructor(
     suspend fun syncFullLocalRegistrations(date: String) {
         withContext(Dispatchers.IO) {
             // Get user data from DataStore
-            val userData = userPreferencesRepository.getUserData().first() // Get the first emitted value
+            val userData = getUserProfileUseCase.getUserData().first() // Get the first emitted value
 
             // Check userData and fetch registrations using Flow
             userData.second?.let { userId ->
@@ -405,7 +406,7 @@ class StudentRepository @Inject constructor(
     suspend fun syncLocalRegistrations(date: String) {
         withContext(Dispatchers.IO) {
             // Get user data from DataStore
-            val userData = userPreferencesRepository.getUserData().first() // Get the first emitted value
+            val userData = getUserProfileUseCase.getUserData().first() // Get the first emitted value
 
             // Check userData and fetch registrations using Flow
             userData.second?.let { userId ->
@@ -446,7 +447,7 @@ class StudentRepository @Inject constructor(
     suspend fun deleteRegistrationByDate( date: String ){
         withContext(Dispatchers.IO) {
             // Get user data from DataStore
-            val userData = userPreferencesRepository.getUserData().first() // Get the first emitted value
+            val userData = getUserProfileUseCase.getUserData().first() // Get the first emitted value
 
             // Check userData and fetch registrations using Flow
             userData.second?.let { userId ->

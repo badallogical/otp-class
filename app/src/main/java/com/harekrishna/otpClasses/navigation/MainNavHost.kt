@@ -4,7 +4,6 @@ import ProfileScreen
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,7 +12,6 @@ import com.harekrishna.otpClasses.ui.attendance.AttendanceDetailsScreen
 import com.harekrishna.otpClasses.ui.attendance.AttendanceHistoryScreen
 import com.harekrishna.otpClasses.ui.dashboard.DashboardScreen
 import com.harekrishna.otpClasses.ui.settings.SettingsScreen
-import com.harekrishna.otpClasses.ui.dashboard.WelcomeScreen
 import com.harekrishna.otpClasses.ui.events.EventsScreen
 import com.harekrishna.otpClasses.ui.events.HarinaamFormScreen
 import com.harekrishna.otpClasses.ui.events.HarinaamRegistrationDetailsScreen
@@ -50,7 +48,6 @@ fun MainNavHost(
         composable("dashboard") { DashboardScreen(navController) }
         composable("settings") { SettingsScreen(navController) }
         composable("about") { AboutScreen() }
-        composable("welcome") { WelcomeScreen(navController) }
         composable("registration") { RegistrationScreen(navController) }
         composable("events") { EventsScreen(navController) }
         composable("harinaam_list") { HarinaanApp() }

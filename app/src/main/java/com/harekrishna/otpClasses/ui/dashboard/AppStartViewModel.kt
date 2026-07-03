@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.harekrishna.otpClasses.core.utils.NetworkChecker
 import com.harekrishna.otpClasses.data.models.UserEntity
 import com.harekrishna.otpClasses.data.sources.repos.AuthRepository
-import com.harekrishna.otpClasses.data.sources.repos.UserPreferencesRepository
 import com.harekrishna.otpClasses.data.sources.repos.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext

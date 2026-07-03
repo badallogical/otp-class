@@ -25,10 +25,6 @@ import com.harekrishna.otpClasses.domain.model.Role
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UI State models
-// ─────────────────────────────────────────────────────────────────────────────
-
 sealed interface LoginState {
     object Idle : LoginState
     object Loading : LoginState
@@ -43,10 +39,6 @@ data class LoginUiState(
     val loadingSource: LoadingSource = LoadingSource.NONE,
     val isOffline: Boolean = false
 )
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ViewModel
-// ─────────────────────────────────────────────────────────────────────────────
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
@@ -72,7 +64,6 @@ class LoginViewModel @Inject constructor(
     }
 
     // ── Session & network ─────────────────────────────────────────────────────
-
     private fun checkNetworkAndSession() {
         _uiState.update { it.copy(isOffline = !NetworkChecker.isInternetAvailable(context)) }
 
@@ -199,7 +190,6 @@ class LoginViewModel @Inject constructor(
                 }
         }
     }
-
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

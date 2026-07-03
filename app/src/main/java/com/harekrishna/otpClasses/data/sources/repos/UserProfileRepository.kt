@@ -8,6 +8,8 @@ interface UserProfileRepository {
 
     fun observeUser(): Flow<UserEntity>
 
+    fun getUserProfile(): Flow<UserEntity>
+
     suspend fun updateProfileName(id: String, name: String)
 
     suspend fun updateProfilePhone(id: String, phone : String )
