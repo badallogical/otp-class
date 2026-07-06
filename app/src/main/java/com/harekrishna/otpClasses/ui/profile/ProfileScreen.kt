@@ -1,3 +1,4 @@
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -59,10 +60,13 @@ fun ProfileScreen(
         }
     }
 
+    BackHandler(enabled = uiState.isProfileCompleted) {
+        navigateToDashboard()
+    }
+
     LaunchedEffect(uiState.isProfileCompleted){
         if( uiState.isProfileCompleted){
             snackbarHostState.showSnackbar("Profile Completed")
-            navigateToDashboard()
         }
     }
 

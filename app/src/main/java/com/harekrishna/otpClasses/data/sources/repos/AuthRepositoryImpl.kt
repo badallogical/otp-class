@@ -74,13 +74,16 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun signOut(context: Context): Result<Unit> {
         return try {
-            // 1. Sign out from Firebase Auth
-            auth.signOut()
+            auth.currentUser?.let { user ->
+                if (user.isAnonymous) {
+                    user.delete().await()
+                } else {
+                    auth.signOut()
+                }
+            }
 
-            // 2. Clear Google Credential Manager Active Session State
-            val credentialManager = CredentialManager.create(context)
-            val clearRequest = ClearCredentialStateRequest()
-            credentialManager.clearCredentialState(clearRequest)
+            CredentialManager.create(context)
+                .clearCredentialState(ClearCredentialStateRequest())
 
             Result.success(Unit)
         } catch (e: Exception) {

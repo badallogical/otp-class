@@ -74,11 +74,7 @@ class ProfileViewModel @Inject constructor(
             try {
                 authRepository.signOut(context)
                     .onSuccess {
-
-                        // Delete the guest user on sign 0ut
-                        if (uiState.value.user.isGuest) {
-                            userProfileRepository.deleteGuestUser()
-                        }
+                        userProfileRepository.handleGuestSignOut()
 
                         _uiState.update { it.copy(isSigningOut = false, signOutSuccess = true) }
                     }

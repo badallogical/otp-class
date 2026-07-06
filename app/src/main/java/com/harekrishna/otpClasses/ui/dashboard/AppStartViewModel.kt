@@ -40,14 +40,11 @@ class AppStartViewModel @Inject constructor(
 
             var currentUser : UserEntity = UserEntity()
             var isProfileCompleted : Boolean = false
+
             if( isFirebaseAuthenticated ){
-
-
-
                 currentUser = userProfileRepo.observeUser().first()
-                isProfileCompleted = !( currentUser.name.isNullOrEmpty() || currentUser.phone.isNullOrEmpty())
+                isProfileCompleted = !( currentUser.name.isBlank() || currentUser.phone.isBlank())
             }
-
 
 
             val destination = when {

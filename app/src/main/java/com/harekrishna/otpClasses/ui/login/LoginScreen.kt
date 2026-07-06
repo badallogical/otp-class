@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -28,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,7 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.harekrishna.otpClasses.ui.theme.Otp_class_appTheme
 import com.harekrishna.otpClasses.ui.theme.ThemeMode
-
+import com.harekrishna.otpClasses.R
 // ─────────────────────────────────────────────────────────────────────────────
 // Entry point — wires ViewModel, handles navigation
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,12 +131,12 @@ fun LoginScreenContent(
 
             Spacer(Modifier.height(if (state.isOffline) 12.dp else 0.dp))
 
-            // ── Lotus mark ───────────────────────────────────────────────────
+            // ── LOGO mark ───────────────────────────────────────────────────
             AnimatedVisibility(
                 visible = entered,
                 enter = fadeIn(tween(500)) + slideInVertically(tween(500)) { -48 }
             ) {
-                Lotusmark()
+                AppLogo()
             }
 
             Spacer(Modifier.height(28.dp))
@@ -198,7 +200,7 @@ fun LoginScreenContent(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun Lotusmark() {
+private fun AppLogo() {
     val colors = MaterialTheme.colorScheme
     Box(contentAlignment = Alignment.Center) {
         // Outer diffuse ring
@@ -226,7 +228,11 @@ private fun Lotusmark() {
             contentAlignment = Alignment.Center
         ) {
             // Replace with: Icon(painterResource(R.drawable.ic_lotus), contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
-            Text(text = "🪷", fontSize = 36.sp)
+            Image(
+                painter = painterResource(R.drawable.iyf),
+                contentDescription = "App Logo",
+                modifier = Modifier.size(96.dp)
+            )
         }
     }
 }

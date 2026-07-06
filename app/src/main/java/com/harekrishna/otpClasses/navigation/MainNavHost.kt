@@ -36,13 +36,32 @@ fun MainNavHost(
     ) {
 
         composable("login") { LoginScreen({ route ->
-                navController.navigate(route)
+                navController.navigate(route){
+                    popUpTo("login"){
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
         } )}
 
         composable("profile") {
             ProfileScreen(
-                { navController.navigate("login")},
-                { navController.navigate("dashboard")})
+                {
+                    navController.navigate("login") {
+                        popUpTo(0) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                },
+                {
+                    navController.navigate("dashboard") {
+                        popUpTo(0) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                })
         }
 
         composable("dashboard") { DashboardScreen(navController) }

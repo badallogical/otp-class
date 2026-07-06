@@ -27,4 +27,6 @@ interface UserProfileRepository {
     suspend fun deleteGuestUser() : Result<Unit>
 
     suspend fun updateGuestUser(currentUser : FirebaseUser) : Result<Unit>
+
+    suspend fun handleGuestSignOut()
 }

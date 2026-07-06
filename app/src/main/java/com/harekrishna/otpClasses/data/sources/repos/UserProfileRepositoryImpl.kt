@@ -196,4 +196,10 @@ class UserProfileRepositoryImpl @Inject constructor(
             user ?: throw NoSuchElementException("User not found")
         }
     }
+
+    override suspend fun handleGuestSignOut(){
+        if( auth.currentUser != null && auth.currentUser?.isAnonymous == true){
+            deleteGuestUser()
+        }
+     }
 }
