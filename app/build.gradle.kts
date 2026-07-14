@@ -64,6 +64,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.compose.material3)
     ksp(libs.hilt.android.compiler)
     
     // >>> ADDED HILT COMPOSE RUNTIME <<<
