@@ -225,7 +225,7 @@ class FollowUpViewModel @Inject constructor(
             // Check if any of the last four attendance dates match the Sundays
             val attendedOnSunday = lastFourDatesOfAttendee.any { date -> sundays.contains(date) }
 
-            // If the student attended on any of the last four Sundays, add to result
+            // If the studentProfile attended on any of the last four Sundays, add to result
             if (attendedOnSunday) {
                 result.add(attendee)
             }
@@ -251,7 +251,7 @@ class FollowUpViewModel @Inject constructor(
             // Check if none of the last four attendance dates match the Sundays
             val absentOnAllSundays = lastFourDatesOfAttendee.none { date -> sundays.contains(date) }
 
-            // If the student was absent on all of the last four Sundays, add to result
+            // If the studentProfile was absent on all of the last four Sundays, add to result
             if (absentOnAllSundays) {
                 result.add(attendee)
             }

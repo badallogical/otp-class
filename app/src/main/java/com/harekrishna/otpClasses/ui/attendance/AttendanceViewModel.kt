@@ -211,7 +211,7 @@ class AttendanceViewModel @Inject constructor(
                 // Perform the network call on IO thread
                 studentRepository.insertStudent(student)
 
-                // Fetch the updated student list after insertion
+                // Fetch the updated studentProfile list after insertion
                 val updatedStudentList = studentRepository.getAllStudents().first()
 
                 // Update the UI after successful registration
@@ -229,7 +229,7 @@ class AttendanceViewModel @Inject constructor(
                         studentRepository.updateStudentToSynced(student.phone)
                     } catch (e: Exception) {
                         // Log or handle any errors related to remote sync
-                        Log.e("RemoteSync", "Failed to sync student to remote", e)
+                        Log.e("RemoteSync", "Failed to sync studentProfile to remote", e)
                     }
                 }
             } catch (e: Exception) {
@@ -237,7 +237,7 @@ class AttendanceViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isRegistering = false
                 )
-                Log.e("AttendanceViewModel", "Error registering student: ${e.message}")
+                Log.e("AttendanceViewModel", "Error registering studentProfile: ${e.message}")
             }
         }
     }

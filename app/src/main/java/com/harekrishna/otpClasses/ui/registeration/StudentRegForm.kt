@@ -779,7 +779,7 @@ private fun AnimatedSubmitButton(
                 }
             } else {
                 Text(
-                    text = if (isEdit) "Update Student" else "Submit",
+                    text = if (isEdit) "Update StudentProfile" else "Submit",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
@@ -807,7 +807,7 @@ fun SuccessDialog(uiState: StudentFormUiState, viewModel: StudentFormViewModel) 
                     Text("Success!", style = MaterialTheme.typography.headlineSmall)
                 }
             },
-            text = { Text("Student registered successfully!", style = MaterialTheme.typography.bodyMedium) },
+            text = { Text("StudentProfile registered successfully!", style = MaterialTheme.typography.bodyMedium) },
             confirmButton = {
                 TextButton(onClick = { viewModel.onDismissSuccessDialog() }) {
                     Text("OK", fontWeight = FontWeight.Medium)
@@ -860,10 +860,10 @@ fun StudentNotFoundDialog(uiState: StudentFormUiState, viewModel: StudentFormVie
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Student Not Found", style = MaterialTheme.typography.headlineSmall)
+                    Text("StudentProfile Not Found", style = MaterialTheme.typography.headlineSmall)
                 }
             },
-            text = { Text("No student found with this phone number.", style = MaterialTheme.typography.bodyMedium) },
+            text = { Text("No studentProfile found with this phone number.", style = MaterialTheme.typography.bodyMedium) },
             confirmButton = {
                 TextButton(onClick = { viewModel.onStudentNotFound() }) {
                     Text("OK", fontWeight = FontWeight.Medium)

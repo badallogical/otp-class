@@ -11,7 +11,6 @@ import com.harekrishna.otpClasses.screens.StudentFormScreen
 import com.harekrishna.otpClasses.ui.attendance.AttendanceDetailsScreen
 import com.harekrishna.otpClasses.ui.attendance.AttendanceHistoryScreen
 import com.harekrishna.otpClasses.ui.dashboard.DashboardScreen
-import com.harekrishna.otpClasses.ui.settings.SettingsScreen
 import com.harekrishna.otpClasses.ui.events.EventsScreen
 import com.harekrishna.otpClasses.ui.events.HarinaamFormScreen
 import com.harekrishna.otpClasses.ui.events.HarinaamRegistrationDetailsScreen
@@ -19,9 +18,9 @@ import com.harekrishna.otpClasses.ui.events.HarinaanApp
 import com.harekrishna.otpClasses.ui.followup.FollowUpScreen
 import com.harekrishna.otpClasses.ui.login.LoginScreen
 import com.harekrishna.otpClasses.ui.registeration.CallingListScreen
-import com.harekrishna.otpClasses.ui.registeration.RegistrationScreen
-import com.harekrishna.otpClasses.ui.registeration2.RegistrationFlowRoot
+import com.harekrishna.otpClasses.ui.registration2.RegistrationScreen
 import com.harekrishna.otpClasses.ui.screens.AttendanceScreen
+import com.harekrishna.otpClasses.ui.settings.SettingsScreen
 import com.harekrishna.otpClasses.ui.utils.AboutScreen
 
 @Composable
@@ -68,7 +67,7 @@ fun MainNavHost(
         composable("dashboard") { DashboardScreen(navController) }
         composable("settings") { SettingsScreen(navController) }
         composable("about") { AboutScreen() }
-        composable("registration") { RegistrationFlowRoot() }
+        composable("registration") { RegistrationScreen() }
         composable("events") { EventsScreen(navController) }
         composable("harinaam_list") { HarinaanApp() }
         composable("harinaam_form") { HarinaamFormScreen(navController) }

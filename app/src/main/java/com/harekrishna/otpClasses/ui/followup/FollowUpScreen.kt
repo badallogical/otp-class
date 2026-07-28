@@ -348,7 +348,7 @@ fun AttendeeListTab(viewModel: FollowUpViewModel) {
             LazyColumn {
                 items(uiState.filteredAttendee) { student ->
                     AttendeeListItem(student, onStudentUpdated =  { updatedReport: AttendeeItem ->
-                        // Handle student status update
+                        // Handle studentProfile status update
                         viewModel.updateStudentStatus(updatedReport.phone, updatedReport.callingStatus,updatedReport.isInvited, updatedReport.isActive,updatedReport.feedback)
                     },  onMessageIconClicked = { report: AttendeeItem ->
                         viewModel.sendWhatsAppMessage(context,report.phone, report.name)
@@ -962,8 +962,8 @@ fun showCallingStatusDialog(
         },
         confirmButton = {
             Button(onClick = {
-                // Save the updated student status
-                // Save the updated student status
+                // Save the updated studentProfile status
+                // Save the updated studentProfile status
                 val formattedStatus: String = when (selectedStatus) {
                     "No" -> if(reason.text.isEmpty()) "No" else "No, ${reason.text}"
                     "❗" -> if(otherReason.text.isEmpty() ) "❗" else "❗, ${otherReason.text}"

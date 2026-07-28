@@ -125,7 +125,7 @@ interface AttendanceDao {
         updateAttendanceResponse(response)
     }
 
-    // load single student attendance
+    // load single studentProfile attendance
     @Transaction
     suspend fun loadAttendance(phone: String, dates : List<String>) {
 
@@ -135,7 +135,7 @@ interface AttendanceDao {
             insertAttendanceResponse(AttendanceResponse(phone))
         }
 
-        // Save all attendance of one student
+        // Save all attendance of one studentProfile
         for (date in dates) {
             insertAttendanceDateFromRemote(
                 AttendanceDate(
@@ -163,7 +163,7 @@ interface AttendanceDao {
 
         val total = jan + feb + mar + apr + may + jun + jul + aug + sep + oct + nov + dec
 
-        // prepare and update the student response
+        // prepare and update the studentProfile response
         val response = AttendanceResponse(
             phone = phone,
             janCount = jan,

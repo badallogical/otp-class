@@ -378,7 +378,7 @@ fun AttendanceDetailsScreen(
 
                         val message = buildString {
                             append("Attendance Report for $date\n")
-                            append("${uiState.selectedFilter} Student : ${filteredAttendees.size}\n\n")
+                            append("${uiState.selectedFilter} StudentProfile : ${filteredAttendees.size}\n\n")
                             filteredAttendees.forEachIndexed { index, attendee ->
                                 append("${index + 1}. ${attendee.name} - ${attendee.phone}")
                                 append("\n")

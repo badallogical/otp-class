@@ -41,7 +41,7 @@ object ApiService {
             val jsonObject = JSONObject().apply {
                 put("type", "registerStudent")
                 put("updated", updated)// Add the request type
-                put("student", JSONObject().apply {
+                put("studentProfile", JSONObject().apply {
                     put("name", student.name)
                     put("phone", student.phone)
                     put("facilitator", student.facilitator)
@@ -71,7 +71,7 @@ object ApiService {
             val jsonObject = JSONObject().apply {
                 put("type", "registerHarinaamStudent")
                 put("updated", updated)// Add the request type
-                put("student", JSONObject().apply {
+                put("studentProfile", JSONObject().apply {
                     put("name", sangkirtanStudent.name)
                     put("phone", sangkirtanStudent.phone)
                     put("category", sangkirtanStudent.category)

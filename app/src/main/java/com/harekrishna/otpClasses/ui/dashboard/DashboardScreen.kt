@@ -153,7 +153,7 @@ fun DashboardContent(navController: NavController) {
             DashboardCard(
                 icon = painterResource(R.drawable.baseline_done_outline_24),
                 title = "Attendance",
-                subtitle = "Mark student attendance",
+                subtitle = "Mark studentProfile attendance",
                 accentColor = GreenSuccess,
                 accentBg = GreenLight,
                 onClick = { navController.navigate("attendance") }
@@ -424,7 +424,7 @@ private fun DashboardCardPreview() {
             DashboardCard(
                 icon = painterResource(R.drawable.baseline_done_outline_24),
                 title = "Attendance",
-                subtitle = "Mark student attendance",
+                subtitle = "Mark studentProfile attendance",
                 accentColor = GreenSuccess,
                 accentBg = GreenLight,
                 onClick = {}

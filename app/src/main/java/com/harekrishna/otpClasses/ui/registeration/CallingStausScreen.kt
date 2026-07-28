@@ -310,7 +310,7 @@ private fun TopSection(
 //@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 //@Composable
 //fun StudentListItem(
-//    student: CallingReportPOJO,
+//    studentProfile: CallingReportPOJO,
 //    onStudentUpdated: (CallingReportPOJO) -> Unit,
 //    onMessageIconClicked: (CallingReportPOJO) -> Unit,
 //    isSelected: Boolean = false,
@@ -356,20 +356,20 @@ private fun TopSection(
 //                .fillMaxWidth(),
 //            verticalArrangement = Arrangement.spacedBy(12.dp)
 //        ) {
-//            // Student Info and Actions Row
+//            // StudentProfile Info and Actions Row
 //            Row(
 //                modifier = Modifier.fillMaxWidth(),
 //                horizontalArrangement = Arrangement.SpaceBetween,
 //                verticalAlignment = Alignment.Top
 //            ) {
-//                // Student Details
+//                // StudentProfile Details
 //                Column(
 //                    modifier = Modifier.weight(1f),
 //                    verticalArrangement = Arrangement.spacedBy(4.dp)
 //                ) {
 //
 //                    CopyableText(
-//                        text = student.name,
+//                        text = studentProfile.name,
 //                        style = MaterialTheme.typography.titleMedium.copy(
 //                            fontWeight = FontWeight.SemiBold,
 //                            letterSpacing = 0.sp
@@ -378,7 +378,7 @@ private fun TopSection(
 //                    )
 //
 //                    CopyableText(
-//                        text = student.phone,
+//                        text = studentProfile.phone,
 //                        style = MaterialTheme.typography.bodyMedium,
 //                        color = MaterialTheme.colorScheme.onSurfaceVariant
 //                    )
@@ -393,10 +393,10 @@ private fun TopSection(
 //                        icon = Icons.AutoMirrored.Filled.Send,
 //                        description = "Send Message",
 //                        onClick = {
-//                            onStudentUpdated(student.copy(isInvited = true))
-//                            onMessageIconClicked(student)
+//                            onStudentUpdated(studentProfile.copy(isInvited = true))
+//                            onMessageIconClicked(studentProfile)
 //                        },
-//                        isActive = student.isInvited
+//                        isActive = studentProfile.isInvited
 //                    )
 //
 //                    Spacer( modifier = Modifier.width(4.dp))
@@ -406,7 +406,7 @@ private fun TopSection(
 //                        description = "Call",
 //                        onClick = {
 //                            val intent = Intent(Intent.ACTION_DIAL).apply {
-//                                data = Uri.parse("tel:${student.phone}")
+//                                data = Uri.parse("tel:${studentProfile.phone}")
 //                            }
 //                            context.startActivity(intent)
 //                            showDialog = true
@@ -423,8 +423,8 @@ private fun TopSection(
 //                    onClick = { showDialog = true },
 //                    label = {
 //                        Text(
-//                            text = student.status.split(",").firstOrNull()?.trim()
-//                                ?: student.status,
+//                            text = studentProfile.status.split(",").firstOrNull()?.trim()
+//                                ?: studentProfile.status,
 //                            style = MaterialTheme.typography.labelMedium,
 //                            maxLines = 1,
 //                            overflow = TextOverflow.Ellipsis
@@ -432,11 +432,11 @@ private fun TopSection(
 //                    },
 //                    modifier = Modifier.width(120.dp),
 //                    colors = AssistChipDefaults.assistChipColors(
-//                        containerColor = if (student.isInvited)
+//                        containerColor = if (studentProfile.isInvited)
 //                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
 //                        else
 //                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-//                        labelColor = if (student.isInvited)
+//                        labelColor = if (studentProfile.isInvited)
 //                            MaterialTheme.colorScheme.primary
 //                        else
 //                            MaterialTheme.colorScheme.onSecondaryContainer
@@ -449,7 +449,7 @@ private fun TopSection(
 //
 //            }
 //
-//            val reason =  extractReason(student.status, "No,").ifEmpty {  extractReason(student.status, "❗,") }
+//            val reason =  extractReason(studentProfile.status, "No,").ifEmpty {  extractReason(studentProfile.status, "❗,") }
 //
 //            if( reason.isNotEmpty() ){
 //                Surface(
@@ -471,14 +471,14 @@ private fun TopSection(
 //                    )
 //                }
 //            }
-//            else if (student.feedback.isNotBlank()) {
+//            else if (studentProfile.feedback.isNotBlank()) {
 //                Surface(
 //                    modifier = Modifier.fillMaxWidth(),
 //                    shape = RoundedCornerShape(8.dp),
 //                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
 //                ) {
 //                    Text(
-//                        text = "\"${student.feedback}\"",
+//                        text = "\"${studentProfile.feedback}\"",
 //                        style = MaterialTheme.typography.bodyMedium.copy(
 //                            fontStyle = FontStyle.Italic,
 //                            lineHeight = 20.sp
@@ -491,7 +491,7 @@ private fun TopSection(
 //                }
 //            }
 //
-//            var about by remember { mutableStateOf(student.remark)}
+//            var about by remember { mutableStateOf(studentProfile.remark)}
 //            // About section
 //            if( expanded ){
 //
@@ -507,9 +507,9 @@ private fun TopSection(
 //                        ) {
 //
 //                                // Profile Picture
-//                                Log.d("Student", "Photo uri ${student.name} is ${student.photoUri}")
-//                                if( !student.photoUri.isNullOrEmpty() && student.photoUri != "null" ) {
-//                                    Log.d("Student", student.photoUri.isNullOrEmpty().toString())
+//                                Log.d("StudentProfile", "Photo uri ${studentProfile.name} is ${studentProfile.photoUri}")
+//                                if( !studentProfile.photoUri.isNullOrEmpty() && studentProfile.photoUri != "null" ) {
+//                                    Log.d("StudentProfile", studentProfile.photoUri.isNullOrEmpty().toString())
 //                                    Box(
 //                                        modifier = Modifier
 //                                            .fillMaxWidth()
@@ -530,7 +530,7 @@ private fun TopSection(
 //                                                contentAlignment = Alignment.Center
 //                                            ) {
 //                                                    AsyncImage(
-//                                                        model = Uri.parse(student.photoUri),
+//                                                        model = Uri.parse(studentProfile.photoUri),
 //                                                        contentDescription = "Profile Photo",
 //                                                        modifier = Modifier.fillMaxSize(),
 //                                                        contentScale = ContentScale.Crop
@@ -547,7 +547,7 @@ private fun TopSection(
 //                                value = about,
 //                                onValueChange = {
 //                                    about = it
-//                                    onRemarkChanged(student.copy(remark = about))
+//                                    onRemarkChanged(studentProfile.copy(remark = about))
 //                                },
 //                                modifier = Modifier
 //                                    .fillMaxWidth()
@@ -585,7 +585,7 @@ private fun TopSection(
 //
 //    if (showDialog) {
 //        showCallingStatusDialog(
-//            student = student,
+//            studentProfile = studentProfile,
 //            onDismiss = { showDialog = false },
 //            onSave = { updatedStudent ->
 //                onStudentUpdated(updatedStudent)
@@ -657,7 +657,7 @@ fun StudentListItem(
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Student Info
+            // StudentProfile Info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1056,7 +1056,7 @@ fun showCallingStatusDialog(
         },
         confirmButton = {
             Button(onClick = {
-                // Save the updated student status
+                // Save the updated studentProfile status
                 val formattedStatus: String = when (selectedStatus) {
                     "No" -> if(reason.text.isEmpty()) "No" else "No, ${reason.text}"
                     "❗" -> if(otherReason.text.isEmpty() ) "❗" else "❗, ${otherReason.text}"

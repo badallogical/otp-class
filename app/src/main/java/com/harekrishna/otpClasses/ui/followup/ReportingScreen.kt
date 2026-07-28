@@ -89,7 +89,7 @@ fun ReportingScreen(context: Context, navController: NavController) {
     var showDropdown by remember { mutableStateOf(false) }
     var isDataFetched by remember { mutableStateOf(false) }
 
-    // State to handle fetching and displaying student reports
+    // State to handle fetching and displaying studentProfile reports
     var studentReports by remember { mutableStateOf<List<ReportDTO>>(emptyList()) }
     var studentsList by remember { mutableStateOf<List<StudentPOJO>>(emptyList()) }
     var trackingStudentList by remember { mutableStateOf<List<StudentPOJO>>(emptyList()) }
@@ -193,7 +193,7 @@ fun ReportingScreen(context: Context, navController: NavController) {
                                     onClick = {
                                         selectedFacilitator = option
                                         showDropdown = false
-//                                    // Fetch student reports based on selected facilitator
+//                                    // Fetch studentProfile reports based on selected facilitator
 //                                    fetchStudentReports(option, onSuccess = {
 //                                        studentReports = it
 //                                        isLoading = false
@@ -304,7 +304,7 @@ fun ReportingScreen(context: Context, navController: NavController) {
                     // Show a message if there are no reports
                     NoStudentFoundMessage()
                 } else {
-                    // Show student reports in a LazyColumn
+                    // Show studentProfile reports in a LazyColumn
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(filterstudentReports) { report ->
                             ReportItem(report, onClick = { student ->
@@ -383,7 +383,7 @@ fun NoStudentFoundMessage() {
     }
 }
 
-// Function to fetch student reports based on facilitator
+// Function to fetch studentProfile reports based on facilitator
 //fun fetchStudentReports(
 //    facilitator: String,
 //    onSuccess: (List<ReportDTO>) -> Unit,
@@ -395,7 +395,7 @@ fun NoStudentFoundMessage() {
 //            // Simulate a network call or database query
 //            delay(1000) // Simulate network delay
 //
-//            // Example student reports (replace with actual data fetching logic)
+//            // Example studentProfile reports (replace with actual data fetching logic)
 //            val reports = listOf(
 //                ReportDTO(name = "John Doe", chanting = 20, lastMeetingDate = "2024-09-01"),
 //                ReportDTO(name = "Jane Smith", chanting = 25, lastMeetingDate = "2024-08-30")
@@ -424,7 +424,7 @@ fun shareFormLink(context: Context) {
     context.startActivity(chooser)
 }
 
-// Composable for displaying individual student report
+// Composable for displaying individual studentProfile report
 @Composable
 fun ReportItem(report: ReportDTO, onClick: (ReportDTO) -> Unit) {
     Card(

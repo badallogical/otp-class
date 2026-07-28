@@ -40,7 +40,7 @@ class StudentRepository @Inject constructor(
 
     private val TAG = "StudentRepository"
 
-    // Insert a student into the database and update the callings
+    // Insert a studentProfile into the database and update the callings
     suspend fun insertStudent(student: StudentDTO, isInvited: Boolean = false) {
         // Save to local
         studentDao.insert(student)
@@ -84,7 +84,7 @@ class StudentRepository @Inject constructor(
         ApiService.registerStudent(student, updated)
     }
 
-    // Get a student by phone as a Flow
+    // Get a studentProfile by phone as a Flow
     fun getStudentByPhone(phone: String): StudentPOJO? {
         return studentDao.getStudentByPhone(phone)
     }
@@ -93,7 +93,7 @@ class StudentRepository @Inject constructor(
         return studentDao.getStudentDTOByPhone(phone)
     }
 
-    // Update a student record
+    // Update a studentProfile record
     suspend fun updateStudent(student: StudentDTO) = withContext(Dispatchers.IO) {
         try {
             studentDao.update(student)
@@ -131,7 +131,7 @@ class StudentRepository @Inject constructor(
     }
 
 
-    // Delete a student by phone number
+    // Delete a studentProfile by phone number
     suspend fun deleteStudentByPhone(phone: String) {
         studentDao.deleteByPhone(phone)
         callingDao.delete(phone)
@@ -191,12 +191,12 @@ class StudentRepository @Inject constructor(
 
         // Store the data in the local database for future requests
         withContext(Dispatchers.IO) {
-            Log.d("student Repo", "writing to db")
+            Log.d("studentProfile Repo", "writing to db")
             remoteStudents.forEach { student ->
-                Log.d(TAG, "Inserting student: $student")
+                Log.d(TAG, "Inserting studentProfile: $student")
                 studentDao.insert(student.copy(sync = true))
 
-                Log.d(TAG, "Student inserted: ${student.name}")
+                Log.d(TAG, "StudentProfile inserted: ${student.name}")
             }
         }
     }
@@ -221,12 +221,12 @@ class StudentRepository @Inject constructor(
         withContext(Dispatchers.IO) {
             Log.d(TAG, "writing to db")
             remoteStudents?.forEach { student ->
-                Log.d(TAG, "Inserting student: $student")
+                Log.d(TAG, "Inserting studentProfile: $student")
 
-                // not only insert student but also update calling report
+                // not only insert studentProfile but also update calling report
                 insertStudent(student.copy(sync = true))
 
-                Log.d(TAG, "Student inserted: ${student.name}")
+                Log.d(TAG, "StudentProfile inserted: ${student.name}")
             }
         }
     }
@@ -490,7 +490,7 @@ class StudentRepository @Inject constructor(
 
     suspend fun updateStudentToSynced(phone: String) {
         try {
-            // Update the student's sync status in the local database
+            // Update the studentProfile's sync status in the local database
             studentDao.updateToSync(phone)
         } catch (exception: Exception) {
             // Handle any errors during the update

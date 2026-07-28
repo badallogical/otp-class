@@ -162,7 +162,7 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
                 ) {
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        "No Student found",
+                        "No StudentProfile found",
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.Gray
                     )
@@ -189,11 +189,11 @@ fun AttendanceScreen(navController: NavController, viewModel: AttendanceViewMode
     if (uiState.showDialog && uiState.selectedStudent != null) {
         AttendanceDialog(
             uiState = uiState,
-            onSubmit = { student ->  // Correctly pass the student to the onSubmit lambda
-                viewModel.postAttendance(student)  // Pass the student to postAttendance function
+            onSubmit = { student ->  // Correctly pass the studentProfile to the onSubmit lambda
+                viewModel.postAttendance(student)  // Pass the studentProfile to postAttendance function
             },
             onDismiss = {
-                viewModel.onDismissAttendanceDialog()  // Dismiss the dialog and clear the selected student
+                viewModel.onDismissAttendanceDialog()  // Dismiss the dialog and clear the selected studentProfile
             }
         )
     }
@@ -500,7 +500,7 @@ fun StudentItem(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Student's name and phone details
+            // StudentProfile's name and phone details
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Center

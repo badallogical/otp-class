@@ -59,12 +59,12 @@ class AttendanceRepository @Inject constructor(
                 Log.d("Fetched Data Size : ", fetchedData.size.toString())
                 Log.d("Fetched Data : ", fetchedData.toString())
 
-                // load each student attendance record
+                // load each studentProfile attendance record
                 fetchedData.forEach { entry ->
                     val phone = entry.phone
                     val dates = entry.attendanceDates
 
-                    // Load that student attendance
+                    // Load that studentProfile attendance
                     attendanceDao.loadAttendance(phone, dates);
                 }
 

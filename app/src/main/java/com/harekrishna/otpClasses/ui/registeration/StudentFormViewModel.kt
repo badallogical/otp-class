@@ -34,7 +34,7 @@ data class StudentFormUiState(
     var phone: String = "",
     var facilitator: String = "NA",
     var batch: String = "OTP",
-    var profession: String = "student",
+    var profession: String = "studentProfile",
     var address: String = "na",
     var city : String = "Lucknow",
     var showDropdownFacilitator: Boolean = false,
@@ -123,7 +123,7 @@ class StudentFormViewModel @Inject constructor(
                         studentRepository.updateStudentToSynced(student.phone)
                     } catch (e: Exception) {
                         // Log or handle any errors related to remote sync
-                        Log.e("RemoteSync", "Failed to sync student to remote", e)
+                        Log.e("RemoteSync", "Failed to sync studentProfile to remote", e)
                     }
                 }
 
@@ -132,7 +132,7 @@ class StudentFormViewModel @Inject constructor(
                 _uiState.update { current ->
                     current.copy(isSubmitting = false, isSuccessfull = false)
                 }
-                Log.e("RegisterStudent", "Failed to register student", e)
+                Log.e("RegisterStudent", "Failed to register studentProfile", e)
             }
         }
     }
@@ -166,7 +166,7 @@ class StudentFormViewModel @Inject constructor(
                 studentRepository.getStudentDTOByPhone(phoneInput)
             }
             if (student != null) {
-                Log.d("Student form", student.toString())
+                Log.d("StudentProfile form", student.toString())
                 val parts = student.address.split(",")
                 val addressOnly = parts.firstOrNull()?.trim() ?: ""
                 val cityOnly = parts.getOrNull(1)?.trim() ?: ""

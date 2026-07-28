@@ -113,7 +113,7 @@ class HarinaanViewModel : ViewModel() {
 
     fun getEvent(id: String) = _events.value.firstOrNull { it.id == id }
 
-    // ── Student Registration ────────────────────────
+    // ── StudentProfile Registration ────────────────────────
     fun registerStudent(eventId: String, name: String, phone: String) {
         _events.value = _events.value.map { evt ->
             if (evt.id != eventId) return@map evt
@@ -128,7 +128,7 @@ class HarinaanViewModel : ViewModel() {
     // ── Harinaam Attendance ─────────────────────────
     /**
      * Add a devotee to the attendance list for an event.
-     * This is a SEPARATE action from student registration.
+     * This is a SEPARATE action from studentProfile registration.
      */
     fun addAttendance(eventId: String, name: String, phone: String) {
         _events.value = _events.value.map { evt ->
@@ -773,7 +773,7 @@ fun EventDetailScreen(
 
                     // ── Action buttons ────────────────────────────────
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        // Register a student
+                        // Register a studentProfile
                         Button(
                             onClick = { showRegisterSheet = true },
                             modifier = Modifier.weight(1f),
@@ -972,12 +972,12 @@ fun RegisterStudentSheet(eventId: String, viewModel: HarinaanViewModel, onDismis
                 }
                 Spacer(Modifier.width(10.dp))
                 Column {
-                    Text("Register Student", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-                    Text("Add student to this event", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Register StudentProfile", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Add studentProfile to this event", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Spacer(Modifier.height(18.dp))
-            FormField("Student Name", name, { name = it }, "e.g. Priya Sharma", Icons.Default.Person)
+            FormField("StudentProfile Name", name, { name = it }, "e.g. Priya Sharma", Icons.Default.Person)
             Spacer(Modifier.height(12.dp))
             FormField("Mobile Number", phone, { phone = it }, "e.g. +91 98765 43210", Icons.Default.Phone)
             Spacer(Modifier.height(20.dp))
@@ -1003,7 +1003,7 @@ fun RegisterStudentSheet(eventId: String, viewModel: HarinaanViewModel, onDismis
 
 // ─────────────────────────────────────────────────────────────────
 // SCREEN 3 — TAKE HARINAAM ATTENDANCE
-// This is SEPARATE from student registration.
+// This is SEPARATE from studentProfile registration.
 // Here we mark which DEVOTEES physically joined the Harinaam kirtan.
 // Search existing devotees from past events, or add a new one.
 // ─────────────────────────────────────────────────────────────────

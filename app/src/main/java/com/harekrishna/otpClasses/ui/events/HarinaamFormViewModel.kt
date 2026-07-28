@@ -83,7 +83,7 @@ class HarinaamFormViewModel @Inject constructor(
                             repository.updateStudentToSynced(student.phone)
                         }
                     } catch (e: Exception) {
-                        Log.e("RemoteSync", "Failed to sync student to remote", e)
+                        Log.e("RemoteSync", "Failed to sync studentProfile to remote", e)
                     }
                 }
             } catch (e: Exception) {

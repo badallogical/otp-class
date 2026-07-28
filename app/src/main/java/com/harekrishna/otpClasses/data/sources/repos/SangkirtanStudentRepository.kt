@@ -26,7 +26,7 @@ class SangkirtanStudentRepository @Inject constructor(
 
     private val TAG = "SangkirtanStudentRepository"
 
-    // Insert a student into the database and then sync to remote
+    // Insert a studentProfile into the database and then sync to remote
     suspend fun insertStudent(sangkirtanStudent: SangkirtanStudentDTO) = withContext(Dispatchers.IO) {
         // Save to local database
         sangkirtanStudentDao.insert(sangkirtanStudent.copy(sync = false))
