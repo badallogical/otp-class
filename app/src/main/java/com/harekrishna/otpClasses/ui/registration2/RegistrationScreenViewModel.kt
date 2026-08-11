@@ -5,17 +5,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
 import com.harekrishna.otpClasses.MyApplication.Companion.toCamelCase
+import com.harekrishna.otpClasses.data.sources.repos.MessageType
+import com.harekrishna.otpClasses.domain.PrepareWhatsappMessageUseCase
 import com.harekrishna.otpClasses.domain.model.InterestLevel
 import com.harekrishna.otpClasses.domain.model.Student
 import com.harekrishna.otpClasses.domain.model.StudentCategory
 import com.harekrishna.otpClasses.domain.model.StudentStatus
 import com.harekrishna.otpClasses.domain.repository.RegistrationRepository
+import com.harekrishna.otpClasses.sendWhatsappMesssage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
@@ -65,13 +70,24 @@ data class RegistrationUiState(
     }
 }
 
+sealed class RegistrationUiEvent {
+    data class LaunchWhatsApp(
+        val phoneNumber: String,
+        val message: String
+    ) : RegistrationUiEvent()
+}
+
 @HiltViewModel
 class RegistrationScreenViewModel @Inject constructor(
+    private val prepareWhatsappMessageUseCase: PrepareWhatsappMessageUseCase,
     private val repository: RegistrationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegistrationUiState())
     val uiState: StateFlow<RegistrationUiState> = _uiState.asStateFlow()
+
+    private val _uiEvent = Channel<RegistrationUiEvent>()
+    val uiEvent = _uiEvent.receiveAsFlow()
 
     private var phoneCheckJob: Job? = null
 
@@ -152,6 +168,31 @@ class RegistrationScreenViewModel @Inject constructor(
             return
         }
         update { it.copy(dialogState = RegDialogState.SENDING_INVITE, errorMessage = null) }
+        // 1. Run business logic via UseCase
+
+
+        // 2. Emit UI event with the formatted message
+        viewModelScope.launch {
+            val message = prepareWhatsappMessageUseCase(
+                uiState.value.phone,
+                 MessageType.WELCOME
+            )
+            _uiEvent.send(
+                RegistrationUiEvent.LaunchWhatsApp(
+                    phoneNumber = state.phone,
+                    message = message
+                )
+            )
+        }
+    }
+
+    suspend fun getWhatsAppMessage(
+        phoneNumber: String,
+        type : MessageType
+    ) : String {
+
+        return prepareWhatsappMessageUseCase(phoneNumber, MessageType.WELCOME)
+
     }
 
     fun onCancelSendingDialog() {

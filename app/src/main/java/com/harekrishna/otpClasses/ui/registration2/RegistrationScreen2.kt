@@ -55,6 +55,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,9 +64,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -78,8 +77,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.harekrishna.otpClasses.MyApplication.Companion.toCamelCase
 import com.harekrishna.otpClasses.domain.model.InterestLevel
-import com.harekrishna.otpClasses.domain.model.Student
 import com.harekrishna.otpClasses.domain.model.StudentCategory
+import com.harekrishna.otpClasses.sendWhatsappMesssage
 import com.harekrishna.otpClasses.ui.theme.Otp_class_appTheme
 import com.harekrishna.otpClasses.ui.theme.ThemeMode
 import kotlinx.coroutines.Dispatchers
@@ -87,11 +86,29 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 @Composable
-fun RegistrationScreen(
+fun RegistrationFormScreen(
     modifier: Modifier = Modifier,
     viewModel: RegistrationScreenViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // 1. Get LocalContext HERE (in composable scope)
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+
+    // 2. Use the 'context' variable inside LaunchedEffect
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is RegistrationUiEvent.LaunchWhatsApp -> {
+                    context.sendWhatsappMesssage(
+                         event.phoneNumber,
+                         event.message
+                    )
+                }
+            }
+        }
+    }
 
     RegistrationScreenContent(
         modifier = modifier,
@@ -109,10 +126,8 @@ fun RegistrationScreen(
 
     // Handle Sending Invite Dialog State
     if (uiState.dialogState == RegDialogState.SENDING_INVITE) {
-        val defaultMsg = "Hare Krishna ${uiState.name}, welcome to the classes!"
         SendingInviteDialog(
             phone = uiState.phone,
-            message = defaultMsg,
             isSubmitting = uiState.isSubmitting,
             onVerifyAndSubmit = viewModel::onVerifyAndSubmit,
             onNotVerifyAndSubmit = viewModel::onNotVerifyAndSubmit,
@@ -366,19 +381,15 @@ private fun PhoneStatusBanner(status: PhoneCheckStatus, modifier: Modifier = Mod
 @Composable
 private fun SendingInviteDialog(
     phone: String,
-    message: String,
     isSubmitting: Boolean,
     onVerifyAndSubmit: () -> Unit,
     onNotVerifyAndSubmit: () -> Unit,
     onCancel: () -> Unit
 ) {
-    val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+
     val progress = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        clipboardManager.setText(AnnotatedString(message))
-        openWhatsAppChat(context, phone, message)
         progress.animateTo(1f, animationSpec = tween(durationMillis = 1400))
     }
 
@@ -833,7 +844,6 @@ private fun SendingInviteDialogPreviewLight() {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             SendingInviteDialog(
                 phone = "+91 98765 43210",
-                message = "Hare Krishna Rahul Verma, welcome to the classes!",
                 isSubmitting = false,
                 onVerifyAndSubmit = {},
                 onNotVerifyAndSubmit = {},

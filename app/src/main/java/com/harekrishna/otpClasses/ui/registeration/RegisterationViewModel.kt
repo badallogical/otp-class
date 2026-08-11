@@ -38,7 +38,7 @@ class RegistrationViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(RegistrationListUiState())
     val uiState: StateFlow<RegistrationListUiState> = _uiState.asStateFlow()
 
-    private val TAG = "RegistrationViewModel"
+    private val TAG = "RegistrationListViewModel"
 
     init {
         viewModelScope.launch {

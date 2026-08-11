@@ -18,7 +18,8 @@ import com.harekrishna.otpClasses.ui.events.HarinaanApp
 import com.harekrishna.otpClasses.ui.followup.FollowUpScreen
 import com.harekrishna.otpClasses.ui.login.LoginScreen
 import com.harekrishna.otpClasses.ui.registeration.CallingListScreen
-import com.harekrishna.otpClasses.ui.registration2.RegistrationScreen
+import com.harekrishna.otpClasses.ui.registration2.RegistrationFormScreen
+import com.harekrishna.otpClasses.ui.registration2.RegistrationListScreen
 import com.harekrishna.otpClasses.ui.screens.AttendanceScreen
 import com.harekrishna.otpClasses.ui.settings.SettingsScreen
 import com.harekrishna.otpClasses.ui.utils.AboutScreen
@@ -67,13 +68,13 @@ fun MainNavHost(
         composable("dashboard") { DashboardScreen(navController) }
         composable("settings") { SettingsScreen(navController) }
         composable("about") { AboutScreen() }
-        composable("registration") { RegistrationScreen() }
+        composable("registration") { RegistrationListScreen( { navController.navigate("form")})  }
         composable("events") { EventsScreen(navController) }
         composable("harinaam_list") { HarinaanApp() }
         composable("harinaam_form") { HarinaamFormScreen(navController) }
 
 
-        composable("form") { StudentFormScreen(null) }
+        composable("form") { RegistrationFormScreen() }
         composable("form_edit/{id}") {
             StudentFormScreen(it.arguments?.getString("id"))
         }
